@@ -140,7 +140,7 @@ export default function AdminPage() {
         .update({
           status: newStatus,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .in('id', orderIds);
 
       if (error) throw error;
