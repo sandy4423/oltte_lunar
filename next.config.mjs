@@ -8,6 +8,10 @@ const nextConfig = {
     // ⚠️ 경고: 린트 에러가 있어도 무시하고 배포합니다.
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    // ⚠️ useSearchParams() Suspense 경고 무시
+    missingSuspenseWithCSRBailout: false,
+  },
 };
 
 export default nextConfig;
