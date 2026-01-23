@@ -299,12 +299,12 @@ export default function OrderPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-red-50 to-orange-50 pb-32">
+    <main className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 pb-32">
       {/* 헤더 */}
-      <header className="bg-gradient-to-r from-red-600 to-red-500 text-white p-6 shadow-lg">
+      <header className="bg-brand text-white p-6 shadow-lg">
         <div className="max-w-lg mx-auto">
           <h1 className="text-2xl font-bold mb-1">🥟 올때만두</h1>
-          <p className="text-red-100 text-sm">설 만두는 제가 빚을게요</p>
+          <p className="text-orange-100 text-sm">설 만두는 제가 빚을게요</p>
         </div>
       </header>
 
@@ -319,14 +319,14 @@ export default function OrderPage() {
               <div className="flex justify-center gap-6 text-sm">
                 <div>
                   <p className="text-gray-500">배송일</p>
-                  <p className="font-bold text-lg text-red-600">
+                  <p className="font-bold text-lg text-brand">
                     {format(new Date(apartment.deliveryDate), 'M월 d일 (EEE)', { locale: ko })}
                   </p>
                 </div>
                 <div className="border-l border-gray-200" />
                 <div>
                   <p className="text-gray-500">주문마감</p>
-                  <p className="font-bold text-lg text-orange-600">
+                  <p className="font-bold text-lg text-brand-dark">
                     {format(new Date(apartment.cutoffAt), 'M월 d일 HH:mm', { locale: ko })}
                   </p>
                 </div>
@@ -464,7 +464,7 @@ export default function OrderPage() {
                         <p className="text-sm text-gray-500">{product.description}</p>
                       </div>
                     </div>
-                    <p className="mt-1 font-bold text-red-600">
+                    <p className="mt-1 font-bold text-brand">
                       {product.price.toLocaleString()}원
                     </p>
                   </div>
@@ -523,7 +523,7 @@ export default function OrderPage() {
         <div className="max-w-lg mx-auto">
           <div className="flex justify-between items-center mb-3">
             <span className="text-gray-600">총 {totalQty}개</span>
-            <span className="text-2xl font-bold text-red-600">
+            <span className="text-2xl font-bold text-brand">
               {totalAmount.toLocaleString()}원
             </span>
           </div>

@@ -86,9 +86,9 @@ export default function OrderCompletePage() {
   // 로딩
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-emerald-50">
+      <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-orange-50 to-amber-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-green-500 border-t-transparent mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand border-t-transparent mx-auto mb-4" />
           <p className="text-gray-600">주문 정보를 불러오는 중...</p>
         </div>
       </main>
@@ -113,12 +113,12 @@ export default function OrderCompletePage() {
   const hasVirtualAccount = order.vbank_num && order.vbank_bank;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-green-50 to-emerald-50 pb-8">
+    <main className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 pb-8">
       {/* 헤더 */}
-      <header className="bg-gradient-to-r from-green-600 to-emerald-500 text-white p-6 text-center">
+      <header className="bg-brand text-white p-6 text-center">
         <CheckCircle className="mx-auto h-16 w-16 mb-4" />
         <h1 className="text-2xl font-bold mb-2">주문이 접수되었습니다!</h1>
-        <p className="text-green-100">
+        <p className="text-orange-100">
           입금 확인 후 확정 문자를 보내드립니다
         </p>
       </header>
@@ -126,14 +126,14 @@ export default function OrderCompletePage() {
       <div className="max-w-lg mx-auto px-4 mt-6 space-y-6">
         {/* 가상계좌 정보 (강조) */}
         {hasVirtualAccount ? (
-          <Card className="bg-white shadow-xl border-2 border-green-200">
+          <Card className="bg-white shadow-xl border-2 border-orange-200">
             <CardContent className="pt-6">
               <div className="text-center mb-6">
-                <Building2 className="mx-auto h-8 w-8 text-green-600 mb-2" />
+                <Building2 className="mx-auto h-8 w-8 text-brand mb-2" />
                 <h2 className="text-lg font-bold text-gray-900">입금 계좌 안내</h2>
               </div>
 
-              <div className="bg-green-50 rounded-2xl p-6 space-y-4">
+              <div className="bg-orange-50 rounded-2xl p-6 space-y-4">
                 <div className="text-center">
                   <p className="text-sm text-gray-500 mb-1">은행</p>
                   <p className="text-2xl font-bold text-gray-900">{order.vbank_bank}</p>
@@ -141,7 +141,7 @@ export default function OrderCompletePage() {
                 
                 <div className="text-center">
                   <p className="text-sm text-gray-500 mb-1">계좌번호</p>
-                  <p className="text-3xl font-bold text-green-700 tracking-wider">
+                  <p className="text-3xl font-bold text-brand-dark tracking-wider">
                     {order.vbank_num}
                   </p>
                 </div>
@@ -155,7 +155,7 @@ export default function OrderCompletePage() {
 
                 <div className="text-center pt-2">
                   <p className="text-sm text-gray-500 mb-1">입금 금액</p>
-                  <p className="text-4xl font-bold text-red-600">
+                  <p className="text-4xl font-bold text-brand">
                     {order.total_amount.toLocaleString()}원
                   </p>
                 </div>
@@ -168,7 +168,7 @@ export default function OrderCompletePage() {
               >
                 {copied ? (
                   <>
-                    <Check className="mr-2 h-5 w-5 text-green-500" />
+                    <Check className="mr-2 h-5 w-5 text-brand" />
                     복사 완료!
                   </>
                 ) : (
@@ -183,7 +183,7 @@ export default function OrderCompletePage() {
         ) : (
           <Card className="bg-white shadow-xl">
             <CardContent className="pt-6 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-green-500 border-t-transparent mx-auto mb-4" />
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand border-t-transparent mx-auto mb-4" />
               <p className="text-gray-600">가상계좌 발급 중...</p>
               <p className="text-sm text-gray-400 mt-2">
                 잠시만 기다려주세요
@@ -243,7 +243,7 @@ export default function OrderCompletePage() {
               </div>
               <div className="flex justify-between text-base">
                 <span className="font-medium">결제 금액</span>
-                <span className="font-bold text-red-600">
+                <span className="font-bold text-brand">
                   {order.total_amount.toLocaleString()}원
                 </span>
               </div>

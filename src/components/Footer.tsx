@@ -13,11 +13,11 @@ export function Footer() {
           랜드마크로 113 후문상가 | 032-832-5012 | info@olttefood.com | 평일 09:00-18:00
         </p>
         <p className="space-x-2">
-          <a href="/terms" className="hover:underline">이용약관</a>
+          <a href="/terms" className="hover:text-brand hover:underline">이용약관</a>
           <span>|</span>
-          <a href="/privacy" className="hover:underline">개인정보처리방침</a>
+          <a href="/privacy" className="hover:text-brand hover:underline">개인정보처리방침</a>
           <span>|</span>
-          <a href="/refund" className="hover:underline">환불정책</a>
+          <a href="/refund" className="hover:text-brand hover:underline">환불정책</a>
         </p>
         <p className="text-[9px] text-gray-300">© {new Date().getFullYear()} 올때만두 · 대표 성하경</p>
       </div>
