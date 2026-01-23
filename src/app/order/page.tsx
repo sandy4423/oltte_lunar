@@ -318,16 +318,16 @@ export default function OrderPage() {
               </h2>
               <div className="flex justify-center gap-6 text-sm">
                 <div>
-                  <p className="text-gray-500">배송일</p>
-                  <p className="font-bold text-lg text-brand">
-                    {format(new Date(apartment.deliveryDate), 'M월 d일 (EEE)', { locale: ko })}
+                  <p className="text-gray-500">주문마감</p>
+                  <p className="font-bold text-lg text-brand-dark">
+                    {format(new Date(apartment.cutoffAt), 'M월 d일 HH:mm', { locale: ko })}
                   </p>
                 </div>
                 <div className="border-l border-gray-200" />
                 <div>
-                  <p className="text-gray-500">주문마감</p>
-                  <p className="font-bold text-lg text-brand-dark">
-                    {format(new Date(apartment.cutoffAt), 'M월 d일 HH:mm', { locale: ko })}
+                  <p className="text-gray-500">배송일</p>
+                  <p className="font-bold text-lg text-brand">
+                    {format(new Date(apartment.deliveryDate), 'M월 d일 (EEE)', { locale: ko })}
                   </p>
                 </div>
               </div>
