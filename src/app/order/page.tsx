@@ -302,7 +302,7 @@ export default function OrderPage() {
     <main className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 pb-32">
       {/* 헤더 */}
       <header className="bg-brand text-white p-6 shadow-lg">
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-lg mx-auto text-center">
           <h1 className="text-2xl font-bold mb-1">🥟 올때만두</h1>
           <p className="text-orange-100 text-sm">설 만두는 제가 빚을게요</p>
         </div>
