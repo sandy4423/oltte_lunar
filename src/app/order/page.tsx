@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { APARTMENTS, PRODUCTS, MIN_ORDER_QUANTITY, type Product } from '@/lib/constants';
 import { supabase } from '@/lib/supabase';
+import { Footer } from '@/components/Footer';
 
 // ============================================
 // Types
@@ -513,6 +514,9 @@ export default function OrderPage() {
           </div>
         )}
       </div>
+
+      {/* Footer - PG 심사용 사업자 정보 */}
+      <Footer />
 
       {/* 하단 고정 결제 버튼 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">

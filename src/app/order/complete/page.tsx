@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 import { supabase } from '@/lib/supabase';
+import { Footer } from '@/components/Footer';
 import type { OrderRow, CustomerRow } from '@/types/database';
 
 // ============================================
@@ -253,9 +254,12 @@ export default function OrderCompletePage() {
         {/* 안내 */}
         <div className="text-center text-sm text-gray-500 space-y-1">
           <p>입금 확인 시 자동으로 확정 문자가 발송됩니다.</p>
-          <p>문의: 010-1234-5678</p>
+          <p>문의: 032-832-5012</p>
         </div>
       </div>
+
+      {/* Footer - PG 심사용 사업자 정보 */}
+      <Footer />
     </main>
   );
 }
