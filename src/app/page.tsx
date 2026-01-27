@@ -17,21 +17,25 @@ export default function HomePage() {
       </header>
 
       {/* 단지 선택 */}
-      <div className="max-w-2xl mx-auto px-4 mt-8">
-        <div className="text-center mb-8">
+      <div className="max-w-2xl mx-auto px-4 mt-12">
+        <div className="text-center mb-10">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             단지를 선택해주세요
           </h2>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {APARTMENT_LIST.map((apt) => {
             const isExpired = new Date() > new Date(apt.cutoffAt);
             
             return (
               <Link key={apt.code} href={`/order?apt=${apt.code}`}>
                 <Button
-                  className="w-full h-14 text-lg"
+                  className={`w-full h-16 text-xl font-semibold transition-all ${
+                    isExpired 
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                      : 'bg-white hover:bg-brand hover:text-white hover:scale-[1.02] shadow-md hover:shadow-xl border-2 border-gray-200 hover:border-brand'
+                  }`}
                   variant="outline"
                   disabled={isExpired}
                 >

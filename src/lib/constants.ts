@@ -21,7 +21,6 @@ export const APARTMENTS: Record<string, ApartmentConfig> = {
   '83250121': {
     code: '83250121',
     name: '베르디움',
-    dongRange: '101동–110동',
     households: 1530,
     dongCount: 10,
     deliveryDate: '2026-02-06',
@@ -30,7 +29,6 @@ export const APARTMENTS: Record<string, ApartmentConfig> = {
   '83250122': {
     code: '83250122',
     name: '호반써밋',
-    dongRange: '101동–110동',
     households: 1820,
     dongCount: 10,
     deliveryDate: '2026-02-07',
