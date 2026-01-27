@@ -7,16 +7,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { PRODUCTS } from '@/lib/constants';
+import { PRODUCTS, getApartmentFullName } from '@/lib/constants';
 import type { CartItem } from '@/types/order';
+import type { ApartmentConfig } from '@/lib/constants';
 
 interface UseOrderSubmitParams {
-  apartment: {
-    code: string;
-    name: string;
-    deliveryDate: string;
-    cutoffAt: string;
-  } | null;
+  apartment: ApartmentConfig | null;
   phone: string;
   name: string;
   dong: string;
@@ -77,7 +73,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
         .insert({
           customer_id: customerId,
           apt_code: apartment.code,
-          apt_name: apartment.name,
+          apt_name: getApartmentFullName(apartment),
           dong: dong,
           ho: ho,
           delivery_date: apartment.deliveryDate,
@@ -123,7 +119,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
         channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY!,
         paymentId: `payment_${order.id}_${Date.now()}`,
-        orderName: `올때만두 - ${apartment.name}`,
+        orderName: `올때만두 - ${getApartmentFullName(apartment)}`,
         totalAmount: totalAmount,
         currency: 'CURRENCY_KRW',
         payMethod: 'VIRTUAL_ACCOUNT',

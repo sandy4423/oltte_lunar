@@ -10,75 +10,96 @@
 export interface ApartmentConfig {
   code: string;        // URL 파라미터
   name: string;        // 표시용 이름
+  dongRange?: string;  // 동 범위 (예: "101동–106동")
+  households: number;  // 세대수
+  dongCount: number;   // 동수
   deliveryDate: string; // 배송일 (YYYY-MM-DD)
   cutoffAt: string;    // 마감 시간 (ISO 8601)
 }
 
 export const APARTMENTS: Record<string, ApartmentConfig> = {
-  '8_oceanpark': {
-    code: '8_oceanpark',
-    name: '8공구 송도 오션파크 베르디움',
-    deliveryDate: '2026-01-31',
-    cutoffAt: '2026-01-29T23:00:00+09:00',
-  },
-  '8_hoban': {
-    code: '8_hoban',
-    name: '8공구 호반써밋 송도',
-    deliveryDate: '2026-02-01',
-    cutoffAt: '2026-01-30T23:00:00+09:00',
-  },
-  '8_skview': {
-    code: '8_skview',
-    name: '8공구 송도 SK뷰',
-    deliveryDate: '2026-02-02',
-    cutoffAt: '2026-01-31T23:00:00+09:00',
-  },
-  '8_ephyun': {
-    code: '8_ephyun',
-    name: '8공구 e편한세상 송도',
-    deliveryDate: '2026-02-03',
-    cutoffAt: '2026-02-01T23:00:00+09:00',
-  },
-  '8_landmark': {
-    code: '8_landmark',
-    name: '8공구 랜드마크시티 센트럴 더샵',
-    deliveryDate: '2026-02-04',
+  '83250121': {
+    code: '83250121',
+    name: '송도 오션파크 베르디움',
+    households: 1530,
+    dongCount: 10,
+    deliveryDate: '2026-02-06',
     cutoffAt: '2026-02-02T23:00:00+09:00',
   },
-  '6_hill_12': {
-    code: '6_hill_12',
-    name: '6공구 힐스테이트 레이크 1+2차',
-    deliveryDate: '2026-02-06',
+  '83250122': {
+    code: '83250122',
+    name: '호반써밋 송도',
+    households: 1820,
+    dongCount: 11,
+    deliveryDate: '2026-02-07',
+    cutoffAt: '2026-02-03T23:00:00+09:00',
+  },
+  '83250123': {
+    code: '83250123',
+    name: '송도 SK뷰',
+    dongRange: '101동–106동',
+    households: 2100,
+    dongCount: 6,
+    deliveryDate: '2026-02-08',
     cutoffAt: '2026-02-04T23:00:00+09:00',
   },
-  '6_hill_3': {
-    code: '6_hill_3',
-    name: '6공구 힐스테이트 레이크 3차',
-    deliveryDate: '2026-02-07',
+  '83250124': {
+    code: '83250124',
+    name: '송도 SK뷰',
+    dongRange: '107동–112동',
+    households: 2100,
+    dongCount: 6,
+    deliveryDate: '2026-02-09',
     cutoffAt: '2026-02-05T23:00:00+09:00',
   },
-  '6_lux': {
-    code: '6_lux',
-    name: '6공구 송도 럭스오션 SK뷰',
-    deliveryDate: '2026-02-09',
+  '83250125': {
+    code: '83250125',
+    name: '랜드마크시티 센트럴 더샵',
+    dongRange: '101동–107동',
+    households: 2885,
+    dongCount: 7,
+    deliveryDate: '2026-02-10',
+    cutoffAt: '2026-02-06T23:00:00+09:00',
+  },
+  '83250126': {
+    code: '83250126',
+    name: '랜드마크시티 센트럴 더샵',
+    dongRange: '108동–115동',
+    households: 2885,
+    dongCount: 8,
+    deliveryDate: '2026-02-11',
     cutoffAt: '2026-02-07T23:00:00+09:00',
   },
-  '6_xi_crystal': {
-    code: '6_xi_crystal',
-    name: '6공구 송도 자이 크리스탈오션',
-    deliveryDate: '2026-02-11',
-    cutoffAt: '2026-02-09T23:00:00+09:00',
+  '83250127': {
+    code: '83250127',
+    name: '더샵 송도 마리나베이',
+    dongRange: '101동–107동',
+    households: 3100,
+    dongCount: 7,
+    deliveryDate: '2026-02-12',
+    cutoffAt: '2026-02-08T23:00:00+09:00',
   },
-  '6_xi_star': {
-    code: '6_xi_star',
-    name: '6공구 자이 더 스타',
+  '83250128': {
+    code: '83250128',
+    name: '더샵 송도 마리나베이',
+    dongRange: '108동–115동',
+    households: 3100,
+    dongCount: 8,
     deliveryDate: '2026-02-13',
-    cutoffAt: '2026-02-11T23:00:00+09:00',
+    cutoffAt: '2026-02-09T23:00:00+09:00',
   },
 };
 
 // 단지 목록 (셀렉트박스용)
 export const APARTMENT_LIST = Object.values(APARTMENTS);
+
+// 단지 전체 이름 (동 범위 포함)
+export const getApartmentFullName = (apt: ApartmentConfig): string => {
+  if (apt.dongRange) {
+    return `${apt.name} (${apt.dongRange})`;
+  }
+  return apt.name;
+};
 
 // ============================================
 // 상품 정보 (PRD 3. 상품 구성)

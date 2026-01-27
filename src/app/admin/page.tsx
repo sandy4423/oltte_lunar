@@ -23,7 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import { APARTMENT_LIST, ORDER_STATUS_LABEL, getProductBySku } from '@/lib/constants';
+import { APARTMENT_LIST, ORDER_STATUS_LABEL, getProductBySku, getApartmentFullName } from '@/lib/constants';
 import { useAdminOrders } from '@/hooks/useAdminOrders';
 import { useOrderFilters } from '@/hooks/useOrderFilters';
 import { useOrderSelection } from '@/hooks/useOrderSelection';
@@ -226,7 +226,7 @@ export default function AdminPage() {
                   <SelectItem value="all">전체 단지</SelectItem>
                   {APARTMENT_LIST.map((apt) => (
                     <SelectItem key={apt.code} value={apt.code}>
-                      {apt.name}
+                      {getApartmentFullName(apt)}
                     </SelectItem>
                   ))}
                 </SelectContent>

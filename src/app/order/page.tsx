@@ -8,7 +8,7 @@ import { AlertCircle } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
 
-import { APARTMENTS } from '@/lib/constants';
+import { APARTMENTS, getApartmentFullName } from '@/lib/constants';
 import { Footer } from '@/components/Footer';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
 import { useCart } from '@/hooks/useCart';
@@ -101,7 +101,7 @@ export default function OrderPage() {
             <AlertCircle className="mx-auto h-12 w-12 text-orange-500 mb-4" />
             <h1 className="text-xl font-bold mb-2">주문이 마감되었습니다</h1>
             <p className="text-muted-foreground">
-              {apartment.name}의 주문 마감 시간이 지났습니다.<br />
+              {getApartmentFullName(apartment)}의 주문 마감 시간이 지났습니다.<br />
               다음 기회에 이용해주세요!
             </p>
           </CardContent>
@@ -126,7 +126,7 @@ export default function OrderPage() {
           <CardContent className="pt-6">
             <div className="text-center">
               <h2 className="text-lg font-bold text-gray-900 mb-3">
-                {apartment.name}
+                {getApartmentFullName(apartment)}
               </h2>
               <div className="flex justify-center gap-6 text-sm">
                 <div>
