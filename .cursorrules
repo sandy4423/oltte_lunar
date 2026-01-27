@@ -1,3 +1,50 @@
-You are an expert Full-Stack Developer (Next.js 14, Supabase).
-Always respond in Korean.
-Follow @prd.md and @schema.sql strictly.
+# .cursorrules (AI 행동 강령)
+
+## 1. 프로젝트 원칙 (Project Principles)
+- **Tech Stack**: Next.js 14+ (App Router), TypeScript, Tailwind CSS, Supabase, PortOne V2.
+- **언어**: 한국어(Korean)로 대화하고 주석을 단다.
+- **목표**: "작동하는 코드"보다 "유지보수 가능한 코드"를 우선한다.
+
+## 2. 폴더 구조 원칙 (Strict Directory Structure)
+AI는 코드를 생성할 때 반드시 아래 폴더 역할을 준수해야 한다. 아무 데나 파일을 만들지 마라.
+
+- **src/app/**: 
+  - 오직 라우팅(URL)과 페이지의 뼈대(`layout.tsx`, `page.tsx`)만 존재한다.
+  - `page.tsx`에는 복잡한 로직을 절대 작성하지 않는다. (Data Fetching 후 컴포넌트로 전달만 수행)
+  
+- **src/components/**: 
+  - **ui/**: 버튼, 인풋 등 재사용 가능한 작은 단위 (Atom).
+  - **features/**: 특정 기능에 종속된 큰 덩어리 (예: `OrderForm`, `PaymentModal`).
+  - *규칙*: 컴포넌트는 "어떻게 보일지"만 담당하고, "데이터를 어떻게 처리할지"는 Hook이나 Lib에 위임한다.
+
+- **src/lib/**: 
+  - 순수 비즈니스 로직, API 호출(Supabase, PortOne, SMS), 유틸리티 함수.
+  - *규칙*: UI 코드가 한 줄도 들어가면 안 된다.
+
+- **src/hooks/**: 
+  - React State(`useState`, `useEffect`)와 로직이 결합된 부분은 무조건 커스텀 훅으로 분리한다.
+  - 예: `useOrderSubmit`, `usePayment`
+
+- **src/types/**: 
+  - 모든 TypeScript 인터페이스와 타입 정의는 여기서 관리한다. `any` 타입 사용 절대 금지.
+
+## 3. 코딩 스타일 (Coding Standards)
+- **함수형 프로그래밍**: 클래스 대신 함수형 컴포넌트와 Hooks를 사용한다.
+- **Early Return**: `if-else` 중첩을 피하고, 조건이 맞지 않으면 빠르게 리턴한다.
+- **Server vs Client**: 
+  - 가능한 모든 곳에 Server Component를 사용한다.
+  - `useState`, `onClick`이 꼭 필요한 경우에만 파일 최상단에 `"use client"`를 명시한다.
+- **Naming**:
+  - 파일명: `kebab-case` (예: `order-form.tsx`)
+  - 컴포넌트명: `PascalCase` (예: `OrderForm`)
+  - 함수/변수명: `camelCase` (예: `submitOrder`)
+
+## 4. 작업 절차 (Workflow)
+AI는 사용자의 요청을 받으면 바로 코드를 뱉지 말고 다음 3단계를 거친다.
+
+1.  **Thinking & Analysis**: 
+    - "이 기능을 구현하기 위해 어떤 파일을 수정하고, 어떤 파일을 새로 만들어야 하는가?"를 먼저 분석해서 브리핑한다.
+2.  **Modular Implementation**: 
+    - 한 파일에 모든 코드를 때려 박지 말고, `types`, `hooks`, `components`로 쪼개서 제안한다.
+3.  **Self-Correction**:
+    - 코드를 작성한 후, "기존 코드를 깨뜨리지 않는지", "import 경로는 정확한지(@/ 사용)" 스스로 검증한다.

@@ -134,14 +134,11 @@ export default function AdminPage() {
     try {
       const orderIds = Array.from(selectedOrders);
 
-      // DB 업데이트
-      const { error } = await supabase
-        .from('orders')
-        .update({
-          status: newStatus,
-          updated_at: new Date().toISOString(),
-        } as any)
-        .in('id', orderIds);
+      // DB 업데이트 (Supabase 타입 이슈로 any 캐스팅)
+      const updateData = { status: newStatus, updated_at: new Date().toISOString() };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const query = (supabase as any).from('orders').update(updateData).in('id', orderIds);
+      const { error } = await query;
 
       if (error) throw error;
 
