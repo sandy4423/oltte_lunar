@@ -90,11 +90,13 @@ export async function sendSMS(to: string, text: string): Promise<SMSResult> {
     console.log('[SMS] Authorization 헤더:', authHeader.substring(0, 50) + '...');
     
     const messageData = {
-      message: {
-        to: normalizedPhone,
-        from: SENDER_NUMBER,
-        text: text,
-      },
+      messages: [
+        {
+          to: normalizedPhone,
+          from: SENDER_NUMBER,
+          text: text,
+        }
+      ],
     };
     console.log('[SMS] 메시지 데이터:', JSON.stringify(messageData));
 
