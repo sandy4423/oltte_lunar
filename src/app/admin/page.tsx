@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { 
@@ -23,141 +23,46 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import { supabase } from '@/lib/supabase';
 import { APARTMENT_LIST, ORDER_STATUS_LABEL, getProductBySku } from '@/lib/constants';
-import type { OrderRow, CustomerRow, OrderItemRow, OrderStatus } from '@/types/database';
-
-// ============================================
-// Types
-// ============================================
-
-interface OrderFull extends OrderRow {
-  customer: CustomerRow;
-  order_items: OrderItemRow[];
-}
+import { useAdminOrders } from '@/hooks/useAdminOrders';
+import { useOrderFilters } from '@/hooks/useOrderFilters';
+import { useOrderSelection } from '@/hooks/useOrderSelection';
+import { useOrderStatusChange } from '@/hooks/useOrderStatusChange';
 
 // ============================================
 // Page Component
 // ============================================
 
 export default function AdminPage() {
-  // 데이터
-  const [orders, setOrders] = useState<OrderFull[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 주문 조회 훅
+  const { orders, loading, fetchOrders } = useAdminOrders();
 
-  // 필터
-  const [filterApt, setFilterApt] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterDeliveryDate, setFilterDeliveryDate] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  // 필터링 훅
+  const {
+    filterApt,
+    setFilterApt,
+    filterStatus,
+    setFilterStatus,
+    filterDeliveryDate,
+    setFilterDeliveryDate,
+    searchQuery,
+    setSearchQuery,
+    filteredOrders,
+    uniqueDeliveryDates,
+  } = useOrderFilters(orders);
 
-  // 선택
-  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  // 선택 훅
+  const { selectedOrders, handleSelectAll, handleSelectOrder, clearSelection } = useOrderSelection();
+
+  // 상태 변경 훅
+  const { actionLoading, handleStatusChange } = useOrderStatusChange({
+    selectedOrders,
+    onSuccess: fetchOrders,
+    onClearSelection: clearSelection,
+  });
 
   // 라벨 인쇄 모드
   const [printMode, setPrintMode] = useState(false);
-
-  // 액션 로딩
-  const [actionLoading, setActionLoading] = useState(false);
-
-  // 주문 목록 조회
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, customer:customers(*), order_items(*)')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setOrders((data as OrderFull[]) || []);
-    } catch (err) {
-      console.error('Fetch orders error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  // 필터링된 주문
-  const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
-      if (filterApt !== 'all' && order.apt_code !== filterApt) return false;
-      if (filterStatus !== 'all' && order.status !== filterStatus) return false;
-      if (filterDeliveryDate !== 'all' && order.delivery_date !== filterDeliveryDate) return false;
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchName = order.customer.name.toLowerCase().includes(query);
-        const matchPhone = order.customer.phone.includes(query);
-        const matchDong = order.dong.includes(query);
-        const matchHo = order.ho.includes(query);
-        if (!matchName && !matchPhone && !matchDong && !matchHo) return false;
-      }
-      return true;
-    });
-  }, [orders, filterApt, filterStatus, filterDeliveryDate, searchQuery]);
-
-  // 고유 배송일 목록
-  const uniqueDeliveryDates = useMemo(() => {
-    const dates = new Set(orders.map((o) => o.delivery_date));
-    return Array.from(dates).sort();
-  }, [orders]);
-
-  // 전체 선택/해제
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedOrders(new Set(filteredOrders.map((o) => o.id)));
-    } else {
-      setSelectedOrders(new Set());
-    }
-  };
-
-  // 개별 선택
-  const handleSelectOrder = (orderId: string, checked: boolean) => {
-    const newSelected = new Set(selectedOrders);
-    if (checked) {
-      newSelected.add(orderId);
-    } else {
-      newSelected.delete(orderId);
-    }
-    setSelectedOrders(newSelected);
-  };
-
-  // 상태 변경 + SMS 발송
-  const handleStatusChange = async (newStatus: OrderStatus) => {
-    if (selectedOrders.size === 0) return;
-
-    setActionLoading(true);
-    try {
-      const orderIds = Array.from(selectedOrders);
-
-      // DB 업데이트 (Supabase 타입 이슈로 any 캐스팅)
-      const updateData = { status: newStatus, updated_at: new Date().toISOString() };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const query = (supabase as any).from('orders').update(updateData).in('id', orderIds);
-      const { error } = await query;
-
-      if (error) throw error;
-
-      // SMS 발송 API 호출 (TODO: 실제 구현)
-      console.log(`[Admin] Status changed to ${newStatus} for ${orderIds.length} orders`);
-      console.log('[Admin] SMS would be sent to:', orderIds);
-
-      // 새로고침
-      await fetchOrders();
-      setSelectedOrders(new Set());
-
-      alert(`${orderIds.length}건의 주문이 ${ORDER_STATUS_LABEL[newStatus]?.label || newStatus}(으)로 변경되었습니다.`);
-    } catch (err) {
-      console.error('Status change error:', err);
-      alert('상태 변경 중 오류가 발생했습니다.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   // 라벨 인쇄 모드 토글
   const handlePrintMode = () => {
@@ -421,7 +326,7 @@ export default function AdminPage() {
                           filteredOrders.length > 0 &&
                           filteredOrders.every((o) => selectedOrders.has(o.id))
                         }
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelectAll(e.target.checked)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSelectAll(e.target.checked, filteredOrders)}
                       />
                     </TableHead>
                     <TableHead>상태</TableHead>

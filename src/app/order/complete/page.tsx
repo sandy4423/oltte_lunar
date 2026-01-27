@@ -1,25 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { CheckCircle, Copy, Check, AlertCircle, Clock, Building2 } from 'lucide-react';
+import { CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-import { supabase } from '@/lib/supabase';
 import { Footer } from '@/components/Footer';
-import type { OrderRow, CustomerRow } from '@/types/database';
-
-// ============================================
-// Types
-// ============================================
-
-interface OrderWithCustomer extends OrderRow {
-  customer: CustomerRow;
-}
+import { useOrderPolling } from '@/hooks/useOrderPolling';
+import { VirtualAccountCard } from '@/components/features/VirtualAccountCard';
 
 // ============================================
 // Page Component
@@ -29,59 +19,8 @@ export default function OrderCompletePage() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
 
-  const [order, setOrder] = useState<OrderWithCustomer | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  // 주문 정보 조회
-  useEffect(() => {
-    async function fetchOrder() {
-      if (!orderId) {
-        setError('주문 정보를 찾을 수 없습니다.');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error: fetchError } = await supabase
-          .from('orders')
-          .select('*, customer:customers(*)')
-          .eq('id', orderId)
-          .single();
-
-        if (fetchError || !data) {
-          throw new Error('주문 정보 조회 실패');
-        }
-
-        setOrder(data as OrderWithCustomer);
-      } catch (err) {
-        console.error('Fetch order error:', err);
-        setError('주문 정보를 불러올 수 없습니다.');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchOrder();
-
-    // 5초마다 가상계좌 정보 폴링 (발급 완료 확인)
-    const interval = setInterval(fetchOrder, 5000);
-    return () => clearInterval(interval);
-  }, [orderId]);
-
-  // 계좌번호 복사
-  const handleCopyAccount = async () => {
-    if (!order?.vbank_num) return;
-
-    try {
-      await navigator.clipboard.writeText(order.vbank_num);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Copy failed:', err);
-    }
-  };
+  // 주문 폴링 훅
+  const { order, loading, error } = useOrderPolling(orderId);
 
   // 로딩
   if (loading) {
@@ -110,7 +49,7 @@ export default function OrderCompletePage() {
     );
   }
 
-  const hasVirtualAccount = order.vbank_num && order.vbank_bank;
+  const hasVirtualAccount = Boolean(order.vbank_num && order.vbank_bank);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 pb-8">
@@ -125,72 +64,13 @@ export default function OrderCompletePage() {
 
       <div className="max-w-lg mx-auto px-4 mt-6 space-y-6">
         {/* 가상계좌 정보 (강조) */}
-        {hasVirtualAccount ? (
-          <Card className="bg-white shadow-xl border-2 border-orange-200">
-            <CardContent className="pt-6">
-              <div className="text-center mb-6">
-                <Building2 className="mx-auto h-8 w-8 text-brand mb-2" />
-                <h2 className="text-lg font-bold text-gray-900">입금 계좌 안내</h2>
-              </div>
-
-              <div className="bg-orange-50 rounded-2xl p-6 space-y-4">
-                <div className="text-center">
-                  <p className="text-sm text-gray-500 mb-1">은행</p>
-                  <p className="text-2xl font-bold text-gray-900">{order.vbank_bank}</p>
-                </div>
-                
-                <div className="text-center">
-                  <p className="text-sm text-gray-500 mb-1">계좌번호</p>
-                  <p className="text-3xl font-bold text-brand-dark tracking-wider">
-                    {order.vbank_num}
-                  </p>
-                </div>
-
-                <div className="text-center">
-                  <p className="text-sm text-gray-500 mb-1">예금주</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {order.vbank_holder || '올때만두'}
-                  </p>
-                </div>
-
-                <div className="text-center pt-2">
-                  <p className="text-sm text-gray-500 mb-1">입금 금액</p>
-                  <p className="text-4xl font-bold text-brand">
-                    {order.total_amount.toLocaleString()}원
-                  </p>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleCopyAccount}
-                variant="outline"
-                className="w-full mt-4 h-12 text-base"
-              >
-                {copied ? (
-                  <>
-                    <Check className="mr-2 h-5 w-5 text-brand" />
-                    복사 완료!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="mr-2 h-5 w-5" />
-                    계좌번호 복사하기
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="bg-white shadow-xl">
-            <CardContent className="pt-6 text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-brand border-t-transparent mx-auto mb-4" />
-              <p className="text-gray-600">가상계좌 발급 중...</p>
-              <p className="text-sm text-gray-400 mt-2">
-                잠시만 기다려주세요
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        <VirtualAccountCard
+          hasVirtualAccount={hasVirtualAccount}
+          vbankBank={order.vbank_bank || null}
+          vbankNum={order.vbank_num || null}
+          vbankHolder={order.vbank_holder || null}
+          totalAmount={order.total_amount}
+        />
 
         {/* 입금 마감 시간 (강조) */}
         <Card className="bg-orange-50 border-orange-200">
