@@ -12,10 +12,13 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[API] 인증번호 발송 요청 시작');
     const { phone } = await request.json();
+    console.log('[API] 요청 전화번호:', phone);
 
     // 전화번호 정규화
     const normalizedPhone = phone.replace(/[^0-9]/g, '');
+    console.log('[API] 정규화된 전화번호:', normalizedPhone);
 
     // 전화번호 형식 검증
     if (!/^01[0-9]{8,9}$/.test(normalizedPhone)) {
@@ -27,6 +30,7 @@ export async function POST(request: NextRequest) {
 
     // 3자리 인증번호 생성
     const code = Math.floor(100 + Math.random() * 900).toString();
+    console.log('[API] 인증번호 생성:', code);
 
     // Supabase에 인증 코드 저장 (5분 만료)
     const expiresAt = new Date();
@@ -49,16 +53,21 @@ export async function POST(request: NextRequest) {
       });
 
     if (dbError) {
-      console.error('DB 저장 오류:', dbError);
+      console.error('[API] DB 저장 오류:', dbError);
       return NextResponse.json(
         { error: '인증번호 저장 실패' },
         { status: 500 }
       );
     }
 
+    console.log('[API] DB 저장 성공');
+
     // SMS 발송
+    console.log('[API] SMS 발송 시작');
     const smsText = createVerificationSMS(code);
+    console.log('[API] SMS 텍스트:', smsText);
     const smsResult = await sendSMS(normalizedPhone, smsText);
+    console.log('[API] SMS 결과:', smsResult);
 
     if (!smsResult.success) {
       console.error('[API] SMS 발송 실패:', smsResult.error);

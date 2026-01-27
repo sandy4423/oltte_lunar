@@ -53,6 +53,11 @@ function createAuthHeader(apiKey: string, apiSecret: string): string {
  */
 export async function sendSMS(to: string, text: string): Promise<SMSResult> {
   try {
+    console.log('[SMS] sendSMS 함수 시작');
+    console.log('[SMS] API_KEY 존재:', !!API_KEY);
+    console.log('[SMS] API_SECRET 존재:', !!API_SECRET);
+    console.log('[SMS] SENDER_NUMBER:', SENDER_NUMBER);
+    
     // 전화번호 정규화 (하이픈 및 공백 제거, 숫자만 남김)
     const normalizedPhone = to.replace(/[^0-9]/g, '');
     
@@ -80,7 +85,9 @@ export async function sendSMS(to: string, text: string): Promise<SMSResult> {
     }
 
     // Solapi REST API 호출 (공식 문서 형식)
+    console.log('[SMS] Authorization 헤더 생성 시작');
     const authHeader = createAuthHeader(API_KEY, API_SECRET);
+    console.log('[SMS] Authorization 헤더:', authHeader.substring(0, 50) + '...');
     
     const messageData = {
       message: {
@@ -89,7 +96,9 @@ export async function sendSMS(to: string, text: string): Promise<SMSResult> {
         text: text,
       },
     };
+    console.log('[SMS] 메시지 데이터:', JSON.stringify(messageData));
 
+    console.log('[SMS] API 요청 시작:', `${API_BASE_URL}/messages/v4/send-many/detail`);
     const response = await fetch(`${API_BASE_URL}/messages/v4/send-many/detail`, {
       method: 'POST',
       headers: {
@@ -99,7 +108,9 @@ export async function sendSMS(to: string, text: string): Promise<SMSResult> {
       body: JSON.stringify(messageData),
     });
 
+    console.log('[SMS] API 응답 상태:', response.status);
     const result = await response.json();
+    console.log('[SMS] API 응답 본문:', JSON.stringify(result));
 
     if (!response.ok) {
       console.error('[SMS] API 응답 오류:', result);
