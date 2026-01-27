@@ -79,7 +79,7 @@ export async function sendSMS(to: string, text: string): Promise<SMSResult> {
       };
     }
 
-    // Solapi REST API 호출
+    // Solapi REST API 호출 (공식 문서 형식)
     const authHeader = createAuthHeader(API_KEY, API_SECRET);
     
     const messageData = {
@@ -111,8 +111,8 @@ export async function sendSMS(to: string, text: string): Promise<SMSResult> {
 
     console.log('[SMS] 발송 성공:', JSON.stringify(result, null, 2));
 
-    // groupId 또는 messageId 반환
-    const messageId = result.groupId || result.messageList?.[0]?.messageId || `sent_${Date.now()}`;
+    // messageId 반환
+    const messageId = result.messageId || result.groupId || `sent_${Date.now()}`;
 
     return {
       success: true,
@@ -165,7 +165,7 @@ export async function sendBulkSMS(
  * 인증번호 SMS 생성
  */
 export function createVerificationSMS(code: string): string {
-  return `[올때만두] 인증번호는 [${code}]입니다. 3분 이내에 입력해주세요.`;
+  return `[올때만두] 인증번호는 [${code}]입니다. 5분 이내에 입력해주세요.`;
 }
 
 /**

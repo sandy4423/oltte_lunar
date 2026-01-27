@@ -158,6 +158,7 @@ export default function OrderPage() {
           isPhoneVerified={verification.isPhoneVerified}
           isVerifying={verification.isVerifying}
           verificationSent={verification.verificationSent}
+          error={verification.error}
           handleSendVerification={verification.handleSendVerification}
           handleVerifyCode={verification.handleVerifyCode}
         />

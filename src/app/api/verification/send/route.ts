@@ -7,6 +7,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { sendSMS, createVerificationSMS } from '@/lib/sms';
 
+// Node.js 런타임 사용 (crypto 모듈 필요)
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const { phone } = await request.json();
@@ -58,9 +61,9 @@ export async function POST(request: NextRequest) {
     const smsResult = await sendSMS(normalizedPhone, smsText);
 
     if (!smsResult.success) {
-      console.error('SMS 발송 실패:', smsResult.error);
+      console.error('[API] SMS 발송 실패:', smsResult.error);
       return NextResponse.json(
-        { error: 'SMS 발송 실패' },
+        { error: `SMS 발송 실패: ${smsResult.error}` },
         { status: 500 }
       );
     }
@@ -70,9 +73,10 @@ export async function POST(request: NextRequest) {
       message: '인증번호가 발송되었습니다.',
     });
   } catch (error) {
-    console.error('인증번호 발송 오류:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[API] 인증번호 발송 오류:', errorMessage, error);
     return NextResponse.json(
-      { error: '서버 오류가 발생했습니다.' },
+      { error: `서버 오류: ${errorMessage}` },
       { status: 500 }
     );
   }

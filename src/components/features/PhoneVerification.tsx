@@ -15,6 +15,7 @@ interface PhoneVerificationProps {
   isPhoneVerified: boolean;
   isVerifying: boolean;
   verificationSent: boolean;
+  error: string | null;
   handleSendVerification: () => void;
   handleVerifyCode: () => void;
 }
@@ -27,6 +28,7 @@ export function PhoneVerification({
   isPhoneVerified,
   isVerifying,
   verificationSent,
+  error,
   handleSendVerification,
   handleVerifyCode,
 }: PhoneVerificationProps) {
@@ -71,6 +73,10 @@ export function PhoneVerification({
               {isVerifying ? '확인중...' : '확인'}
             </Button>
           </div>
+        )}
+
+        {error && (
+          <p className="text-sm text-red-600 font-medium">⚠ {error}</p>
         )}
 
         {isPhoneVerified && (

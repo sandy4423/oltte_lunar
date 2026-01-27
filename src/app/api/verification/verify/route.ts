@@ -6,6 +6,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+// Node.js 런타임 사용
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
   try {
     const { phone, code } = await request.json();
