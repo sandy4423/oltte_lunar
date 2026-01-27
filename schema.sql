@@ -47,6 +47,18 @@ create table order_items (
   line_amount int not null
 );
 
+-- 5. Verification Codes (인증번호)
+create table verification_codes (
+  id uuid default gen_random_uuid() primary key,
+  phone text not null,
+  code text not null,
+  verified boolean default false,
+  expires_at timestamptz not null,
+  created_at timestamptz default now()
+);
+
 -- Indexes
 create index idx_orders_phone on customers(phone);
 create index idx_orders_apt_date on orders(apt_code, delivery_date);
+create index idx_verification_phone_code on verification_codes(phone, code);
+create index idx_verification_expires on verification_codes(expires_at);

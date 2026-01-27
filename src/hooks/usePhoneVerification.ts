@@ -14,30 +14,71 @@ export function usePhoneVerification() {
   const [verificationSent, setVerificationSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 인증번호 발송 (Mock)
+  // 인증번호 발송
   const handleSendVerification = async () => {
     if (!/^01[0-9]{8,9}$/.test(phone.replace(/-/g, ''))) {
       setError('올바른 휴대폰 번호를 입력해주세요.');
       return;
     }
+    
     setError(null);
-    setVerificationSent(true);
-    // TODO: 실제 SMS 인증 API 연동
-    console.log('[Mock] 인증번호 발송:', phone);
+    
+    try {
+      const response = await fetch('/api/verification/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || '인증번호 발송에 실패했습니다.');
+        return;
+      }
+
+      setVerificationSent(true);
+      console.log('[SMS] 인증번호 발송 성공');
+    } catch (err) {
+      console.error('[SMS] 발송 오류:', err);
+      setError('인증번호 발송 중 오류가 발생했습니다.');
+    }
   };
 
-  // 인증번호 확인 (Mock)
+  // 인증번호 확인
   const handleVerifyCode = async () => {
+    if (verificationCode.length !== 3) {
+      setError('인증번호 3자리를 입력해주세요.');
+      return;
+    }
+
     setIsVerifying(true);
-    // Mock: 아무 코드나 입력하면 성공
-    await new Promise((r) => setTimeout(r, 500));
-    if (verificationCode.length >= 4) {
+    setError(null);
+
+    try {
+      const response = await fetch('/api/verification/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, code: verificationCode }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || '인증에 실패했습니다.');
+        setIsVerifying(false);
+        return;
+      }
+
       setIsPhoneVerified(true);
       setError(null);
-    } else {
-      setError('인증번호를 확인해주세요.');
+      console.log('[SMS] 인증 성공');
+    } catch (err) {
+      console.error('[SMS] 인증 오류:', err);
+      setError('인증 중 오류가 발생했습니다.');
+    } finally {
+      setIsVerifying(false);
     }
-    setIsVerifying(false);
   };
 
   return {
