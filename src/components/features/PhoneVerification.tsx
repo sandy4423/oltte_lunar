@@ -16,8 +16,10 @@ interface PhoneVerificationProps {
   isVerifying: boolean;
   verificationSent: boolean;
   error: string | null;
+  isGuestOrder: boolean;
   handleSendVerification: () => void;
   handleVerifyCode: () => void;
+  handleGuestOrder: () => void;
 }
 
 export function PhoneVerification({
@@ -29,8 +31,10 @@ export function PhoneVerification({
   isVerifying,
   verificationSent,
   error,
+  isGuestOrder,
   handleSendVerification,
   handleVerifyCode,
+  handleGuestOrder,
 }: PhoneVerificationProps) {
   return (
     <Card>
@@ -79,8 +83,24 @@ export function PhoneVerification({
           <p className="text-sm text-red-600 font-medium">⚠ {error}</p>
         )}
 
-        {isPhoneVerified && (
+        {isPhoneVerified && !isGuestOrder && (
           <p className="text-sm text-green-600 font-medium">✓ 인증 완료</p>
+        )}
+
+        {isGuestOrder && (
+          <p className="text-sm text-blue-600 font-medium">✓ 비회원 주문 모드</p>
+        )}
+
+        {!isPhoneVerified && !verificationSent && (
+          <div className="pt-2 border-t">
+            <Button
+              onClick={handleGuestOrder}
+              variant="outline"
+              className="w-full text-gray-600 hover:text-gray-900"
+            >
+              전화번호 없이 비회원 주문하기
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>

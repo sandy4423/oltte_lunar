@@ -13,6 +13,7 @@ export function usePhoneVerification() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isGuestOrder, setIsGuestOrder] = useState(false);
 
   // 인증번호 발송
   const handleSendVerification = async () => {
@@ -81,6 +82,15 @@ export function usePhoneVerification() {
     }
   };
 
+  // 비회원 주문 (전화번호 인증 건너뛰기)
+  const handleGuestOrder = () => {
+    setIsGuestOrder(true);
+    setIsPhoneVerified(true); // 폼 검증을 위해 인증 완료로 처리
+    setPhone(`guest_${Date.now()}`); // 임시 게스트 전화번호
+    setError(null);
+    console.log('[Guest] 비회원 주문 모드 활성화');
+  };
+
   return {
     phone,
     setPhone,
@@ -91,7 +101,9 @@ export function usePhoneVerification() {
     verificationSent,
     error,
     setError,
+    isGuestOrder,
     handleSendVerification,
     handleVerifyCode,
+    handleGuestOrder,
   };
 }

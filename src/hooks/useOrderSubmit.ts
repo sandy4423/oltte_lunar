@@ -37,26 +37,20 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
     setError(null);
 
     try {
-      const normalizedPhone = phone.replace(/-/g, '');
+      const isGuestOrder = phone.startsWith('guest_');
+      const normalizedPhone = isGuestOrder ? phone : phone.replace(/-/g, '');
 
       // 1. 고객 생성 또는 조회
       let customerId: string;
       
-      const { data: existingCustomer } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('phone', normalizedPhone)
-        .single();
-
-      if (existingCustomer) {
-        customerId = existingCustomer.id;
-      } else {
+      // 비회원 주문은 항상 새 고객 생성
+      if (isGuestOrder) {
         const { data: newCustomer, error: customerError } = await supabase
           .from('customers')
           .insert({
             phone: normalizedPhone,
-            name: name,
-            marketing_opt_in: marketingOptIn,
+            name: name || '비회원',
+            marketing_opt_in: false,
           })
           .select('id')
           .single();
@@ -65,6 +59,32 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
           throw new Error('고객 정보 저장 실패');
         }
         customerId = newCustomer.id;
+      } else {
+        // 일반 주문: 기존 고객 조회 또는 생성
+        const { data: existingCustomer } = await supabase
+          .from('customers')
+          .select('id')
+          .eq('phone', normalizedPhone)
+          .single();
+
+        if (existingCustomer) {
+          customerId = existingCustomer.id;
+        } else {
+          const { data: newCustomer, error: customerError } = await supabase
+            .from('customers')
+            .insert({
+              phone: normalizedPhone,
+              name: name,
+              marketing_opt_in: marketingOptIn,
+            })
+            .select('id')
+            .single();
+
+          if (customerError || !newCustomer) {
+            throw new Error('고객 정보 저장 실패');
+          }
+          customerId = newCustomer.id;
+        }
       }
 
       // 2. 주문 생성
@@ -115,6 +135,15 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
       // 4. PortOne 결제 요청
       const { default: PortOne } = await import('@portone/browser-sdk/v2');
 
+      // 게스트 주문일 경우 전화번호 제외
+      const customerInfo: { fullName: string; phoneNumber?: string } = {
+        fullName: name || '비회원',
+      };
+      
+      if (!isGuestOrder) {
+        customerInfo.phoneNumber = normalizedPhone;
+      }
+
       const paymentResponse = await PortOne.requestPayment({
         storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
         channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY!,
@@ -128,10 +157,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
             validHours: Math.max(1, Math.floor((new Date(apartment.cutoffAt).getTime() - Date.now()) / (1000 * 60 * 60))),
           },
         },
-        customer: {
-          phoneNumber: normalizedPhone,
-          fullName: name,
-        },
+        customer: customerInfo,
         customData: {
           orderId: order.id,
           aptCode: apartment.code,
