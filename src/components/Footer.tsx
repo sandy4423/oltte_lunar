@@ -7,7 +7,7 @@ export function Footer() {
     <footer className="bg-gray-50 border-t border-gray-100 mt-8 py-4">
       <div className="max-w-lg mx-auto px-4 text-center text-[10px] text-gray-400 leading-tight space-y-1">
         <p>
-          올때만두 | 사업자등록번호: 286-34-01627
+          올때만두 | 사업자등록번호: 286-34-01627 | 개인정보책임자: 성하경
         </p>
         <p>
           랜드마크로 113 후문상가 | 032-832-5012 | info@olttefood.com | 평일 09:00-18:00
