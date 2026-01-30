@@ -42,6 +42,7 @@ export default function OrderPage() {
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [showPersonalInfoDialog, setShowPersonalInfoDialog] = useState(false);
   const [showMarketingDialog, setShowMarketingDialog] = useState(false);
+  const [highlightConsent, setHighlightConsent] = useState(false);
 
   // 장바구니 훅
   const { cart, updateQuantity, totalQty, totalAmount, isMinOrderMet } = useCart();
@@ -75,13 +76,12 @@ export default function OrderPage() {
     return new Date() > new Date(apartment.cutoffAt);
   }, [apartment]);
 
-  // 폼 유효성
+  // 폼 유효성 (동의 체크 제외 - 별도 검증)
   const isFormValid = 
     verification.isPhoneVerified && 
     name.trim() !== '' && 
     dong !== '' && 
     ho.trim() !== '' && 
-    personalInfoConsent && // 필수 동의 추가
     isMinOrderMet;
 
   // 에러 통합 (인증 에러 또는 제출 에러)
@@ -89,6 +89,24 @@ export default function OrderPage() {
   const setError = (err: string | null) => {
     verification.setError(err);
     orderSubmit.setError(err);
+  };
+
+  // 주문 제출 핸들러 (동의 검증 포함)
+  const handleOrderSubmit = async () => {
+    // 개인정보 동의 필수 체크
+    if (!personalInfoConsent) {
+      setHighlightConsent(true);
+      setError('개인정보 수집 및 이용에 동의해주세요.');
+      // 3초 후 강조 해제
+      setTimeout(() => {
+        setHighlightConsent(false);
+        setError(null);
+      }, 3000);
+      return;
+    }
+    
+    // 실제 주문 제출
+    await orderSubmit.handleSubmit();
   };
 
   // 단지 없음
@@ -196,6 +214,7 @@ export default function OrderPage() {
           setMarketingOptIn={setMarketingOptIn}
           onShowPersonalInfoDialog={() => setShowPersonalInfoDialog(true)}
           onShowMarketingDialog={() => setShowMarketingDialog(true)}
+          highlightConsent={highlightConsent}
         />
 
         {/* 상품 선택 */}
@@ -224,7 +243,7 @@ export default function OrderPage() {
         totalAmount={totalAmount}
         isFormValid={isFormValid}
         isSubmitting={orderSubmit.isSubmitting}
-        onSubmit={orderSubmit.handleSubmit}
+        onSubmit={handleOrderSubmit}
       />
 
       {/* 개인정보 수집 동의 Dialog */}

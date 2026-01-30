@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 interface DeliveryFormProps {
   name: string;
@@ -24,6 +25,7 @@ interface DeliveryFormProps {
   setMarketingOptIn: (consent: boolean) => void;
   onShowPersonalInfoDialog: () => void;
   onShowMarketingDialog: () => void;
+  highlightConsent?: boolean;
 }
 
 export function DeliveryForm({
@@ -41,6 +43,7 @@ export function DeliveryForm({
   setMarketingOptIn,
   onShowPersonalInfoDialog,
   onShowMarketingDialog,
+  highlightConsent = false,
 }: DeliveryFormProps) {
   return (
     <Card>
@@ -95,7 +98,10 @@ export function DeliveryForm({
         {/* 동의 섹션 */}
         <div className="space-y-3 pt-4 border-t">
           {/* 전체 동의 */}
-          <div className="flex items-center space-x-2">
+          <div className={cn(
+            "flex items-center space-x-2 p-2 rounded transition-all",
+            highlightConsent && "border-2 border-red-500 bg-red-50"
+          )}>
             <Checkbox 
               id="allConsent" 
               checked={allConsent}
@@ -123,7 +129,7 @@ export function DeliveryForm({
                 if (checked && marketingOptIn) setAllConsent(true);
               }}
             />
-            <label htmlFor="personalInfo" className="text-sm cursor-pointer flex-1">
+            <label htmlFor="personalInfo" className="text-xs cursor-pointer flex-1">
               개인정보 수집 및 이용 동의 (필수)
               <button 
                 type="button"
@@ -151,7 +157,7 @@ export function DeliveryForm({
                 if (checked && personalInfoConsent) setAllConsent(true);
               }}
             />
-            <label htmlFor="marketing" className="text-sm cursor-pointer flex-1">
+            <label htmlFor="marketing" className="text-xs cursor-pointer flex-1">
               마케팅 정보 수신 동의 (선택)
               <button 
                 type="button"
