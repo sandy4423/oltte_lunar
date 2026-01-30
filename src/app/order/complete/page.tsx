@@ -74,14 +74,15 @@ export default function OrderCompletePage() {
         />
 
         {/* 카드 결제 버튼 - 가상계좌 대신 카드로 결제 */}
-        {order.status === 'WAITING_FOR_DEPOSIT' && (
+        {/* 임시 숨김: PG 승인 대기 중 */}
+        {/* {order.status === 'WAITING_FOR_DEPOSIT' && (
           <CardPaymentButton
             orderId={order.id}
             amount={order.total_amount}
             orderName={`올때만두 - ${order.apt_name}`}
             customerName={order.customer.name}
           />
-        )}
+        )} */}
 
         {/* 입금 마감 시간 (강조) */}
         <Card className="bg-orange-50 border-orange-200">
