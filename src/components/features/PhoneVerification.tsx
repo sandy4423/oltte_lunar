@@ -60,13 +60,18 @@ export function PhoneVerification({
     // 숫자만 추출
     const numbers = value.replace(/[^0-9]/g, '');
     
-    // 010을 제외한 나머지 8자리
+    // 010을 제외한 나머지 숫자들
     const rest = numbers.slice(3);
     
-    // 입력된 자리수만큼 마스킹 해제
-    const masked = (rest + '00000000').slice(0, 8);
-    
-    return `010-${masked.slice(0, 4)}-${masked.slice(4, 8)}`;
+    // 입력된 숫자만 표시 (마스킹 없음)
+    if (rest.length === 0) {
+      return '010-';
+    } else if (rest.length <= 4) {
+      return `010-${rest}`;
+    } else {
+      // 4자리 후 자동으로 "-" 추가
+      return `010-${rest.slice(0, 4)}-${rest.slice(4, 8)}`;
+    }
   };
 
   // 전화번호 입력 핸들러
@@ -85,7 +90,7 @@ export function PhoneVerification({
   };
 
   // 표시용 전화번호
-  const displayPhone = phone ? formatPhoneNumber(phone) : '010-0000-0000';
+  const displayPhone = phone ? formatPhoneNumber(phone) : '010-';
   return (
     <Card>
       <CardHeader className="pb-4">
