@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3자리 인증번호 생성
-    const code = Math.floor(100 + Math.random() * 900).toString();
+    // 4자리 인증번호 생성
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
 
     // Supabase에 인증 코드 저장 (5분 만료)
     const expiresAt = new Date();

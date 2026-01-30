@@ -62,8 +62,8 @@ export function usePhoneVerification() {
 
   // 인증번호 확인
   const handleVerifyCode = async () => {
-    if (verificationCode.length !== 3) {
-      setError('인증번호 3자리를 입력해주세요.');
+    if (verificationCode.length !== 4) {
+      setError('인증번호 4자리를 입력해주세요.');
       return;
     }
 

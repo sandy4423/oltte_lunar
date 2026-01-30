@@ -65,10 +65,10 @@ export function PhoneVerification({
           <div className="flex gap-2">
             <Input
               type="text"
-              placeholder="인증번호 3자리"
+              placeholder="인증번호 4자리"
               value={verificationCode}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVerificationCode(e.target.value)}
-              maxLength={3}
+              maxLength={4}
               className="flex-1 text-lg tracking-widest"
             />
             <Button onClick={handleVerifyCode} disabled={isVerifying}>
