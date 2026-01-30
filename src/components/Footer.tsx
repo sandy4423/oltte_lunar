@@ -13,7 +13,7 @@ export function Footer() {
           인천광역시 연수구 랜드마크로 113 e편한세상송도 후문상가 제114호 일부호
         </p>
         <p>
-          032-832-5012 | info@olttefood.com | 평일 09:00-18:00
+          010-2592-4423 | info@olttefood.com | 평일 09:00-18:00
         </p>
         <p className="space-x-2">
           <a href="/terms" className="hover:text-brand hover:underline">이용약관</a>

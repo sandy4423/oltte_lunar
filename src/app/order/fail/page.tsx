@@ -59,8 +59,8 @@ export default function PaymentFailPage() {
               {actualOrderId ? '주문 페이지로 돌아가기' : '홈으로 돌아가기'}
             </Button>
 
-            <p className="text-sm text-gray-500">
-              문의: 032-832-5012
+            <p className="text-xs text-gray-400">
+              문의: 010-2592-4423
             </p>
           </div>
         </CardContent>

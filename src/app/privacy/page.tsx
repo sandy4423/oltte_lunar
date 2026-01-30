@@ -125,11 +125,11 @@ export default function PrivacyPage() {
               이용자의 불만처리 및 피해구제를 위하여 아래와 같이 개인정보 보호책임자를 
               지정하고 있습니다.
             </p>
-            <div className="mt-3 p-4 bg-gray-50 rounded-lg">
+            <div className="mt-3 p-4 bg-gray-50 rounded-lg text-sm">
               <p><strong>개인정보 보호책임자</strong></p>
               <p>성명: 성하경</p>
               <p>직책: 대표</p>
-              <p>연락처: 032-832-5012</p>
+              <p className="text-xs text-gray-500">연락처: 010-2592-4423</p>
               <p>이메일: info@olttefood.com</p>
             </div>
           </section>
