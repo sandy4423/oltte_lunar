@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     // SMS 발송
     try {
-      if (order.customer?.phone && !order.customer.phone.startsWith('guest_')) {
+      if (order.customer?.phone) {
         await sendOrderNotification({
           to: order.customer.phone,
           customerName: order.customer.name || '고객',

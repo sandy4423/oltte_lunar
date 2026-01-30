@@ -160,10 +160,8 @@ export default function OrderPage() {
           isSending={verification.isSending}
           verificationSent={verification.verificationSent}
           error={verification.error}
-          isGuestOrder={verification.isGuestOrder}
           handleSendVerification={verification.handleSendVerification}
           handleVerifyCode={verification.handleVerifyCode}
-          handleGuestOrder={verification.handleGuestOrder}
         />
 
         {/* 배송 정보 */}

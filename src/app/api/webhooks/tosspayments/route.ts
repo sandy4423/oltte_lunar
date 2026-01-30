@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 
       // SMS 발송
       try {
-        if (order.customer?.phone && !order.customer.phone.startsWith('guest_')) {
+        if (order.customer?.phone) {
           const deliveryDateFormatted = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
           
           await sendSMS(order.customer.phone, createPaymentConfirmSMS({

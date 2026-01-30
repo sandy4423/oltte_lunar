@@ -88,8 +88,8 @@ export async function POST(request: NextRequest) {
       accountNumber: payment.virtualAccount.accountNumber,
     });
 
-    // SMS 발송 (비회원 제외)
-    if (customerPhone && !customerPhone.startsWith('guest_')) {
+    // SMS 발송
+    if (customerPhone) {
       try {
         const dueDateFormatted = format(new Date(payment.virtualAccount.dueDate), 'M월 d일 (EEE) HH:mm', { locale: ko });
         const deliveryDateFormatted = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
