@@ -157,6 +157,7 @@ export default function OrderPage() {
           setVerificationCode={verification.setVerificationCode}
           isPhoneVerified={verification.isPhoneVerified}
           isVerifying={verification.isVerifying}
+          isSending={verification.isSending}
           verificationSent={verification.verificationSent}
           error={verification.error}
           isGuestOrder={verification.isGuestOrder}

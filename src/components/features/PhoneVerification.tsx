@@ -14,6 +14,7 @@ interface PhoneVerificationProps {
   setVerificationCode: (code: string) => void;
   isPhoneVerified: boolean;
   isVerifying: boolean;
+  isSending: boolean; // 발송 중 상태 추가
   verificationSent: boolean;
   error: string | null;
   isGuestOrder: boolean;
@@ -29,6 +30,7 @@ export function PhoneVerification({
   setVerificationCode,
   isPhoneVerified,
   isVerifying,
+  isSending,
   verificationSent,
   error,
   isGuestOrder,
@@ -51,15 +53,15 @@ export function PhoneVerification({
             placeholder="01012345678"
             value={phone}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
-            disabled={isPhoneVerified}
+            disabled={isPhoneVerified || isSending}
             className="flex-1 text-lg"
           />
           <Button
             onClick={handleSendVerification}
-            disabled={isPhoneVerified || verificationSent}
+            disabled={isPhoneVerified || verificationSent || isSending}
             variant={verificationSent ? 'secondary' : 'default'}
           >
-            {verificationSent ? '전송됨' : '인증요청'}
+            {isSending ? '발송중...' : verificationSent ? '전송됨' : '인증요청'}
           </Button>
         </div>
         

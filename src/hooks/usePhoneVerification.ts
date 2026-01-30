@@ -11,18 +11,26 @@ export function usePhoneVerification() {
   const [verificationCode, setVerificationCode] = useState('');
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isSending, setIsSending] = useState(false); // 발송 중 상태 추가
   const [verificationSent, setVerificationSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isGuestOrder, setIsGuestOrder] = useState(false);
 
   // 인증번호 발송
   const handleSendVerification = async () => {
+    // 중복 클릭 방지
+    if (isSending) {
+      console.log('[SMS] 이미 발송 중입니다.');
+      return;
+    }
+
     if (!/^01[0-9]{8,9}$/.test(phone.replace(/-/g, ''))) {
       setError('올바른 휴대폰 번호를 입력해주세요.');
       return;
     }
     
     setError(null);
+    setIsSending(true); // 발송 시작
     
     try {
       const response = await fetch('/api/verification/send', {
@@ -43,6 +51,8 @@ export function usePhoneVerification() {
     } catch (err) {
       console.error('[SMS] 발송 오류:', err);
       setError('인증번호 발송 중 오류가 발생했습니다.');
+    } finally {
+      setIsSending(false); // 발송 완료
     }
   };
 
@@ -98,6 +108,7 @@ export function usePhoneVerification() {
     setVerificationCode,
     isPhoneVerified,
     isVerifying,
+    isSending, // 발송 중 상태 추가
     verificationSent,
     error,
     setError,
