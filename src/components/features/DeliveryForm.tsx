@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface DeliveryFormProps {
   name: string;
@@ -15,6 +16,14 @@ interface DeliveryFormProps {
   setDong: (dong: string) => void;
   ho: string;
   setHo: (ho: string) => void;
+  allConsent: boolean;
+  setAllConsent: (consent: boolean) => void;
+  personalInfoConsent: boolean;
+  setPersonalInfoConsent: (consent: boolean) => void;
+  marketingOptIn: boolean;
+  setMarketingOptIn: (consent: boolean) => void;
+  onShowPersonalInfoDialog: () => void;
+  onShowMarketingDialog: () => void;
 }
 
 export function DeliveryForm({
@@ -24,6 +33,14 @@ export function DeliveryForm({
   setDong,
   ho,
   setHo,
+  allConsent,
+  setAllConsent,
+  personalInfoConsent,
+  setPersonalInfoConsent,
+  marketingOptIn,
+  setMarketingOptIn,
+  onShowPersonalInfoDialog,
+  onShowMarketingDialog,
 }: DeliveryFormProps) {
   return (
     <Card>
@@ -72,6 +89,81 @@ export function DeliveryForm({
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setHo(e.target.value)}
               className="mt-1 text-lg"
             />
+          </div>
+        </div>
+
+        {/* 동의 섹션 */}
+        <div className="space-y-3 pt-4 border-t">
+          {/* 전체 동의 */}
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="allConsent" 
+              checked={allConsent}
+              onCheckedChange={(checked) => {
+                setAllConsent(checked as boolean);
+                setPersonalInfoConsent(checked as boolean);
+                setMarketingOptIn(checked as boolean);
+              }}
+            />
+            <label htmlFor="allConsent" className="text-sm font-semibold cursor-pointer">
+              전체 동의
+            </label>
+          </div>
+          
+          {/* 개인정보 수집 동의 (필수) */}
+          <div className="flex items-center space-x-2 pl-6">
+            <Checkbox 
+              id="personalInfo" 
+              checked={personalInfoConsent}
+              onCheckedChange={(checked) => {
+                setPersonalInfoConsent(checked as boolean);
+                // 개인정보 동의 해제 시 전체 동의도 해제
+                if (!checked) setAllConsent(false);
+                // 모두 체크되면 전체 동의 활성화
+                if (checked && marketingOptIn) setAllConsent(true);
+              }}
+            />
+            <label htmlFor="personalInfo" className="text-sm cursor-pointer flex-1">
+              개인정보 수집 및 이용 동의 (필수)
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onShowPersonalInfoDialog();
+                }}
+                className="ml-1 text-blue-600 underline hover:text-blue-800"
+              >
+                보기
+              </button>
+            </label>
+          </div>
+          
+          {/* 마케팅 동의 (선택) */}
+          <div className="flex items-center space-x-2 pl-6">
+            <Checkbox 
+              id="marketing" 
+              checked={marketingOptIn}
+              onCheckedChange={(checked) => {
+                setMarketingOptIn(checked as boolean);
+                // 마케팅 동의 해제 시 전체 동의도 해제
+                if (!checked) setAllConsent(false);
+                // 모두 체크되면 전체 동의 활성화
+                if (checked && personalInfoConsent) setAllConsent(true);
+              }}
+            />
+            <label htmlFor="marketing" className="text-sm cursor-pointer flex-1">
+              마케팅 정보 수신 동의 (선택)
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onShowMarketingDialog();
+                }}
+                className="ml-1 text-blue-600 underline hover:text-blue-800"
+              >
+                보기
+              </button>
+            </label>
           </div>
         </div>
       </CardContent>

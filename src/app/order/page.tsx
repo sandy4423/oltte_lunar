@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { AlertCircle } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 import { APARTMENTS, getApartmentFullName } from '@/lib/constants';
 import { Footer } from '@/components/Footer';
@@ -36,10 +37,23 @@ export default function OrderPage() {
   const [name, setName] = useState('');
   const [dong, setDong] = useState('');
   const [ho, setHo] = useState('');
+  const [allConsent, setAllConsent] = useState(false);
+  const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [showPersonalInfoDialog, setShowPersonalInfoDialog] = useState(false);
+  const [showMarketingDialog, setShowMarketingDialog] = useState(false);
 
   // 장바구니 훅
   const { cart, updateQuantity, totalQty, totalAmount, isMinOrderMet } = useCart();
+
+  // 고객 정보 자동 채우기
+  useEffect(() => {
+    if (verification.customerInfo) {
+      if (verification.customerInfo.name) setName(verification.customerInfo.name);
+      if (verification.customerInfo.dong) setDong(verification.customerInfo.dong);
+      if (verification.customerInfo.ho) setHo(verification.customerInfo.ho);
+    }
+  }, [verification.customerInfo]);
 
   // 주문 제출 훅
   const orderSubmit = useOrderSubmit({
@@ -48,6 +62,7 @@ export default function OrderPage() {
     name,
     dong,
     ho,
+    personalInfoConsent,
     marketingOptIn,
     cart,
     totalQty,
@@ -66,6 +81,7 @@ export default function OrderPage() {
     name.trim() !== '' && 
     dong !== '' && 
     ho.trim() !== '' && 
+    personalInfoConsent && // 필수 동의 추가
     isMinOrderMet;
 
   // 에러 통합 (인증 에러 또는 제출 에러)
@@ -172,6 +188,14 @@ export default function OrderPage() {
           setDong={setDong}
           ho={ho}
           setHo={setHo}
+          allConsent={allConsent}
+          setAllConsent={setAllConsent}
+          personalInfoConsent={personalInfoConsent}
+          setPersonalInfoConsent={setPersonalInfoConsent}
+          marketingOptIn={marketingOptIn}
+          setMarketingOptIn={setMarketingOptIn}
+          onShowPersonalInfoDialog={() => setShowPersonalInfoDialog(true)}
+          onShowMarketingDialog={() => setShowMarketingDialog(true)}
         />
 
         {/* 상품 선택 */}
@@ -202,6 +226,58 @@ export default function OrderPage() {
         isSubmitting={orderSubmit.isSubmitting}
         onSubmit={orderSubmit.handleSubmit}
       />
+
+      {/* 개인정보 수집 동의 Dialog */}
+      <Dialog open={showPersonalInfoDialog} onOpenChange={setShowPersonalInfoDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>개인정보 수집 및 이용 동의</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-sm">
+            <div>
+              <h4 className="font-semibold mb-2">수집하는 개인정보 항목</h4>
+              <p className="text-gray-600">이름, 전화번호, 주소(동·호수), 주문 내역</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-2">수집 및 이용 목적</h4>
+              <p className="text-gray-600">주문 처리 및 배송, 다음 주문 시 편의 제공</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-2">보유 및 이용 기간</h4>
+              <p className="text-gray-600">최종 주문일로부터 1년</p>
+            </div>
+            <p className="text-xs text-gray-500">
+              위 개인정보 수집에 동의하지 않을 권리가 있으며, 동의를 거부할 경우 서비스 이용이 제한됩니다.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 마케팅 정보 수신 동의 Dialog */}
+      <Dialog open={showMarketingDialog} onOpenChange={setShowMarketingDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>마케팅 정보 수신 동의</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-sm">
+            <div>
+              <h4 className="font-semibold mb-2">수신 정보</h4>
+              <p className="text-gray-600">신규 상품 안내, 이벤트 정보, 프로모션 안내</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-2">수신 방법</h4>
+              <p className="text-gray-600">SMS 문자 메시지</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-2">동의 철회</h4>
+              <p className="text-gray-600">언제든지 고객센터를 통해 철회 가능합니다.</p>
+            </div>
+            <p className="text-xs text-gray-500">
+              마케팅 정보 수신은 선택 사항이며, 동의하지 않아도 서비스 이용에 제한이 없습니다.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

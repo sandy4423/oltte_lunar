@@ -17,6 +17,7 @@ interface UseOrderSubmitParams {
   name: string;
   dong: string;
   ho: string;
+  personalInfoConsent: boolean;
   marketingOptIn: boolean;
   cart: CartItem[];
   totalQty: number;
@@ -29,7 +30,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
-    const { apartment, phone, name, dong, ho, marketingOptIn, cart, totalQty, totalAmount } = params;
+    const { apartment, phone, name, dong, ho, personalInfoConsent, marketingOptIn, cart, totalQty, totalAmount } = params;
     
     if (!apartment) return;
 

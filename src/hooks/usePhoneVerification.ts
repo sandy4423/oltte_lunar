@@ -14,6 +14,11 @@ export function usePhoneVerification() {
   const [isSending, setIsSending] = useState(false); // 발송 중 상태 추가
   const [verificationSent, setVerificationSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [customerInfo, setCustomerInfo] = useState<{
+    name: string;
+    dong: string;
+    ho: string;
+  } | null>(null);
 
   // 인증번호 발송
   const handleSendVerification = async () => {
@@ -83,6 +88,21 @@ export function usePhoneVerification() {
       setIsPhoneVerified(true);
       setError(null);
       console.log('[SMS] 인증 성공');
+
+      // 기존 고객 정보 조회
+      try {
+        const infoResponse = await fetch(`/api/customer/info?phone=${encodeURIComponent(phone)}`);
+        if (infoResponse.ok) {
+          const info = await infoResponse.json();
+          if (info.name || info.dong || info.ho) {
+            setCustomerInfo(info);
+            console.log('[Customer] 기존 정보 조회:', info);
+          }
+        }
+      } catch (infoErr) {
+        // 고객 정보 조회 실패는 무시 (신규 고객일 수 있음)
+        console.log('[Customer] 신규 고객 또는 정보 조회 실패');
+      }
     } catch (err) {
       console.error('[SMS] 인증 오류:', err);
       setError('인증 중 오류가 발생했습니다.');
@@ -102,6 +122,7 @@ export function usePhoneVerification() {
     verificationSent,
     error,
     setError,
+    customerInfo,
     handleSendVerification,
     handleVerifyCode,
   };
