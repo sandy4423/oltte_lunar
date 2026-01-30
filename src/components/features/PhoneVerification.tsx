@@ -6,6 +6,8 @@ import { Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 interface PhoneVerificationProps {
   phone: string;
@@ -19,6 +21,16 @@ interface PhoneVerificationProps {
   error: string | null;
   handleSendVerification: () => void;
   handleVerifyCode: () => void;
+  // 동의 관련 props
+  allConsent: boolean;
+  setAllConsent: (consent: boolean) => void;
+  personalInfoConsent: boolean;
+  setPersonalInfoConsent: (consent: boolean) => void;
+  marketingOptIn: boolean;
+  setMarketingOptIn: (consent: boolean) => void;
+  onShowPersonalInfoDialog: () => void;
+  onShowMarketingDialog: () => void;
+  highlightConsent?: boolean;
 }
 
 export function PhoneVerification({
@@ -33,7 +45,47 @@ export function PhoneVerification({
   error,
   handleSendVerification,
   handleVerifyCode,
+  allConsent,
+  setAllConsent,
+  personalInfoConsent,
+  setPersonalInfoConsent,
+  marketingOptIn,
+  setMarketingOptIn,
+  onShowPersonalInfoDialog,
+  onShowMarketingDialog,
+  highlightConsent = false,
 }: PhoneVerificationProps) {
+  // 전화번호 포맷팅 (010-XXXX-XXXX)
+  const formatPhoneNumber = (value: string) => {
+    // 숫자만 추출
+    const numbers = value.replace(/[^0-9]/g, '');
+    
+    // 010을 제외한 나머지 8자리
+    const rest = numbers.slice(3);
+    
+    // 입력된 자리수만큼 마스킹 해제
+    const masked = (rest + '00000000').slice(0, 8);
+    
+    return `010-${masked.slice(0, 4)}-${masked.slice(4, 8)}`;
+  };
+
+  // 전화번호 입력 핸들러
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // 숫자만 추출
+    const numbers = value.replace(/[^0-9]/g, '');
+    
+    // 010 고정, 최대 11자리까지만
+    if (numbers.length <= 11 && numbers.startsWith('010')) {
+      setPhone(numbers);
+    } else if (numbers.length <= 8) {
+      // 010 없이 입력한 경우 010 추가
+      setPhone('010' + numbers);
+    }
+  };
+
+  // 표시용 전화번호
+  const displayPhone = phone ? formatPhoneNumber(phone) : '010-0000-0000';
   return (
     <Card>
       <CardHeader className="pb-4">
@@ -46,9 +98,9 @@ export function PhoneVerification({
         <div className="flex gap-2">
           <Input
             type="tel"
-            placeholder="01012345678"
-            value={phone}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPhone(e.target.value)}
+            placeholder="010-0000-0000"
+            value={displayPhone}
+            onChange={handlePhoneChange}
             disabled={isPhoneVerified || isSending}
             className="flex-1 text-lg"
           />
@@ -83,6 +135,86 @@ export function PhoneVerification({
 
         {isPhoneVerified && (
           <p className="text-sm text-green-600 font-medium">✓ 인증 완료</p>
+        )}
+
+        {/* 인증 완료 후 동의 체크박스 표시 */}
+        {isPhoneVerified && (
+          <div className="space-y-3 pt-4 border-t">
+            {/* 전체 동의 */}
+            <div className={cn(
+              "flex items-center space-x-2 p-2 rounded transition-all",
+              highlightConsent && "border-2 border-red-500 bg-red-50"
+            )}>
+              <Checkbox 
+                id="allConsent" 
+                checked={allConsent}
+                onCheckedChange={(checked) => {
+                  setAllConsent(checked as boolean);
+                  setPersonalInfoConsent(checked as boolean);
+                  setMarketingOptIn(checked as boolean);
+                }}
+              />
+              <label htmlFor="allConsent" className="text-sm font-semibold cursor-pointer">
+                전체 동의
+              </label>
+            </div>
+            
+            {/* 개인정보 수집 동의 (필수) */}
+            <div className="flex items-center space-x-2 pl-6">
+              <Checkbox 
+                id="personalInfo" 
+                checked={personalInfoConsent}
+                onCheckedChange={(checked) => {
+                  setPersonalInfoConsent(checked as boolean);
+                  // 개인정보 동의 해제 시 전체 동의도 해제
+                  if (!checked) setAllConsent(false);
+                  // 모두 체크되면 전체 동의 활성화
+                  if (checked && marketingOptIn) setAllConsent(true);
+                }}
+              />
+              <label htmlFor="personalInfo" className="text-xs cursor-pointer flex-1">
+                개인정보 수집 및 이용 동의 (필수)
+                <button 
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onShowPersonalInfoDialog();
+                  }}
+                  className="ml-1 text-blue-600 underline hover:text-blue-800"
+                >
+                  보기
+                </button>
+              </label>
+            </div>
+            
+            {/* 마케팅 동의 (선택) */}
+            <div className="flex items-center space-x-2 pl-6">
+              <Checkbox 
+                id="marketing" 
+                checked={marketingOptIn}
+                onCheckedChange={(checked) => {
+                  setMarketingOptIn(checked as boolean);
+                  // 마케팅 동의 해제 시 전체 동의도 해제
+                  if (!checked) setAllConsent(false);
+                  // 모두 체크되면 전체 동의 활성화
+                  if (checked && personalInfoConsent) setAllConsent(true);
+                }}
+              />
+              <label htmlFor="marketing" className="text-xs cursor-pointer flex-1">
+                마케팅 정보 수신 동의 (선택)
+                <button 
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onShowMarketingDialog();
+                  }}
+                  className="ml-1 text-blue-600 underline hover:text-blue-800"
+                >
+                  보기
+                </button>
+              </label>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

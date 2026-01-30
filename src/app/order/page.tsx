@@ -196,6 +196,15 @@ export default function OrderPage() {
           error={verification.error}
           handleSendVerification={verification.handleSendVerification}
           handleVerifyCode={verification.handleVerifyCode}
+          allConsent={allConsent}
+          setAllConsent={setAllConsent}
+          personalInfoConsent={personalInfoConsent}
+          setPersonalInfoConsent={setPersonalInfoConsent}
+          marketingOptIn={marketingOptIn}
+          setMarketingOptIn={setMarketingOptIn}
+          onShowPersonalInfoDialog={() => setShowPersonalInfoDialog(true)}
+          onShowMarketingDialog={() => setShowMarketingDialog(true)}
+          highlightConsent={highlightConsent}
         />
 
         {/* 배송 정보 */}
@@ -206,15 +215,6 @@ export default function OrderPage() {
           setDong={setDong}
           ho={ho}
           setHo={setHo}
-          allConsent={allConsent}
-          setAllConsent={setAllConsent}
-          personalInfoConsent={personalInfoConsent}
-          setPersonalInfoConsent={setPersonalInfoConsent}
-          marketingOptIn={marketingOptIn}
-          setMarketingOptIn={setMarketingOptIn}
-          onShowPersonalInfoDialog={() => setShowPersonalInfoDialog(true)}
-          onShowMarketingDialog={() => setShowMarketingDialog(true)}
-          highlightConsent={highlightConsent}
         />
 
         {/* 상품 선택 */}
