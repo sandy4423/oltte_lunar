@@ -117,6 +117,7 @@ export function PhoneVerification({
           <div className="flex gap-2">
             <Input
               type="text"
+              inputMode="numeric"
               placeholder="인증번호 4자리"
               value={verificationCode}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVerificationCode(e.target.value)}
