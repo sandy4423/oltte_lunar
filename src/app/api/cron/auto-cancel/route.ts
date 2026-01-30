@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { cancelVirtualAccount } from '@/lib/portone';
+import { cancelPayment } from '@/lib/tosspayments';
 
 // Vercel Cron 인증 (선택사항)
 const CRON_SECRET = process.env.CRON_SECRET;
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     // status = 'WAITING_FOR_DEPOSIT' AND cutoff_at < now
     const { data: expiredOrders, error: queryError } = await supabase
       .from('orders')
-      .select('id, portone_payment_id, customer_id, apt_name')
+      .select('id, toss_payment_key, customer_id, apt_name')
       .eq('status', 'WAITING_FOR_DEPOSIT')
       .lt('cutoff_at', now);
 
@@ -72,19 +72,18 @@ export async function GET(request: NextRequest) {
 
     for (const order of expiredOrders) {
       try {
-        // 3-1. PortOne 가상계좌 말소 (paymentId가 있는 경우에만)
-        if (order.portone_payment_id) {
-          const cancelResult = await cancelVirtualAccount(
-            order.portone_payment_id,
-            '입금 마감 시간 초과 (자동 취소)'
-          );
-
-          if (!cancelResult.success) {
-            console.warn(
-              `[Cron] Failed to cancel virtual account for order ${order.id}:`,
-              cancelResult.error
+        // 3-1. 토스페이먼츠 결제 취소 (가상계좌 입금 차단)
+        if (order.toss_payment_key) {
+          try {
+            await cancelPayment(
+              order.toss_payment_key,
+              '입금 마감 시간 경과로 자동 취소'
             );
-            // 가상계좌 말소 실패해도 DB 상태는 변경 (이미 입금되었을 수 있음)
+            console.log(`[Cron] Payment cancelled for order ${order.id}`);
+          } catch (cancelError) {
+            // 결제 취소 실패는 로그만 남기고 계속 진행
+            // (이미 취소된 경우 등)
+            console.error(`[Cron] Payment cancel failed for order ${order.id}:`, cancelError);
           }
         }
 

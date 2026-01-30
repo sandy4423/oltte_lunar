@@ -1,7 +1,7 @@
 /**
  * 주문 제출 훅
  * 
- * 주문 생성, DB 저장, PortOne 결제 연동을 처리합니다.
+ * 주문 생성, DB 저장, 토스페이먼츠 가상계좌 발급을 처리합니다.
  */
 
 import { useState } from 'react';
@@ -132,57 +132,35 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
         throw new Error('주문 상품 저장 실패');
       }
 
-      // 4. PortOne 결제 요청
-      const { default: PortOne } = await import('@portone/browser-sdk/v2');
-
-      // 게스트 주문일 경우 전화번호 제외
-      const customerInfo: { fullName: string; phoneNumber?: string } = {
-        fullName: name || '비회원',
-      };
-      
-      if (!isGuestOrder) {
-        customerInfo.phoneNumber = normalizedPhone;
-      }
-
-      const paymentResponse = await PortOne.requestPayment({
-        storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
-        channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY!,
-        paymentId: `payment_${order.id}_${Date.now()}`,
-        orderName: `올때만두 - ${getApartmentFullName(apartment)}`,
-        totalAmount: totalAmount,
-        currency: 'CURRENCY_KRW',
-        payMethod: 'VIRTUAL_ACCOUNT',
-        virtualAccount: {
-          accountExpiry: {
-            validHours: Math.max(1, Math.floor((new Date(apartment.cutoffAt).getTime() - Date.now()) / (1000 * 60 * 60))),
-          },
+      // 4. 토스페이먼츠 가상계좌 발급 (서버 API 호출)
+      const vbankResponse = await fetch('/api/payments/virtual-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        customer: customerInfo,
-        customData: {
+        body: JSON.stringify({
           orderId: order.id,
-          aptCode: apartment.code,
-        },
+          amount: totalAmount,
+          customerName: name || '비회원',
+          customerPhone: isGuestOrder ? undefined : normalizedPhone,
+          bank: '20', // 우리은행 (기본값)
+        }),
       });
 
-      if (paymentResponse?.code) {
-        // 결제 실패
-        throw new Error(paymentResponse.message || '결제 요청 실패');
+      if (!vbankResponse.ok) {
+        const errorData = await vbankResponse.json();
+        throw new Error(errorData.error || '가상계좌 발급 실패');
       }
 
-      // 5. 결제 정보 업데이트
-      if (paymentResponse?.paymentId) {
-        await supabase
-          .from('orders')
-          .update({
-            portone_payment_id: paymentResponse.paymentId,
-            status: 'WAITING_FOR_DEPOSIT',
-            vbank_bank: '가상계좌 정보 확인 중',
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', order.id);
+      const vbankData = await vbankResponse.json();
+      
+      if (!vbankData.success) {
+        throw new Error(vbankData.error || '가상계좌 발급 실패');
       }
 
-      // 6. 완료 페이지로 이동
+      console.log('[Order] Virtual account issued:', vbankData);
+
+      // 5. 완료 페이지로 이동
       router.push(`/order/complete?orderId=${order.id}`);
     } catch (err) {
       console.error('Order error:', err);

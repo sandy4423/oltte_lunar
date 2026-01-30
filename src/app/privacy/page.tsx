@@ -94,7 +94,7 @@ export default function PrivacyPage() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border border-gray-200 px-4 py-2">포트원(PortOne)</td>
+                    <td className="border border-gray-200 px-4 py-2">토스페이먼츠</td>
                     <td className="border border-gray-200 px-4 py-2">전자결제 대행</td>
                   </tr>
                   <tr>

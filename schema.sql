@@ -31,7 +31,9 @@ create table orders (
   vbank_num text,
   vbank_bank text,
   vbank_holder text,
-  portone_payment_id text,
+  vbank_expires_at timestamptz,
+  toss_payment_key text,
+  toss_secret text,
   paid_at timestamptz,
   created_at timestamptz default now(),
   updated_at timestamptz default now()

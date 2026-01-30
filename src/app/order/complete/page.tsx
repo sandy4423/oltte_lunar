@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Footer } from '@/components/Footer';
 import { useOrderPolling } from '@/hooks/useOrderPolling';
 import { VirtualAccountCard } from '@/components/features/VirtualAccountCard';
+import { CardPaymentButton } from '@/components/features/CardPaymentButton';
 
 // ============================================
 // Page Component
@@ -71,6 +72,16 @@ export default function OrderCompletePage() {
           vbankHolder={order.vbank_holder || null}
           totalAmount={order.total_amount}
         />
+
+        {/* 카드 결제 버튼 - 가상계좌 대신 카드로 결제 */}
+        {order.status === 'WAITING_FOR_DEPOSIT' && (
+          <CardPaymentButton
+            orderId={order.id}
+            amount={order.total_amount}
+            orderName={`올때만두 - ${order.apt_name}`}
+            customerName={order.customer.name}
+          />
+        )}
 
         {/* 입금 마감 시간 (강조) */}
         <Card className="bg-orange-50 border-orange-200">
