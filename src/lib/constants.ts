@@ -114,7 +114,7 @@ export const getApartmentFullName = (apt: ApartmentConfig): string => {
 // ============================================
 
 export interface Product {
-  sku: 'meat' | 'kimchi' | 'half' | 'ricecake_1kg';
+  sku: 'meat' | 'kimchi' | 'half' | 'ricecake_1kg' | 'broth_1200ml';
   name: string;
   description: string;
   price: number;
@@ -149,6 +149,13 @@ export const PRODUCTS: Product[] = [
     description: '1kg',
     price: 10000,
     emoji: '🍚',
+  },
+  {
+    sku: 'broth_1200ml',
+    name: '양지육수',
+    description: '1200ml',
+    price: 10000,
+    emoji: '🍲',
   },
 ];
 

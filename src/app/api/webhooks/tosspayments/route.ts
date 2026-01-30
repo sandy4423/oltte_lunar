@@ -10,7 +10,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { verifyWebhookSecret } from '@/lib/tosspayments';
-import { sendOrderNotification } from '@/lib/sms';
+import { sendSMS, createPaymentConfirmSMS } from '@/lib/sms';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 export async function POST(request: NextRequest) {
   try {
@@ -90,15 +92,15 @@ export async function POST(request: NextRequest) {
       // SMS 발송
       try {
         if (order.customer?.phone && !order.customer.phone.startsWith('guest_')) {
-          await sendOrderNotification({
-            to: order.customer.phone,
+          const deliveryDateFormatted = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
+          
+          await sendSMS(order.customer.phone, createPaymentConfirmSMS({
             customerName: order.customer.name || '고객',
-            orderNumber: actualOrderId,
-            status: newStatus === 'PAID' ? '입금 확인' : '마감 후 입금',
-            deliveryDate: order.delivery_date,
+            deliveryDate: deliveryDateFormatted,
             aptName: order.apt_name,
-            totalAmount: order.total_amount,
-          });
+            dong: order.dong,
+            ho: order.ho,
+          }));
           
           console.log(`[Webhook] SMS sent to ${order.customer.phone}`);
         }

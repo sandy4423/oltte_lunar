@@ -7,6 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { issueVirtualAccount, getBankName } from '@/lib/tosspayments';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { sendSMS, createVirtualAccountSMS } from '@/lib/sms';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
     // 주문 정보 조회
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('id, cutoff_at')
+      .select('id, cutoff_at, delivery_date, apt_name, dong, ho')
       .eq('id', orderId)
       .single();
 
@@ -84,6 +87,31 @@ export async function POST(request: NextRequest) {
       bank: payment.virtualAccount.bankCode,
       accountNumber: payment.virtualAccount.accountNumber,
     });
+
+    // SMS 발송 (비회원 제외)
+    if (customerPhone && !customerPhone.startsWith('guest_')) {
+      try {
+        const dueDateFormatted = format(new Date(payment.virtualAccount.dueDate), 'M월 d일 (EEE) HH:mm', { locale: ko });
+        const deliveryDateFormatted = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
+        
+        await sendSMS(customerPhone, createVirtualAccountSMS({
+          customerName,
+          bankName: getBankName(payment.virtualAccount.bankCode),
+          accountNumber: payment.virtualAccount.accountNumber,
+          amount,
+          dueDate: dueDateFormatted,
+          deliveryDate: deliveryDateFormatted,
+          aptName: order.apt_name,
+          dong: order.dong,
+          ho: order.ho,
+        }));
+        
+        console.log(`[API] SMS sent to ${customerPhone}`);
+      } catch (smsError) {
+        // SMS 실패는 로그만 남기고 계속 진행
+        console.error('[API] SMS error:', smsError);
+      }
+    }
 
     // 응답 반환
     return NextResponse.json({
