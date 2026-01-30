@@ -25,9 +25,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 인증번호 검증
-    if (!code || code.length !== 3) {
+    if (!code || code.length !== 4) {
       return NextResponse.json(
-        { error: '인증번호 3자리를 입력해주세요.' },
+        { error: '인증번호 4자리를 입력해주세요.' },
         { status: 400 }
       );
     }
