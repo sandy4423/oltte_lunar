@@ -187,17 +187,17 @@ export function createVirtualAccountSMS(params: {
   const { customerName, bankName, accountNumber, amount, dueDate, deliveryDate, aptName, dong, ho } = params;
   return `[올때만두 공식] ${customerName}님 주문 감사합니다!
 
-💰 입금 정보
+[입금 정보]
 ${bankName} ${accountNumber}
 입금액: ${amount.toLocaleString()}원 (정확히)
 마감: ${dueDate}까지
 
-📦 배송 안내
-• 배송일: ${deliveryDate}
-• 배송지: ${aptName} ${dong}동 ${ho}호
-• 만두는 빚은 즉시 급속냉동하여
+[배송 안내]
+- 배송일: ${deliveryDate}
+- 배송지: ${aptName} ${dong}동 ${ho}호
+- 만두는 빚은 즉시 급속냉동하여
   신선하게 준비합니다
-• 수령 즉시 냉동 보관해주세요
+- 수령 즉시 냉동 보관해주세요
 
 입금 확인 후 다시 안내드릴게요!`;
 }
@@ -215,14 +215,14 @@ export function createPaymentConfirmSMS(params: {
   const { customerName, deliveryDate, aptName, dong, ho } = params;
   return `[올때만두 공식] ${customerName}님 입금 확인되었습니다!
 
-📦 배송 정보
-• 배송일: ${deliveryDate}
-• 배송지: ${aptName} ${dong}동 ${ho}호
-• 만두는 빚은 즉시 급속냉동하여
+[배송 정보]
+- 배송일: ${deliveryDate}
+- 배송지: ${aptName} ${dong}동 ${ho}호
+- 만두는 빚은 즉시 급속냉동하여
   최고의 신선도를 유지합니다
 
-🏠 다음엔 더 편하게!
-매장에서 포장 주문하실 수 있어요
+[매장 안내]
+다음엔 매장에서 포장 주문하실 수 있어요
 https://toss.place/_p/bGynOJ0Bc
 
 배송 시작 시 다시 알려드릴게요!`;
@@ -243,8 +243,10 @@ export function createShippingSMS(params: {
 시간 양해 부탁드립니다
 배달 완료 시에 문자 드릴게요
 
-📍 배송지: ${dong}동 ${ho}호
-🏠 다음엔 매장에서 포장 주문하세요
+배송지: ${dong}동 ${ho}호
+
+[매장 안내]
+다음엔 매장에서 포장 주문하세요
 https://toss.place/_p/bGynOJ0Bc`;
 }
 
@@ -260,6 +262,7 @@ export function createDeliveredSMS(params: {
 문 앞을 확인해주세요
 맛있는 설 보내세요!
 
-🏠 다음엔 더 편하게!
+[매장 안내]
+다음엔 더 편하게!
 https://toss.place/_p/bGynOJ0Bc`;
 }
