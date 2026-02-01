@@ -1,11 +1,16 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { APARTMENT_LIST, getApartmentFullName } from '@/lib/constants';
 import { Footer } from '@/components/Footer';
+import { trackPageView } from '@/lib/trackPageView';
 
 export default function HomePage() {
+  useEffect(() => {
+    trackPageView('/');
+  }, []);
   return (
     <main className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 pb-8">
       {/* 헤더 */}

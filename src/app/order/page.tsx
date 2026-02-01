@@ -20,6 +20,7 @@ import { ProductSelector } from '@/components/features/ProductSelector';
 import { OrderSummaryBar } from '@/components/features/OrderSummaryBar';
 import { ProductDetailImage } from '@/components/features/ProductDetailImage';
 import { DeliveryMethodDialog } from '@/components/features/DeliveryMethodDialog';
+import { trackPageView } from '@/lib/trackPageView';
 
 // ============================================
 // Page Component
@@ -31,6 +32,11 @@ export default function OrderPage() {
 
   // 단지 정보
   const apartment = aptCode ? APARTMENTS[aptCode] : null;
+
+  // 페이지 방문 추적
+  useEffect(() => {
+    trackPageView('/order', aptCode || undefined);
+  }, [aptCode]);
 
   // 전화번호 인증 훅
   const verification = usePhoneVerification();

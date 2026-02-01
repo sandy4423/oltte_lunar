@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -12,6 +13,7 @@ import { useOrderPolling } from '@/hooks/useOrderPolling';
 import { VirtualAccountCard } from '@/components/features/VirtualAccountCard';
 import { CardPaymentButton } from '@/components/features/CardPaymentButton';
 import { STORE_INFO } from '@/lib/constants';
+import { trackPageView } from '@/lib/trackPageView';
 
 // ============================================
 // Page Component
@@ -23,6 +25,11 @@ export default function OrderCompletePage() {
 
   // 주문 폴링 훅
   const { order, loading, error } = useOrderPolling(orderId);
+
+  // 페이지 방문 추적
+  useEffect(() => {
+    trackPageView('/order/complete');
+  }, []);
 
   // 로딩
   if (loading) {

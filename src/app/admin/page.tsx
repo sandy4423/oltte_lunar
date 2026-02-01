@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { 
   RefreshCw, Truck, CheckCircle, Printer, Download,
-  Filter, Search
+  Filter, Search, BarChart3
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,10 @@ export default function AdminPage() {
   // 주문 조회 훅
   const { orders, loading, fetchOrders } = useAdminOrders();
 
+  // 페이지 통계 상태
+  const [pageStats, setPageStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+
   // 필터링 훅
   const {
     filterApt,
@@ -63,6 +67,25 @@ export default function AdminPage() {
 
   // 라벨 인쇄 모드
   const [printMode, setPrintMode] = useState(false);
+
+  // 통계 조회
+  const fetchPageStats = async () => {
+    setStatsLoading(true);
+    try {
+      const res = await fetch('/api/analytics/page-stats?days=30');
+      const data = await res.json();
+      setPageStats(data);
+    } catch (error) {
+      console.error('Failed to fetch page stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // 초기 로드 시 통계 조회
+  useEffect(() => {
+    fetchPageStats();
+  }, []);
 
   // 라벨 인쇄 모드 토글
   const handlePrintMode = () => {
@@ -173,7 +196,91 @@ export default function AdminPage() {
           </Button>
         </div>
 
-        {/* 통계 카드 */}
+        {/* 페이지 방문 통계 섹션 */}
+        {pageStats && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-5 w-5 text-blue-600" />
+              <h2 className="text-xl font-bold">페이지 방문 통계 (최근 30일)</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              {/* 총 방문 수 */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-500">총 방문</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-blue-600">{pageStats.totalViews}</div>
+                </CardContent>
+              </Card>
+              
+              {/* 홈페이지 방문 */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-500">홈페이지</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">
+                    {pageStats.pageBreakdown['/'] || 0}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* 주문 페이지 방문 */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-500">주문 페이지</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-orange-600">
+                    {pageStats.pageBreakdown['/order'] || 0}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 페이지별 상세 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>페이지별 방문</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {Object.entries(pageStats.pageBreakdown).map(([page, count]) => (
+                      <div key={page} className="flex justify-between items-center">
+                        <span className="text-sm font-mono text-gray-700">{page}</span>
+                        <span className="text-sm font-bold">{count as number}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* 단지별 통계 (있는 경우) */}
+              {Object.keys(pageStats.aptBreakdown).length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>단지별 주문 페이지 방문</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {Object.entries(pageStats.aptBreakdown).map(([apt, count]) => (
+                        <div key={apt} className="flex justify-between items-center">
+                          <span className="text-sm text-gray-700">{apt}</span>
+                          <span className="text-sm font-bold">{count as number}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 주문 통계 카드 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="pt-4">
