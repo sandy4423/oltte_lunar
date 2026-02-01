@@ -380,13 +380,13 @@ export default function AdminPage() {
                             {order.customer.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')}
                           </TableCell>
                           <TableCell>
-                            <div className="text-sm">
+                            <div className="text-sm space-y-1">
                               {order.order_items.map((item) => {
                                 const product = getProductBySku(item.sku);
                                 return (
-                                  <span key={item.id} className="block">
+                                  <div key={item.id} className="whitespace-nowrap">
                                     {product?.emoji} {product?.name || item.sku} x{item.qty}
-                                  </span>
+                                  </div>
                                 );
                               })}
                             </div>
