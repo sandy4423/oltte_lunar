@@ -18,6 +18,7 @@ import { PhoneVerification } from '@/components/features/PhoneVerification';
 import { DeliveryForm } from '@/components/features/DeliveryForm';
 import { ProductSelector } from '@/components/features/ProductSelector';
 import { OrderSummaryBar } from '@/components/features/OrderSummaryBar';
+import { ProductDetailImage } from '@/components/features/ProductDetailImage';
 
 // ============================================
 // Page Component
@@ -180,6 +181,11 @@ export default function OrderPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* 상품 상세 이미지 */}
+      <div className="max-w-lg mx-auto mt-6">
+        <ProductDetailImage />
       </div>
 
       <div className="max-w-lg mx-auto px-4 mt-6 space-y-6">
