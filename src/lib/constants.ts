@@ -154,7 +154,7 @@ export const PRODUCTS: Product[] = [
     sku: 'broth_1200ml',
     name: '양지육수',
     description: '1200ml',
-    price: 10000,
+    price: 5000,
     emoji: '🍲',
   },
 ];
