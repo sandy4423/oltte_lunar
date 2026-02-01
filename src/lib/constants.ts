@@ -139,7 +139,7 @@ export const PRODUCTS: Product[] = [
   {
     sku: 'half',
     name: '반반만두',
-    description: '고기4 + 김치4, 약 450g',
+    description: '고기4 + 김치4',
     price: 10000,
     emoji: '🥟',
   },
