@@ -183,3 +183,9 @@ export const ORDER_STATUS_LABEL: Record<string, { label: string; color: string }
 // ============================================
 
 export const MIN_ORDER_QUANTITY = 3;
+
+// ============================================
+// 관리자 연락처
+// ============================================
+
+export const ADMIN_PHONE = '01058774424';
