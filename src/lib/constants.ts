@@ -125,14 +125,14 @@ export const PRODUCTS: Product[] = [
   {
     sku: 'meat',
     name: '고기만두',
-    description: '1팩 8개, 약 450g',
+    description: '1팩 8알',
     price: 10000,
     emoji: '🥟',
   },
   {
     sku: 'kimchi',
     name: '김치만두',
-    description: '1팩 8개, 약 450g (매콤)',
+    description: '1팩 8알 (매콤)',
     price: 10000,
     emoji: '🌶️',
   },
