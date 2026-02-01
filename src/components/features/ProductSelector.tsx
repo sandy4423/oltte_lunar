@@ -83,11 +83,15 @@ export function ProductSelector({
 
         {/* 최소 주문 안내 */}
         {!isMinOrderMet && totalQty > 0 && (
-          <div className="flex items-center gap-2 p-3 bg-orange-50 text-orange-700 rounded-lg text-sm">
-            <AlertCircle className="h-4 w-4 flex-shrink-0" />
-            <p>
-              최소 3개 이상 주문 가능합니다. 
-              (현재 {totalQty}개)
+          <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+            <div className="flex items-center gap-2 text-orange-700 text-sm">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <p className="font-semibold">
+                최소 주문: 만두/떡 3개 이상
+              </p>
+            </div>
+            <p className="text-xs text-orange-600 mt-1 ml-6">
+              (육수는 최소 주문 수량에 포함되지 않습니다)
             </p>
           </div>
         )}

@@ -184,6 +184,9 @@ export const ORDER_STATUS_LABEL: Record<string, { label: string; color: string }
 
 export const MIN_ORDER_QUANTITY = 3;
 
+// 무료배송 조건에 포함되는 상품 (만두, 떡만)
+export const FREE_SHIPPING_ELIGIBLE_SKUS = ['meat', 'kimchi', 'half', 'ricecake_1kg'] as const;
+
 // ============================================
 // 관리자 연락처
 // ============================================
