@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { 
   RefreshCw, Truck, CheckCircle, Printer, Download,
-  Filter, Search, BarChart3
+  Filter, Search, BarChart3, Lock
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -30,10 +30,19 @@ import { useOrderSelection } from '@/hooks/useOrderSelection';
 import { useOrderStatusChange } from '@/hooks/useOrderStatusChange';
 
 // ============================================
+// 비밀번호 인증 상수
+// ============================================
+const ADMIN_PASSWORD = '4423';
+
+// ============================================
 // Page Component
 // ============================================
 
 export default function AdminPage() {
+  // 인증 상태
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
   // 주문 조회 훅
   const { orders, loading, fetchOrders } = useAdminOrders();
 
@@ -82,10 +91,33 @@ export default function AdminPage() {
     }
   };
 
+  // 초기 인증 상태 확인
+  useEffect(() => {
+    const authStatus = sessionStorage.getItem('admin_auth');
+    if (authStatus === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
   // 초기 로드 시 통계 조회
   useEffect(() => {
-    fetchPageStats();
-  }, []);
+    if (isAuthenticated) {
+      fetchPageStats();
+    }
+  }, [isAuthenticated]);
+
+  // 비밀번호 확인
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('admin_auth', 'true');
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+      setPasswordInput('');
+    }
+  };
 
   // 라벨 인쇄 모드 토글
   const handlePrintMode = () => {
@@ -98,6 +130,42 @@ export default function AdminPage() {
 
   // 선택된 주문들
   const selectedOrdersData = orders.filter((o) => selectedOrders.has(o.id));
+
+  // 비밀번호 인증 화면
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex items-center justify-center mb-4">
+              <Lock className="h-12 w-12 text-brand" />
+            </div>
+            <CardTitle className="text-center text-2xl">관리자 로그인</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <Input
+                  type="password"
+                  placeholder="비밀번호를 입력하세요"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  className={passwordError ? 'border-red-500' : ''}
+                  autoFocus
+                />
+                {passwordError && (
+                  <p className="text-red-500 text-sm mt-2">비밀번호가 올바르지 않습니다.</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full">
+                로그인
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   // 라벨 인쇄 모드 UI
   if (printMode) {
