@@ -34,7 +34,7 @@ export function OrderSummaryBar({
           className="w-full h-14 text-lg font-bold"
           size="xl"
         >
-          {isSubmitting ? '처리중...' : '가상계좌로 주문하기'}
+          {isSubmitting ? '처리중...' : '주문하기'}
         </Button>
         <p className="text-center text-xs text-gray-400 mt-2">
           문자로 계좌번호가 발송됩니다

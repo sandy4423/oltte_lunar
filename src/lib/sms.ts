@@ -190,7 +190,7 @@ export function createVirtualAccountSMS(params: {
 [입금 정보]
 ${bankName} ${accountNumber}
 입금액: ${amount.toLocaleString()}원 (정확히)
-마감: ${dueDate}까지
+입금기한: ${dueDate}까지
 
 [배송 안내]
 - 배송일: ${deliveryDate}

@@ -4,10 +4,12 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Truck, Store } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { PICKUP_DISCOUNT, STORE_INFO } from '@/lib/constants';
 
 interface DeliveryMethodDialogProps {
@@ -24,10 +26,26 @@ export function DeliveryMethodDialog({
   onSelect,
 }: DeliveryMethodDialogProps) {
   const formattedDate = format(new Date(deliveryDate), 'M월 d일(EEE)', { locale: ko });
+  const [selectedMethod, setSelectedMethod] = useState<'delivery' | 'pickup' | null>(null);
 
-  const handleSelect = (isPickup: boolean) => {
-    onSelect(isPickup);
-    onOpenChange(false);
+  // 다이얼로그 열릴 때마다 초기화
+  useEffect(() => {
+    if (open) {
+      setSelectedMethod(null);
+    }
+  }, [open]);
+
+  // 선택만 하고 닫지 않음
+  const handleButtonClick = (method: 'delivery' | 'pickup') => {
+    setSelectedMethod(method);
+  };
+
+  // 주문하기 버튼 클릭 시 확정
+  const handleConfirm = () => {
+    if (selectedMethod) {
+      onSelect(selectedMethod === 'pickup');
+      onOpenChange(false);
+    }
   };
 
   return (
@@ -40,8 +58,12 @@ export function DeliveryMethodDialog({
         <div className="grid gap-4 py-4">
           {/* 배달 버튼 */}
           <button
-            onClick={() => handleSelect(false)}
-            className="relative flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-gray-200 hover:border-brand hover:bg-orange-50 transition-all duration-200 group"
+            onClick={() => handleButtonClick('delivery')}
+            className={`relative flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all duration-200 group ${
+              selectedMethod === 'delivery'
+                ? 'border-brand bg-orange-100 shadow-lg'
+                : 'border-gray-200 hover:border-brand hover:bg-orange-50'
+            }`}
           >
             <div className="flex items-center justify-center w-16 h-16 rounded-full bg-orange-100 group-hover:bg-brand group-hover:scale-110 transition-all">
               <Truck className="w-8 h-8 text-brand group-hover:text-white" />
@@ -56,8 +78,12 @@ export function DeliveryMethodDialog({
 
           {/* 픽업 버튼 */}
           <button
-            onClick={() => handleSelect(true)}
-            className="relative flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-brand bg-orange-50 hover:bg-orange-100 transition-all duration-200 group"
+            onClick={() => handleButtonClick('pickup')}
+            className={`relative flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all duration-200 group ${
+              selectedMethod === 'pickup'
+                ? 'border-brand bg-orange-100 shadow-lg'
+                : 'border-brand bg-orange-50 hover:bg-orange-100'
+            }`}
           >
             {/* 할인 배지 */}
             <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
@@ -79,9 +105,15 @@ export function DeliveryMethodDialog({
           </button>
         </div>
 
-        <p className="text-center text-xs text-gray-400">
-          선택하신 방법으로 주문이 진행됩니다
-        </p>
+        <div className="pt-4">
+          <Button
+            onClick={handleConfirm}
+            disabled={!selectedMethod}
+            className="w-full h-12 text-lg font-bold"
+          >
+            주문하기
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
