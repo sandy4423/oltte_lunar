@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { PRODUCTS, getApartmentFullName } from '@/lib/constants';
+import { PRODUCTS, getApartmentFullName, PICKUP_DISCOUNT } from '@/lib/constants';
 import type { CartItem } from '@/types/order';
 import type { ApartmentConfig } from '@/lib/constants';
 
@@ -29,7 +29,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (isPickup: boolean = false) => {
     const { apartment, phone, name, dong, ho, personalInfoConsent, marketingOptIn, cart, totalQty, totalAmount } = params;
     
     if (!apartment) return;
@@ -39,6 +39,10 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
 
     try {
       const normalizedPhone = phone.replace(/-/g, '');
+      
+      // 픽업 선택 시 할인 적용
+      const pickupDiscount = isPickup ? PICKUP_DISCOUNT : 0;
+      const finalAmount = totalAmount - pickupDiscount;
 
       // 1. 고객 생성 또는 조회
       let customerId: string;
@@ -82,8 +86,10 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
           cutoff_at: apartment.cutoffAt,
           status: 'CREATED',
           total_qty: totalQty,
-          total_amount: totalAmount,
+          total_amount: finalAmount,
           payment_method: 'vbank',
+          is_pickup: isPickup,
+          pickup_discount: pickupDiscount,
         })
         .select('id')
         .single();
@@ -122,7 +128,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
         },
         body: JSON.stringify({
           orderId: order.id,
-          amount: totalAmount,
+          amount: finalAmount,
           customerName: name,
           customerPhone: normalizedPhone,
           bank: '20', // 우리은행 (기본값)

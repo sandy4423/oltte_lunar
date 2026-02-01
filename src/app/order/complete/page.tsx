@@ -11,6 +11,7 @@ import { Footer } from '@/components/Footer';
 import { useOrderPolling } from '@/hooks/useOrderPolling';
 import { VirtualAccountCard } from '@/components/features/VirtualAccountCard';
 import { CardPaymentButton } from '@/components/features/CardPaymentButton';
+import { STORE_INFO } from '@/lib/constants';
 
 // ============================================
 // Page Component
@@ -116,14 +117,23 @@ export default function OrderCompletePage() {
                 <span className="text-gray-500">연락처</span>
                 <span className="font-medium">{order.customer.phone}</span>
               </div>
+              {order.is_pickup ? (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">픽업 장소</span>
+                  <span className="font-medium text-right">
+                    {STORE_INFO.address}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">배송지</span>
+                  <span className="font-medium">
+                    {order.apt_name} {order.dong}동 {order.ho}호
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between">
-                <span className="text-gray-500">배송지</span>
-                <span className="font-medium">
-                  {order.apt_name} {order.dong}동 {order.ho}호
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">배송 예정일</span>
+                <span className="text-gray-500">{order.is_pickup ? '픽업 예정일' : '배송 예정일'}</span>
                 <span className="font-medium">
                   {format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko })}
                 </span>
@@ -133,6 +143,12 @@ export default function OrderCompletePage() {
                 <span className="text-gray-500">총 수량</span>
                 <span className="font-medium">{order.total_qty}개</span>
               </div>
+              {order.is_pickup && order.pickup_discount > 0 && (
+                <div className="flex justify-between text-sm text-red-600">
+                  <span>픽업 할인</span>
+                  <span className="font-medium">-{order.pickup_discount.toLocaleString()}원</span>
+                </div>
+              )}
               <div className="flex justify-between text-base">
                 <span className="font-medium">결제 금액</span>
                 <span className="font-bold text-brand">

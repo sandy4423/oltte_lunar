@@ -334,6 +334,7 @@ export default function AdminPage() {
                     <TableHead>동/호</TableHead>
                     <TableHead>주문자</TableHead>
                     <TableHead>연락처</TableHead>
+                    <TableHead>배달방법</TableHead>
                     <TableHead>상품</TableHead>
                     <TableHead className="text-right">금액</TableHead>
                     <TableHead>배송일</TableHead>
@@ -343,7 +344,7 @@ export default function AdminPage() {
                 <TableBody>
                   {filteredOrders.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={11} className="text-center py-8 text-gray-500">
                         {loading ? '로딩 중...' : '주문이 없습니다.'}
                       </TableCell>
                     </TableRow>
@@ -378,6 +379,17 @@ export default function AdminPage() {
                           <TableCell>{order.customer.name}</TableCell>
                           <TableCell className="text-sm text-gray-500">
                             {order.customer.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')}
+                          </TableCell>
+                          <TableCell>
+                            {order.is_pickup ? (
+                              <Badge className="bg-purple-100 text-purple-800 border-purple-300">
+                                🏪 픽업
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+                                🚚 배달
+                              </Badge>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="text-sm space-y-1">

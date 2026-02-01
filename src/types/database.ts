@@ -56,8 +56,13 @@ export interface OrderRow {
   vbank_num: string | null;        // text, NULLABLE
   vbank_bank: string | null;       // text, NULLABLE
   vbank_holder: string | null;     // text, NULLABLE
-  portone_payment_id: string | null; // text, NULLABLE
+  vbank_expires_at: string | null; // timestamptz, NULLABLE
+  toss_payment_key: string | null; // text, NULLABLE
+  toss_secret: string | null;      // text, NULLABLE
+  portone_payment_id: string | null; // text, NULLABLE (deprecated)
   paid_at: string | null;          // timestamptz, NULLABLE
+  is_pickup: boolean;              // boolean, DEFAULT false
+  pickup_discount: number;         // int, DEFAULT 0
   created_at: string;              // timestamptz, DEFAULT now()
   updated_at: string;              // timestamptz, DEFAULT now()
 }
@@ -102,8 +107,13 @@ export interface OrderInsert {
   vbank_num?: string | null;       // optional
   vbank_bank?: string | null;      // optional
   vbank_holder?: string | null;    // optional
-  portone_payment_id?: string | null; // optional
+  vbank_expires_at?: string | null; // optional
+  toss_payment_key?: string | null; // optional
+  toss_secret?: string | null;     // optional
+  portone_payment_id?: string | null; // optional (deprecated)
   paid_at?: string | null;         // optional
+  is_pickup?: boolean;             // optional, default: false
+  pickup_discount?: number;        // optional, default: 0
   created_at?: string;             // optional, default: now()
   updated_at?: string;             // optional, default: now()
 }
@@ -148,8 +158,13 @@ export interface OrderUpdate {
   vbank_num?: string | null;
   vbank_bank?: string | null;
   vbank_holder?: string | null;
+  vbank_expires_at?: string | null;
+  toss_payment_key?: string | null;
+  toss_secret?: string | null;
   portone_payment_id?: string | null;
   paid_at?: string | null;
+  is_pickup?: boolean;
+  pickup_discount?: number;
   created_at?: string;
   updated_at?: string;
 }

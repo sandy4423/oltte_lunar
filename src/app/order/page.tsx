@@ -19,6 +19,7 @@ import { DeliveryForm } from '@/components/features/DeliveryForm';
 import { ProductSelector } from '@/components/features/ProductSelector';
 import { OrderSummaryBar } from '@/components/features/OrderSummaryBar';
 import { ProductDetailImage } from '@/components/features/ProductDetailImage';
+import { DeliveryMethodDialog } from '@/components/features/DeliveryMethodDialog';
 
 // ============================================
 // Page Component
@@ -44,6 +45,7 @@ export default function OrderPage() {
   const [showPersonalInfoDialog, setShowPersonalInfoDialog] = useState(false);
   const [showMarketingDialog, setShowMarketingDialog] = useState(false);
   const [highlightConsent, setHighlightConsent] = useState(false);
+  const [showDeliveryMethodDialog, setShowDeliveryMethodDialog] = useState(false);
 
   // 장바구니 훅
   const { cart, updateQuantity, totalQty, totalAmount, isMinOrderMet } = useCart();
@@ -106,8 +108,13 @@ export default function OrderPage() {
       return;
     }
     
-    // 실제 주문 제출
-    await orderSubmit.handleSubmit();
+    // 배달/픽업 선택 다이얼로그 표시
+    setShowDeliveryMethodDialog(true);
+  };
+
+  // 배달/픽업 선택 후 실제 주문 진행
+  const handleDeliveryMethodSelect = async (isPickup: boolean) => {
+    await orderSubmit.handleSubmit(isPickup);
   };
 
   // 단지 없음
@@ -303,6 +310,16 @@ export default function OrderPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* 배달/픽업 선택 다이얼로그 */}
+      {apartment && (
+        <DeliveryMethodDialog
+          open={showDeliveryMethodDialog}
+          onOpenChange={setShowDeliveryMethodDialog}
+          deliveryDate={apartment.deliveryDate}
+          onSelect={handleDeliveryMethodSelect}
+        />
+      )}
     </main>
   );
 }
