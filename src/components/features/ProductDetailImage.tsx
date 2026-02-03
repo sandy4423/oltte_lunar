@@ -51,7 +51,7 @@ export function ProductDetailImage() {
           ) : (
             <>
               <ChevronDown className="h-5 w-5" />
-              상품 상세 보기
+              자세히 보기
             </>
           )}
         </button>
