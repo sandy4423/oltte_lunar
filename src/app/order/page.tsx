@@ -343,7 +343,8 @@ export default function OrderPage() {
           </DialogHeader>
           <div className="space-y-4 text-center py-4">
             <div className="text-lg font-semibold text-brand">
-              주문 마감일이 지났지만
+              주문 마감일이 지났지만,<br />
+              많은 분들의 요청에 따라
             </div>
             <div className="text-2xl font-bold text-brand-dark">
               오늘까지 추가주문 받습니다!
@@ -366,11 +367,11 @@ export default function OrderPage() {
             <DialogTitle className="text-center text-xl">⏰ 주문 마감 임박!</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 text-center py-4">
-            <div className="text-3xl font-bold text-red-600">
-              주문 0일 전
+            <div className="text-2xl font-bold text-red-600">
+              {getApartmentFullName(apartment)} 오늘 주문 마감입니다!
             </div>
             <div className="text-lg font-semibold text-gray-900">
-              오늘 {format(new Date(apartment.cutoffAt), 'HH:mm', { locale: ko })}에 마감됩니다!
+              {format(new Date(apartment.cutoffAt), 'HH:mm', { locale: ko })}에 마감됩니다!
             </div>
             <p className="text-gray-600 text-sm">
               마감 시간 이후에는<br />
