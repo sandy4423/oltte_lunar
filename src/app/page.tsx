@@ -1,13 +1,22 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { APARTMENT_LIST, getApartmentFullName } from '@/lib/constants';
 import { Footer } from '@/components/Footer';
 import { trackPageView } from '@/lib/trackPageView';
+import { captureSource } from '@/lib/sourceTracking';
 
 export default function HomePage() {
+  const searchParams = useSearchParams();
+  
+  // 유입 경로 캡처 (페이지 로드 시 1회)
+  useEffect(() => {
+    captureSource(searchParams);
+  }, []); // 빈 배열로 한 번만 실행
+  
   useEffect(() => {
     trackPageView('/');
   }, []);

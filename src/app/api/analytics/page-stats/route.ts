@@ -66,11 +66,28 @@ export async function GET(req: NextRequest) {
       return acc;
     }, {} as Record<string, number>);
     
+    // 유입 경로별 방문 통계
+    const { data: sourceStats, error: sourceError } = await supabase
+      .from('page_views')
+      .select('source')
+      .not('source', 'is', null)
+      .gte('created_at', startDate.toISOString());
+    
+    if (sourceError) throw sourceError;
+    
+    const sourceBreakdown = (sourceStats || []).reduce((acc, { source }) => {
+      if (source) {
+        acc[source] = (acc[source] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+    
     return NextResponse.json({
       totalViews: totalViews || 0,
       pageBreakdown,
       aptBreakdown,
       dailyBreakdown,
+      sourceBreakdown,
       period: { days, startDate: startDate.toISOString() },
     });
   } catch (error) {

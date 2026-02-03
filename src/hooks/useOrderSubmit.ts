@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { PRODUCTS, getApartmentFullName, PICKUP_DISCOUNT } from '@/lib/constants';
+import { getStoredSource } from '@/lib/sourceTracking';
 import type { CartItem } from '@/types/order';
 import type { ApartmentConfig } from '@/lib/constants';
 
@@ -43,6 +44,9 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
       // 픽업 선택 시 할인 적용
       const pickupDiscount = isPickup ? PICKUP_DISCOUNT : 0;
       const finalAmount = totalAmount - pickupDiscount;
+
+      // 유입 경로 가져오기
+      const source = getStoredSource();
 
       // 1. 고객 생성 또는 조회
       let customerId: string;
@@ -90,6 +94,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
           payment_method: 'vbank',
           is_pickup: isPickup,
           pickup_discount: pickupDiscount,
+          source: source,
         })
         .select('id')
         .single();

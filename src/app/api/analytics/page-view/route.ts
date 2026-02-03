@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
  */
 export async function POST(req: NextRequest) {
   try {
-    const { page, aptCode, userAgent } = await req.json();
+    const { page, aptCode, source, userAgent } = await req.json();
     
     if (!page) {
       return NextResponse.json(
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     const { error } = await supabase.from('page_views').insert({
       page,
       apt_code: aptCode || null,
+      source: source || null,
       user_agent: userAgent || null,
     });
     

@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { 
   RefreshCw, Truck, CheckCircle, Printer, Download,
-  Filter, Search, BarChart3, Lock
+  Filter, Search, BarChart3, Lock, TrendingUp
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/table';
 
 import { APARTMENT_LIST, ORDER_STATUS_LABEL, getProductBySku, getApartmentFullName } from '@/lib/constants';
+import { TRAFFIC_SOURCE_LABELS } from '@/types/source';
 import { useAdminOrders } from '@/hooks/useAdminOrders';
 import { useOrderFilters } from '@/hooks/useOrderFilters';
 import { useOrderSelection } from '@/hooks/useOrderSelection';
@@ -48,6 +49,7 @@ export default function AdminPage() {
 
   // 페이지 통계 상태
   const [pageStats, setPageStats] = useState<any>(null);
+  const [orderStats, setOrderStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(false);
 
   // 필터링 훅
@@ -91,6 +93,17 @@ export default function AdminPage() {
     }
   };
 
+  // 주문 통계 조회
+  const fetchOrderStats = async () => {
+    try {
+      const res = await fetch('/api/analytics/order-stats?days=30');
+      const data = await res.json();
+      setOrderStats(data);
+    } catch (error) {
+      console.error('Failed to fetch order stats:', error);
+    }
+  };
+
   // 초기 인증 상태 확인
   useEffect(() => {
     const authStatus = sessionStorage.getItem('admin_auth');
@@ -103,6 +116,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchPageStats();
+      fetchOrderStats();
     }
   }, [isAuthenticated]);
 
@@ -345,6 +359,55 @@ export default function AdminPage() {
                 </Card>
               )}
             </div>
+          </div>
+        )}
+
+        {/* 유입 경로별 통계 */}
+        {(pageStats?.sourceBreakdown || orderStats?.sourceBreakdown) && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-5 w-5 text-purple-600" />
+              <h2 className="text-xl font-bold">유입 경로 분석 (최근 30일)</h2>
+            </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>유입 경로별 방문 및 주문</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {Object.entries(TRAFFIC_SOURCE_LABELS).map(([key, label]) => {
+                    const visits = pageStats?.sourceBreakdown?.[key] || 0;
+                    const orders = orderStats?.sourceBreakdown?.[key]?.total || 0;
+                    const paidOrders = orderStats?.sourceBreakdown?.[key]?.paid || 0;
+                    const conversion = visits > 0 ? ((orders / visits) * 100).toFixed(1) : '0.0';
+                    
+                    return (
+                      <div key={key} className="border-b pb-3 last:border-0">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-semibold">{label}</span>
+                          <span className="text-sm text-gray-500">전환율: {conversion}%</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <div className="text-gray-500">방문</div>
+                            <div className="text-lg font-bold text-blue-600">{visits}</div>
+                          </div>
+                          <div>
+                            <div className="text-gray-500">주문</div>
+                            <div className="text-lg font-bold text-green-600">{orders}</div>
+                          </div>
+                          <div>
+                            <div className="text-gray-500">결제완료</div>
+                            <div className="text-lg font-bold text-purple-600">{paidOrders}</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 

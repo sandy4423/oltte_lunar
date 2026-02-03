@@ -2,14 +2,19 @@
  * 페이지 방문 추적 유틸리티
  */
 
+import { getStoredSource } from './sourceTracking';
+
 export async function trackPageView(page: string, aptCode?: string) {
   try {
+    const source = getStoredSource();
+    
     await fetch('/api/analytics/page-view', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         page,
         aptCode,
+        source,
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
       }),
     });

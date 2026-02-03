@@ -63,6 +63,7 @@ export interface OrderRow {
   paid_at: string | null;          // timestamptz, NULLABLE
   is_pickup: boolean;              // boolean, DEFAULT false
   pickup_discount: number;         // int, DEFAULT 0
+  source: string | null;           // text, NULLABLE - 유입 경로
   created_at: string;              // timestamptz, DEFAULT now()
   updated_at: string;              // timestamptz, DEFAULT now()
 }
@@ -114,6 +115,7 @@ export interface OrderInsert {
   paid_at?: string | null;         // optional
   is_pickup?: boolean;             // optional, default: false
   pickup_discount?: number;        // optional, default: 0
+  source?: string | null;          // optional - 유입 경로
   created_at?: string;             // optional, default: now()
   updated_at?: string;             // optional, default: now()
 }
@@ -165,6 +167,7 @@ export interface OrderUpdate {
   paid_at?: string | null;
   is_pickup?: boolean;
   pickup_discount?: number;
+  source?: string | null;
   created_at?: string;
   updated_at?: string;
 }

@@ -21,6 +21,7 @@ import { OrderSummaryBar } from '@/components/features/OrderSummaryBar';
 import { ProductDetailImage } from '@/components/features/ProductDetailImage';
 import { DeliveryMethodDialog } from '@/components/features/DeliveryMethodDialog';
 import { trackPageView } from '@/lib/trackPageView';
+import { captureSource } from '@/lib/sourceTracking';
 
 // ============================================
 // Page Component
@@ -32,6 +33,11 @@ export default function OrderPage() {
 
   // 단지 정보
   const apartment = aptCode ? APARTMENTS[aptCode] : null;
+
+  // 유입 경로 캡처 (페이지 로드 시 1회)
+  useEffect(() => {
+    captureSource(searchParams);
+  }, []); // 빈 배열로 한 번만 실행
 
   // 페이지 방문 추적
   useEffect(() => {
