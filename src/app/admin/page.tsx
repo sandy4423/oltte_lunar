@@ -23,7 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import { APARTMENT_LIST, ORDER_STATUS_LABEL, getProductBySku, getApartmentFullName } from '@/lib/constants';
+import { APARTMENT_LIST, APARTMENTS, ORDER_STATUS_LABEL, getProductBySku, getApartmentFullName } from '@/lib/constants';
 import { TRAFFIC_SOURCE_LABELS } from '@/types/source';
 import { useAdminOrders } from '@/hooks/useAdminOrders';
 import { useOrderFilters } from '@/hooks/useOrderFilters';
@@ -348,12 +348,17 @@ export default function AdminPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {Object.entries(pageStats.aptBreakdown).map(([apt, count]) => (
-                        <div key={apt} className="flex justify-between items-center">
-                          <span className="text-sm text-gray-700">{apt}</span>
-                          <span className="text-sm font-bold">{count as number}</span>
-                        </div>
-                      ))}
+                      {Object.entries(pageStats.aptBreakdown).map(([aptCode, count]) => {
+                        const apartment = APARTMENTS[aptCode];
+                        const displayName = apartment ? getApartmentFullName(apartment) : aptCode;
+                        
+                        return (
+                          <div key={aptCode} className="flex justify-between items-center">
+                            <span className="text-sm text-gray-700">{displayName}</span>
+                            <span className="text-sm font-bold">{count as number}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </CardContent>
                 </Card>
