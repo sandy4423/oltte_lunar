@@ -52,6 +52,8 @@ export default function OrderPage() {
   const [showMarketingDialog, setShowMarketingDialog] = useState(false);
   const [highlightConsent, setHighlightConsent] = useState(false);
   const [showDeliveryMethodDialog, setShowDeliveryMethodDialog] = useState(false);
+  const [showExtendedOrderDialog, setShowExtendedOrderDialog] = useState(false);
+  const [showZeroDayDialog, setShowZeroDayDialog] = useState(false);
 
   // 장바구니 훅
   const { cart, updateQuantity, totalQty, totalAmount, isMinOrderMet } = useCart();
@@ -81,9 +83,33 @@ export default function OrderPage() {
 
   // 마감 체크
   const isExpired = useMemo(() => {
-    if (!apartment) return true;
+    if (!apartment) return false;
     return new Date() > new Date(apartment.cutoffAt);
   }, [apartment]);
+
+  // 마감일까지 남은 일수 계산
+  const daysUntilCutoff = useMemo(() => {
+    if (!apartment) return null;
+    const now = new Date();
+    const cutoff = new Date(apartment.cutoffAt);
+    const diffTime = cutoff.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  }, [apartment]);
+
+  // 페이지 로드 시 팝업 표시
+  useEffect(() => {
+    if (!apartment) return;
+    
+    // 마감일이 지났으면 추가 주문 안내 팝업
+    if (isExpired) {
+      setShowExtendedOrderDialog(true);
+    }
+    // 주문 0일 전 팝업 (마감 당일)
+    else if (daysUntilCutoff === 0) {
+      setShowZeroDayDialog(true);
+    }
+  }, [apartment, isExpired, daysUntilCutoff]);
 
   // 폼 유효성 (동의 체크 제외 - 별도 검증)
   const isFormValid = 
@@ -133,24 +159,6 @@ export default function OrderPage() {
             <h1 className="text-xl font-bold mb-2">접근할 수 없는 페이지입니다</h1>
             <p className="text-muted-foreground">
               QR코드를 다시 스캔해주세요.
-            </p>
-          </CardContent>
-        </Card>
-      </main>
-    );
-  }
-
-  // 마감됨
-  if (isExpired) {
-    return (
-      <main className="min-h-screen flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-orange-500 mb-4" />
-            <h1 className="text-xl font-bold mb-2">주문이 마감되었습니다</h1>
-            <p className="text-muted-foreground">
-              {getApartmentFullName(apartment)}의 주문 마감 시간이 지났습니다.<br />
-              다음 기회에 이용해주세요!
             </p>
           </CardContent>
         </Card>
@@ -326,6 +334,54 @@ export default function OrderPage() {
           onSelect={handleDeliveryMethodSelect}
         />
       )}
+
+      {/* 마감일 지났지만 추가 주문 받는다는 팝업 */}
+      <Dialog open={showExtendedOrderDialog} onOpenChange={setShowExtendedOrderDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">📢 추가 주문 안내</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-center py-4">
+            <div className="text-lg font-semibold text-brand">
+              주문 마감일이 지났지만
+            </div>
+            <div className="text-2xl font-bold text-brand-dark">
+              오늘까지 추가주문 받습니다!
+            </div>
+            <p className="text-gray-600 text-sm">
+              설 만두 준비를 놓치신 분들을 위해<br />
+              특별히 주문을 연장합니다.
+            </p>
+            <p className="text-orange-600 font-medium">
+              서둘러 주문해주세요! 🥟
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 주문 0일 전 팝업 */}
+      <Dialog open={showZeroDayDialog} onOpenChange={setShowZeroDayDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">⏰ 주문 마감 임박!</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-center py-4">
+            <div className="text-3xl font-bold text-red-600">
+              주문 0일 전
+            </div>
+            <div className="text-lg font-semibold text-gray-900">
+              오늘 {format(new Date(apartment.cutoffAt), 'HH:mm', { locale: ko })}에 마감됩니다!
+            </div>
+            <p className="text-gray-600 text-sm">
+              마감 시간 이후에는<br />
+              주문이 불가능합니다.
+            </p>
+            <p className="text-brand font-medium">
+              지금 바로 주문하세요! 🥟
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

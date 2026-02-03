@@ -31,21 +31,13 @@ export default function HomePage() {
 
         <div className="space-y-4">
           {APARTMENT_LIST.map((apt) => {
-            const isExpired = new Date() > new Date(apt.cutoffAt);
-            
             return (
               <Link key={apt.code} href={`/order?apt=${apt.code}`}>
                 <Button
-                  className={`w-full h-16 text-xl font-semibold transition-all ${
-                    isExpired 
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'bg-white hover:bg-brand hover:text-white hover:scale-[1.02] shadow-md hover:shadow-xl border-2 border-gray-200 hover:border-brand'
-                  }`}
+                  className="w-full h-16 text-xl font-semibold transition-all bg-white hover:bg-brand hover:text-white hover:scale-[1.02] shadow-md hover:shadow-xl border-2 border-gray-200 hover:border-brand"
                   variant="outline"
-                  disabled={isExpired}
                 >
                   {getApartmentFullName(apt)}
-                  {isExpired && ' (마감)'}
                 </Button>
               </Link>
             );
