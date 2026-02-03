@@ -188,10 +188,10 @@ export const MIN_ORDER_QUANTITY = 3;
 export const FREE_SHIPPING_ELIGIBLE_SKUS = ['meat', 'kimchi', 'half', 'ricecake_1kg'] as const;
 
 // ============================================
-// 관리자 연락처
+// 관리자 연락처 (Deprecated - Slack으로 전환)
 // ============================================
 
-export const ADMIN_PHONE = '01058774424';
+// export const ADMIN_PHONE = '01058774424'; // 더 이상 사용하지 않음 (Slack으로 전환됨)
 
 // ============================================
 // 픽업 옵션

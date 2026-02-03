@@ -10,8 +10,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { verifyWebhookSecret } from '@/lib/tosspayments';
-import { sendSMS, createPaymentConfirmSMS, createAdminPaymentConfirmSMS } from '@/lib/sms';
-import { ADMIN_PHONE } from '@/lib/constants';
+import { sendSMS, createPaymentConfirmSMS } from '@/lib/sms';
+import { sendSlackMessage, createPaymentConfirmation } from '@/lib/slack';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -110,11 +110,11 @@ export async function POST(request: NextRequest) {
         console.error('[Webhook] SMS error:', smsError);
       }
 
-      // SMS 발송 (관리자 알림)
+      // Slack 알림 (관리자)
       try {
         const deliveryDateFormatted = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
         
-        await sendSMS(ADMIN_PHONE, createAdminPaymentConfirmSMS({
+        await sendSlackMessage(createPaymentConfirmation({
           orderId: actualOrderId,
           customerName: order.customer?.name || '고객',
           customerPhone: order.customer?.phone || '미입력',
@@ -125,10 +125,10 @@ export async function POST(request: NextRequest) {
           deliveryDate: deliveryDateFormatted,
         }));
         
-        console.log(`[Webhook] Admin payment notification SMS sent to ${ADMIN_PHONE}`);
-      } catch (smsError) {
-        // SMS 실패는 로그만 남기고 계속 진행
-        console.error('[Webhook] Admin SMS error:', smsError);
+        console.log(`[Webhook] Admin payment notification sent to Slack`);
+      } catch (slackError) {
+        // Slack 실패는 로그만 남기고 계속 진행
+        console.error('[Webhook] Slack error:', slackError);
       }
 
       return NextResponse.json({ success: true, status: newStatus });

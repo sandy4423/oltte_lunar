@@ -7,8 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { issueVirtualAccount, getBankName } from '@/lib/tosspayments';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { sendSMS, createVirtualAccountSMS, createAdminOrderNotificationSMS } from '@/lib/sms';
-import { ADMIN_PHONE } from '@/lib/constants';
+import { sendSMS, createVirtualAccountSMS } from '@/lib/sms';
+import { sendSlackMessage, createOrderNotification } from '@/lib/slack';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -114,11 +114,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // SMS 발송 (관리자 알림)
+    // Slack 알림 (관리자)
     try {
       const deliveryDateFormatted = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
       
-      await sendSMS(ADMIN_PHONE, createAdminOrderNotificationSMS({
+      await sendSlackMessage(createOrderNotification({
         orderId: orderId.toString(),
         customerName,
         customerPhone: customerPhone || '미입력',
@@ -129,10 +129,10 @@ export async function POST(request: NextRequest) {
         deliveryDate: deliveryDateFormatted,
       }));
       
-      console.log(`[API] Admin notification SMS sent to ${ADMIN_PHONE}`);
-    } catch (smsError) {
-      // SMS 실패는 로그만 남기고 계속 진행
-      console.error('[API] Admin SMS error:', smsError);
+      console.log(`[API] Admin notification sent to Slack`);
+    } catch (slackError) {
+      // Slack 실패는 로그만 남기고 계속 진행
+      console.error('[API] Slack error:', slackError);
     }
 
     // 응답 반환
