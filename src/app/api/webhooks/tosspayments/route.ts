@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { verifyWebhookSecret } from '@/lib/tosspayments';
 import { sendSMS, createPaymentConfirmSMS } from '@/lib/sms';
-import { sendSlackMessage, createPaymentConfirmation } from '@/lib/slack';
+import { sendSlackMessage, createPaymentConfirmation, createErrorAlert } from '@/lib/slack';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -50,6 +50,15 @@ export async function POST(request: NextRequest) {
 
     if (orderError || !order) {
       console.error('[Webhook] Order not found:', actualOrderId);
+      
+      // Slack 에러 알림
+      await sendSlackMessage(createErrorAlert({
+        errorType: '웹훅 - 주문 조회 실패',
+        errorMessage: '주문을 찾을 수 없습니다',
+        orderId: actualOrderId,
+        timestamp: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
+      })).catch(e => console.error('[Error Alert]', e));
+      
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
@@ -85,6 +94,18 @@ export async function POST(request: NextRequest) {
 
       if (updateError) {
         console.error('[Webhook] Order update error:', updateError);
+        
+        // Slack 에러 알림
+        await sendSlackMessage(createErrorAlert({
+          errorType: '웹훅 - 주문 상태 업데이트 실패',
+          errorMessage: updateError.message || '주문 상태 업데이트 실패',
+          orderId: actualOrderId,
+          customerName: order.customer?.name,
+          customerPhone: order.customer?.phone,
+          aptName: order.apt_name,
+          timestamp: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
+        })).catch(e => console.error('[Error Alert]', e));
+        
         throw new Error('Failed to update order status');
       }
 
@@ -157,6 +178,15 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('[Webhook] Error:', error);
+    
+    // Slack 에러 알림
+    await sendSlackMessage(createErrorAlert({
+      errorType: '웹훅 처리 오류',
+      errorMessage: error.message || 'Webhook processing failed',
+      orderId: body?.orderId?.replace('ORDER_', ''),
+      timestamp: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
+    })).catch(e => console.error('[Error Alert]', e));
+    
     return NextResponse.json(
       {
         success: false,

@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { issueVirtualAccount, getBankName } from '@/lib/tosspayments';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendSMS, createVirtualAccountSMS } from '@/lib/sms';
-import { sendSlackMessage, createOrderNotification } from '@/lib/slack';
+import { sendSlackMessage, createOrderNotification, createErrorAlert } from '@/lib/slack';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -150,6 +150,22 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('[API] Virtual account error:', error);
+    
+    // Slack 에러 알림
+    try {
+      const body = await request.json().catch(() => ({}));
+      await sendSlackMessage(createErrorAlert({
+        errorType: '가상계좌 발급 오류',
+        errorMessage: error.message || '가상계좌 발급 중 오류가 발생했습니다.',
+        orderId: body?.orderId?.toString(),
+        customerName: body?.customerName,
+        customerPhone: body?.customerPhone,
+        timestamp: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
+      }));
+    } catch (alertError) {
+      console.error('[Error Alert]', alertError);
+    }
+    
     return NextResponse.json(
       {
         success: false,

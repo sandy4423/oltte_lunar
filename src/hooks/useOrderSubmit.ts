@@ -157,7 +157,25 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
       router.push(`/order/complete?orderId=${order.id}`);
     } catch (err) {
       console.error('Order error:', err);
-      setError(err instanceof Error ? err.message : '주문 처리 중 오류가 발생했습니다.');
+      const errorMessage = err instanceof Error ? err.message : '주문 처리 중 오류가 발생했습니다.';
+      setError(errorMessage);
+      
+      // Slack 에러 알림
+      try {
+        await fetch('/api/error-alert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            errorType: '주문 제출 오류',
+            errorMessage: errorMessage,
+            customerName: name,
+            customerPhone: phone,
+            aptName: apartment ? getApartmentFullName(apartment) : undefined,
+          }),
+        });
+      } catch (alertError) {
+        console.error('[Error Alert]', alertError);
+      }
     } finally {
       setIsSubmitting(false);
     }
