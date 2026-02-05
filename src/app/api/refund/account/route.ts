@@ -255,15 +255,13 @@ export async function POST(request: NextRequest) {
       throw new Error('결제 키가 없습니다.');
     }
 
-    const bankName = getBankName(bank_code);
-
     try {
       await cancelPayment(
         order.toss_payment_key,
         refundToken.refund_reason,
         refundToken.refund_amount,
         {
-          bank: bankName,
+          bank: bank_code,  // 은행 코드 전달 (예: "20")
           accountNumber: account_number,
           holderName: account_holder,
         }
@@ -325,6 +323,7 @@ export async function POST(request: NextRequest) {
       .eq('id', refundToken.id);
 
     // 8. 고객에게 환불 완료 SMS 발송
+    const bankName = getBankName(bank_code);
     const smsText = createRefundCompleteSMS({
       customerName: order.customer.name,
       refundAmount: refundToken.refund_amount,
