@@ -73,6 +73,11 @@ export interface OrderRow {
   refund_account_number: string | null; // text, NULLABLE - 환불 계좌번호
   refund_account_holder: string | null; // text, NULLABLE - 환불 계좌 예금주
   refunded_at: string | null;      // timestamptz, NULLABLE - 환불 처리 일시
+  cash_receipt_type: string | null; // text, NULLABLE - 현금영수증 종류 (소득공제/지출증빙)
+  cash_receipt_number: string | null; // text, NULLABLE - 현금영수증 등록번호
+  cash_receipt_issued: boolean;    // boolean, DEFAULT false - 현금영수증 발급 완료 여부
+  cash_receipt_url: string | null; // text, NULLABLE - 발급된 현금영수증 URL
+  cash_receipt_key: string | null; // text, NULLABLE - 토스페이먼츠 현금영수증 고유키
   created_at: string;              // timestamptz, DEFAULT now()
   updated_at: string;              // timestamptz, DEFAULT now()
 }
@@ -146,6 +151,11 @@ export interface OrderInsert {
   refund_account_number?: string | null; // optional
   refund_account_holder?: string | null; // optional
   refunded_at?: string | null;     // optional
+  cash_receipt_type?: string | null; // optional - 현금영수증 종류
+  cash_receipt_number?: string | null; // optional - 현금영수증 등록번호
+  cash_receipt_issued?: boolean;   // optional, default: false
+  cash_receipt_url?: string | null; // optional - 발급된 현금영수증 URL
+  cash_receipt_key?: string | null; // optional - 토스페이먼츠 현금영수증 고유키
   created_at?: string;             // optional, default: now()
   updated_at?: string;             // optional, default: now()
 }
@@ -219,6 +229,11 @@ export interface OrderUpdate {
   refund_account_number?: string | null;
   refund_account_holder?: string | null;
   refunded_at?: string | null;
+  cash_receipt_type?: string | null;
+  cash_receipt_number?: string | null;
+  cash_receipt_issued?: boolean;
+  cash_receipt_url?: string | null;
+  cash_receipt_key?: string | null;
   created_at?: string;
   updated_at?: string;
 }

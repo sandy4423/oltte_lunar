@@ -12,6 +12,7 @@ import { Footer } from '@/components/Footer';
 import { useOrderPolling } from '@/hooks/useOrderPolling';
 import { VirtualAccountCard } from '@/components/features/VirtualAccountCard';
 import { CardPaymentButton } from '@/components/features/CardPaymentButton';
+import { CashReceiptForm } from '@/components/features/CashReceiptForm';
 import { STORE_INFO } from '@/lib/constants';
 import { trackPageView } from '@/lib/trackPageView';
 
@@ -79,6 +80,17 @@ export default function OrderCompletePage() {
           vbankNum={order.vbank_num || null}
           vbankHolder={order.vbank_holder || null}
           totalAmount={order.total_amount}
+        />
+
+        {/* 현금영수증 */}
+        <CashReceiptForm
+          orderId={order.id}
+          totalAmount={order.total_amount}
+          status={order.status}
+          initialType={order.cash_receipt_type as '소득공제' | '지출증빙' | null}
+          initialNumber={order.cash_receipt_number}
+          issued={order.cash_receipt_issued}
+          receiptUrl={order.cash_receipt_url}
         />
 
         {/* 카드 결제 버튼 - 가상계좌 대신 카드로 결제 */}

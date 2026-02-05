@@ -9,9 +9,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { verifyWebhookSecret } from '@/lib/tosspayments';
+import { verifyWebhookSecret, issueCashReceipt } from '@/lib/tosspayments';
 import { sendSMS, createPaymentConfirmSMS } from '@/lib/sms';
-import { sendSlackMessage, createPaymentConfirmation, createErrorAlert } from '@/lib/slack';
+import { sendSlackMessage, createPaymentConfirmation, createErrorAlert, sendSlackAlert } from '@/lib/slack';
 import { formatKST } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
@@ -109,6 +109,49 @@ export async function POST(request: NextRequest) {
       }
 
       console.log(`[Webhook] Order ${actualOrderId} status updated to ${newStatus}`);
+
+      // 현금영수증 자동 발급 (신청된 경우)
+      if (order.cash_receipt_type && order.cash_receipt_number && !order.cash_receipt_issued) {
+        try {
+          console.log('[Webhook] Issuing cash receipt automatically');
+          
+          const cashReceiptData = await issueCashReceipt({
+            orderId: order.id,
+            amount: order.total_amount,
+            orderName: `올때만두 - ${order.apt_name}`,
+            customerName: order.customer?.name,
+            type: order.cash_receipt_type as '소득공제' | '지출증빙',
+            registrationNumber: order.cash_receipt_number,
+          });
+
+          // 발급 성공 시 정보 저장
+          await supabase
+            .from('orders')
+            .update({
+              cash_receipt_issued: true,
+              cash_receipt_url: cashReceiptData.receiptUrl,
+              cash_receipt_key: cashReceiptData.receiptKey,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', actualOrderId);
+
+          console.log('[Webhook] Cash receipt issued successfully:', cashReceiptData);
+        } catch (cashReceiptError: any) {
+          console.error('[Webhook] Cash receipt issue failed:', cashReceiptError);
+          
+          // Slack 알림
+          await sendSlackAlert({
+            title: '⚠️ 현금영수증 자동 발급 실패',
+            fields: [
+              { title: '주문 ID', value: actualOrderId },
+              { title: '고객명', value: order.customer?.name || '미입력' },
+              { title: '금액', value: `${order.total_amount.toLocaleString()}원` },
+              { title: '유형', value: order.cash_receipt_type },
+              { title: '오류', value: cashReceiptError.message },
+            ],
+          }).catch(e => console.error('[Slack Alert]', e));
+        }
+      }
 
       // SMS 발송 (고객)
       try {

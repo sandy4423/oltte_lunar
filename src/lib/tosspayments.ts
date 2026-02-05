@@ -210,6 +210,41 @@ export function verifyWebhookSecret(webhookSecret: string, savedSecret: string):
 }
 
 /**
+ * 현금영수증 발급
+ * 
+ * @param params 현금영수증 발급 파라미터
+ * @returns CashReceipt 객체
+ */
+export async function issueCashReceipt(params: {
+  orderId: string;
+  amount: number;
+  orderName: string;
+  customerName?: string;
+  type: '소득공제' | '지출증빙';
+  registrationNumber: string;
+  taxFreeAmount?: number;
+}) {
+  try {
+    const response = await fetch(`${TOSS_API_BASE}/cash-receipts`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '현금영수증 발급 실패');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('[Toss] Cash receipt issue error:', error);
+    throw error;
+  }
+}
+
+/**
  * 은행 코드를 은행 이름으로 변환
  */
 export function getBankName(bankCode: string): string {
