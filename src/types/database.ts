@@ -78,6 +78,7 @@ export interface OrderRow {
   cash_receipt_issued: boolean;    // boolean, DEFAULT false - 현금영수증 발급 완료 여부
   cash_receipt_url: string | null; // text, NULLABLE - 발급된 현금영수증 URL
   cash_receipt_key: string | null; // text, NULLABLE - 토스페이먼츠 현금영수증 고유키
+  is_hidden: boolean;              // boolean, DEFAULT false - 테스트 주문 등 숨김 처리 여부
   created_at: string;              // timestamptz, DEFAULT now()
   updated_at: string;              // timestamptz, DEFAULT now()
 }
@@ -156,6 +157,7 @@ export interface OrderInsert {
   cash_receipt_issued?: boolean;   // optional, default: false
   cash_receipt_url?: string | null; // optional - 발급된 현금영수증 URL
   cash_receipt_key?: string | null; // optional - 토스페이먼츠 현금영수증 고유키
+  is_hidden?: boolean;             // optional, default: false
   created_at?: string;             // optional, default: now()
   updated_at?: string;             // optional, default: now()
 }
@@ -234,6 +236,7 @@ export interface OrderUpdate {
   cash_receipt_issued?: boolean;
   cash_receipt_url?: string | null;
   cash_receipt_key?: string | null;
+  is_hidden?: boolean;
   created_at?: string;
   updated_at?: string;
 }

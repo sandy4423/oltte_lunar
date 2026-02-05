@@ -13,11 +13,12 @@ export async function GET(req: NextRequest) {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
     
-    // 유입 경로별 주문 수
+    // 유입 경로별 주문 수 (숨긴 주문 제외)
     const { data: orderSourceStats, error } = await supabase
       .from('orders')
       .select('source, status')
       .not('source', 'is', null)
+      .eq('is_hidden', false)
       .gte('created_at', startDate.toISOString());
     
     if (error) throw error;

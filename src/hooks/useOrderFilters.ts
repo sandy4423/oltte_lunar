@@ -16,8 +16,16 @@ export function useOrderFilters(orders: OrderFull[]) {
   // 필터링된 주문
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
+      // 숨긴 주문 필터
+      if (filterStatus === 'hidden') {
+        if (!order.is_hidden) return false;
+      } else {
+        // 일반 필터: 숨기지 않은 주문만
+        if (order.is_hidden) return false;
+        if (filterStatus !== 'all' && order.status !== filterStatus) return false;
+      }
+      
       if (filterApt !== 'all' && order.apt_code !== filterApt) return false;
-      if (filterStatus !== 'all' && order.status !== filterStatus) return false;
       if (filterDeliveryDate !== 'all' && order.delivery_date !== filterDeliveryDate) return false;
       if (searchQuery) {
         const query = searchQuery.toLowerCase();

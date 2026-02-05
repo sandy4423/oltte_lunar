@@ -5,7 +5,8 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { 
   RefreshCw, Truck, CheckCircle, Printer, Download,
-  Filter, Search, BarChart3, Lock, TrendingUp, ChevronDown, ChevronUp, Plus
+  Filter, Search, BarChart3, Lock, TrendingUp, ChevronDown, ChevronUp, Plus,
+  EyeOff, Eye
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -151,6 +152,44 @@ export default function AdminPage() {
       window.print();
       setPrintMode(false);
     }, 100);
+  };
+
+  // 주문 숨기기/보이기
+  const handleHideOrders = async (hidden: boolean) => {
+    if (selectedOrders.size === 0) return;
+
+    const orderIds = Array.from(selectedOrders);
+    const action = hidden ? '숨기기' : '보이기';
+
+    if (!confirm(`선택한 ${selectedOrders.size}개 주문을 ${action} 처리하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/orders/hide', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderIds,
+          hidden,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || `${action} 처리에 실패했습니다.`);
+      }
+
+      // 성공 시 목록 새로고침 및 선택 해제
+      await fetchOrders();
+      clearSelection();
+      alert(`${selectedOrders.size}개 주문이 ${action} 처리되었습니다.`);
+    } catch (error: any) {
+      console.error(`[HideOrders] Error:`, error);
+      alert(error.message || `${action} 처리 중 오류가 발생했습니다.`);
+    }
   };
 
   // 선택된 주문들
@@ -465,14 +504,14 @@ export default function AdminPage() {
           <Card>
             <CardContent className="pt-4">
               <p className="text-sm text-gray-500">전체 주문</p>
-              <p className="text-2xl font-bold">{orders.length}</p>
+              <p className="text-2xl font-bold">{orders.filter((o) => !o.is_hidden).length}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
               <p className="text-sm text-gray-500">입금대기</p>
               <p className="text-2xl font-bold text-yellow-600">
-                {orders.filter((o) => o.status === 'WAITING_FOR_DEPOSIT').length}
+                {orders.filter((o) => !o.is_hidden && o.status === 'WAITING_FOR_DEPOSIT').length}
               </p>
             </CardContent>
           </Card>
@@ -480,7 +519,7 @@ export default function AdminPage() {
             <CardContent className="pt-4">
               <p className="text-sm text-gray-500">결제완료</p>
               <p className="text-2xl font-bold text-green-600">
-                {orders.filter((o) => o.status === 'PAID').length}
+                {orders.filter((o) => !o.is_hidden && o.status === 'PAID').length}
               </p>
             </CardContent>
           </Card>
@@ -488,7 +527,7 @@ export default function AdminPage() {
             <CardContent className="pt-4">
               <p className="text-sm text-gray-500">배송완료</p>
               <p className="text-2xl font-bold text-purple-600">
-                {orders.filter((o) => o.status === 'DELIVERED').length}
+                {orders.filter((o) => !o.is_hidden && o.status === 'DELIVERED').length}
               </p>
             </CardContent>
           </Card>
@@ -541,6 +580,7 @@ export default function AdminPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">전체 상태</SelectItem>
+                  <SelectItem value="hidden">숨긴 주문</SelectItem>
                   {Object.entries(ORDER_STATUS_LABEL).map(([key, { label }]) => (
                     <SelectItem key={key} value={key}>
                       {label}
@@ -601,6 +641,27 @@ export default function AdminPage() {
               >
                 취소 요청 {selectedOrders.size === 1 ? '(1)' : ''}
               </Button>
+              {filterStatus !== 'hidden' ? (
+                <Button
+                  onClick={() => handleHideOrders(true)}
+                  disabled={selectedOrders.size === 0}
+                  variant="outline"
+                  className="text-gray-600 border-gray-200 hover:bg-gray-50"
+                >
+                  <EyeOff className="mr-2 h-4 w-4" />
+                  숨기기 ({selectedOrders.size})
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => handleHideOrders(false)}
+                  disabled={selectedOrders.size === 0}
+                  variant="outline"
+                  className="text-green-600 border-green-200 hover:bg-green-50"
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  보이기 ({selectedOrders.size})
+                </Button>
+              )}
               <Button
                 onClick={handlePrintMode}
                 disabled={selectedOrders.size === 0}
