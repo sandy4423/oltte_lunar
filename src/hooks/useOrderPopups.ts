@@ -40,15 +40,14 @@ export function useOrderPopups(apartment: ApartmentConfig | null): UseOrderPopup
     return new Date() > new Date(apartment.cutoffAt);
   }, [apartment]);
 
-  // 배송일이 지났는지 체크
+  // 배송일이 지났는지 체크 (배송일 새벽 6시 기준)
   const isDeliveryDatePassed = useMemo(() => {
     if (!apartment) return false;
-    const today = new Date();
-    const deliveryDate = new Date(apartment.deliveryDate);
-    // 시간 무시하고 날짜만 비교
-    today.setHours(0, 0, 0, 0);
-    deliveryDate.setHours(0, 0, 0, 0);
-    return today >= deliveryDate;
+    const now = new Date();
+    const deliveryDateTime = new Date(apartment.deliveryDate);
+    // 배송일 당일 새벽 6시 기준
+    deliveryDateTime.setHours(6, 0, 0, 0);
+    return now >= deliveryDateTime;
   }, [apartment]);
 
   // 마감일이 오늘인지 체크 (날짜만 비교, 시간 제외)

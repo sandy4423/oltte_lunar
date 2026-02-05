@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -112,6 +112,45 @@ export default function OrderPage() {
     
     return () => clearInterval(timer); // cleanup
   }, [apartment]);
+
+  // 추가 주문 마감 시간 (배송일 새벽 6시)
+  const extendedOrderDeadline = useMemo(() => {
+    if (!apartment) return null;
+    const deadline = new Date(apartment.deliveryDate);
+    deadline.setHours(6, 0, 0, 0);
+    return deadline;
+  }, [apartment]);
+
+  // 추가 주문 마감까지 남은 시간
+  const [extendedTimeRemaining, setExtendedTimeRemaining] = useState('');
+
+  useEffect(() => {
+    if (!extendedOrderDeadline || activePopup !== 'extendedOrder') return;
+    
+    const updateExtendedRemaining = () => {
+      const now = new Date();
+      const diff = extendedOrderDeadline.getTime() - now.getTime();
+      
+      if (diff <= 0) {
+        setExtendedTimeRemaining('마감됨');
+        return;
+      }
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      if (hours > 0) {
+        setExtendedTimeRemaining(`${hours}시간 ${minutes}분`);
+      } else {
+        setExtendedTimeRemaining(`${minutes}분`);
+      }
+    };
+    
+    updateExtendedRemaining(); // 초기 설정
+    const timer = setInterval(updateExtendedRemaining, 1000);
+    
+    return () => clearInterval(timer); // cleanup
+  }, [extendedOrderDeadline, activePopup]);
 
   // 고객 정보 자동 채우기
   useEffect(() => {
@@ -394,8 +433,20 @@ export default function OrderPage() {
               많은 분들의 요청에 따라
             </div>
             <div className="text-2xl font-bold text-brand-dark">
-              오늘까지 추가주문 받습니다!
+              배송일 새벽 6시까지 추가주문 받습니다!
             </div>
+            
+            {/* 마감 시간 및 카운트다운 */}
+            <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 space-y-2">
+              <p className="text-sm text-gray-600">현재 시각: {currentTime}</p>
+              <div className="text-2xl font-bold text-orange-600">
+                {format(new Date(apartment.deliveryDate), 'M월 d일 (EEE) 06:00', { locale: ko })}에 마감!
+              </div>
+              <p className="text-lg font-semibold text-orange-600">
+                ⏰ {extendedTimeRemaining} 남음
+              </p>
+            </div>
+            
             <p className="text-gray-600 text-sm">
               설 만두 준비를 놓치신 분들을 위해<br />
               특별히 주문을 연장합니다.
