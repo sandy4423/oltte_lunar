@@ -15,7 +15,13 @@ export function useAdminOrders() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/orders');
+      const response = await fetch('/api/admin/orders', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      });
       const data = await response.json();
       
       if (data.success) {
