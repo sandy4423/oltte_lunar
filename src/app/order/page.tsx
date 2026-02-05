@@ -254,6 +254,24 @@ export default function OrderPage() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 mt-6 space-y-6">
+        {/* 상품 선택 */}
+        <ProductSelector
+          cart={cart}
+          updateQuantity={updateQuantity}
+          totalQty={totalQty}
+          isMinOrderMet={isMinOrderMet}
+        />
+
+        {/* 배송 정보 */}
+        <DeliveryForm
+          name={name}
+          setName={setName}
+          dong={dong}
+          setDong={setDong}
+          ho={ho}
+          setHo={setHo}
+        />
+
         {/* 전화번호 인증 */}
         <PhoneVerification
           phone={verification.phone}
@@ -276,24 +294,6 @@ export default function OrderPage() {
           onShowPersonalInfoDialog={() => setShowPersonalInfoDialog(true)}
           onShowMarketingDialog={() => setShowMarketingDialog(true)}
           highlightConsent={highlightConsent}
-        />
-
-        {/* 배송 정보 */}
-        <DeliveryForm
-          name={name}
-          setName={setName}
-          dong={dong}
-          setDong={setDong}
-          ho={ho}
-          setHo={setHo}
-        />
-
-        {/* 상품 선택 */}
-        <ProductSelector
-          cart={cart}
-          updateQuantity={updateQuantity}
-          totalQty={totalQty}
-          isMinOrderMet={isMinOrderMet}
         />
 
         {/* 에러 메시지 */}
