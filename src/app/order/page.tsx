@@ -231,6 +231,9 @@ export default function OrderPage() {
                   <p className="text-xs text-gray-400 line-through mt-1">
                     전단지상: {format(new Date(apartment.originalCutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
                   </p>
+                  <p className="text-xs text-green-600 font-medium mt-2">
+                    📢 많은 고객님들의 요청에 따라<br />마감일이 연장되었습니다
+                  </p>
                 </div>
                 <div className="border-l border-gray-200" />
                 <div>
