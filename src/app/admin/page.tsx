@@ -192,6 +192,35 @@ export default function AdminPage() {
     }
   };
 
+  // 개별 주문 배송완료 처리 (모바일 카드용)
+  const handleSingleDelivered = async (orderId: string) => {
+    if (!confirm('배송완료 처리하시겠습니까?')) return;
+
+    try {
+      const response = await fetch('/api/admin/orders/status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderIds: [orderId],
+          status: 'DELIVERED',
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '배송완료 처리에 실패했습니다.');
+      }
+
+      await fetchOrders();
+      alert('배송완료 처리되었습니다.');
+    } catch (error: any) {
+      console.error('[SingleDelivered] Error:', error);
+      alert(error.message || '배송완료 처리 중 오류가 발생했습니다.');
+    }
+  };
+
   // 선택된 주문들
   const selectedOrdersData = orders.filter((o) => selectedOrders.has(o.id));
 
@@ -681,8 +710,97 @@ export default function AdminPage() {
           </CardContent>
         </Card>
 
-        {/* 주문 테이블 */}
-        <Card>
+        {/* 모바일 카드 뷰 */}
+        <div className="block md:hidden space-y-3">
+          {filteredOrders.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-gray-500">
+                {loading ? '로딩 중...' : '주문이 없습니다.'}
+              </CardContent>
+            </Card>
+          ) : (
+            filteredOrders.map((order) => {
+              const statusInfo = ORDER_STATUS_LABEL[order.status] || {
+                label: order.status,
+                color: 'bg-gray-500 text-white',
+              };
+
+              return (
+                <Card key={order.id} className="p-4">
+                  {/* 체크박스 + 상태 */}
+                  <div className="flex items-center justify-between mb-3">
+                    <Checkbox
+                      checked={selectedOrders.has(order.id)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        handleSelectOrder(order.id, e.target.checked)
+                      }
+                    />
+                    <Badge className={statusInfo.color}>
+                      {statusInfo.label}
+                    </Badge>
+                  </div>
+
+                  {/* 주문 정보 */}
+                  <div className="space-y-2 text-sm">
+                    <div className="font-semibold text-base">
+                      {order.apt_name.replace(/^[68]공구 /, '')} / {order.dong}동 {order.ho}호
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{order.customer.name}</span>
+                      <span className="text-gray-500">
+                        {order.customer.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')}
+                      </span>
+                    </div>
+                    <div>
+                      {order.is_pickup ? (
+                        <Badge className="bg-purple-500 text-white border-purple-600">
+                          🏪 픽업
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-blue-500 text-white border-blue-600">
+                          🚚 배달
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      {order.order_items.map((item) => {
+                        const product = getProductBySku(item.sku);
+                        return (
+                          <div key={item.id}>
+                            {product?.emoji} {product?.name || item.sku} x{item.qty}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="font-bold text-lg">
+                        {order.total_amount.toLocaleString()}원
+                      </span>
+                      <span className="text-gray-600">
+                        {format(new Date(order.delivery_date), 'M/d (EEE)', { locale: ko })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 배송완료 버튼 */}
+                  {(order.status === 'PAID' || order.status === 'OUT_FOR_DELIVERY') && (
+                    <Button
+                      onClick={() => handleSingleDelivered(order.id)}
+                      className="w-full mt-3"
+                      variant="outline"
+                    >
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      배송완료
+                    </Button>
+                  )}
+                </Card>
+              );
+            })
+          )}
+        </div>
+
+        {/* 주문 테이블 (데스크톱) */}
+        <Card className="hidden md:block">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
@@ -750,11 +868,11 @@ export default function AdminPage() {
                           </TableCell>
                           <TableCell>
                             {order.is_pickup ? (
-                              <Badge className="bg-purple-100 text-purple-800 border-purple-300">
+                              <Badge className="bg-purple-500 text-white border-purple-600">
                                 🏪 픽업
                               </Badge>
                             ) : (
-                              <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+                              <Badge className="bg-blue-500 text-white border-blue-600">
                                 🚚 배달
                               </Badge>
                             )}

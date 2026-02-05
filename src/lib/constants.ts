@@ -179,16 +179,16 @@ export const getProductBySku = (sku: string): Product | undefined => {
 // ============================================
 
 export const ORDER_STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  CREATED: { label: '주문생성', color: 'bg-gray-100 text-gray-800' },
-  WAITING_FOR_DEPOSIT: { label: '입금대기', color: 'bg-yellow-100 text-yellow-800' },
-  PAID: { label: '결제완료', color: 'bg-green-100 text-green-800' },
-  AUTO_CANCELED: { label: '자동취소', color: 'bg-red-100 text-red-800' },
-  OUT_FOR_DELIVERY: { label: '배송중', color: 'bg-blue-100 text-blue-800' },
-  DELIVERED: { label: '배송완료', color: 'bg-purple-100 text-purple-800' },
-  LATE_DEPOSIT: { label: '마감후입금', color: 'bg-orange-100 text-orange-800' },
-  CANCEL_REQUESTED: { label: '계좌정보 대기', color: 'bg-yellow-100 text-yellow-800' },
-  REFUND_PROCESSING: { label: '환불처리중', color: 'bg-orange-100 text-orange-800' },
-  REFUNDED: { label: '환불완료', color: 'bg-gray-100 text-gray-800' },
+  CREATED: { label: '주문생성', color: 'bg-gray-500 text-white' },
+  WAITING_FOR_DEPOSIT: { label: '입금대기', color: 'bg-yellow-500 text-white' },
+  PAID: { label: '결제완료', color: 'bg-green-600 text-white' },
+  AUTO_CANCELED: { label: '자동취소', color: 'bg-red-600 text-white' },
+  OUT_FOR_DELIVERY: { label: '배송중', color: 'bg-blue-600 text-white' },
+  DELIVERED: { label: '배송완료', color: 'bg-purple-600 text-white' },
+  LATE_DEPOSIT: { label: '마감후입금', color: 'bg-orange-500 text-white' },
+  CANCEL_REQUESTED: { label: '계좌정보 대기', color: 'bg-yellow-500 text-white' },
+  REFUND_PROCESSING: { label: '환불처리중', color: 'bg-orange-600 text-white' },
+  REFUNDED: { label: '환불완료', color: 'bg-gray-500 text-white' },
 };
 
 // ============================================
