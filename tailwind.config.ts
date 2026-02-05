@@ -11,9 +11,9 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#ff5700",
-          light: "#ff7a33",
-          dark: "#cc4600",
+          DEFAULT: "#FF6F0F",
+          light: "#FF8A3F",
+          dark: "#CC590C",
         },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
