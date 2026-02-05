@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마감일 병기 표시 미리보기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#ff6b35',
+                        'brand-dark': '#e85a2a',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(to bottom, #fff7ed, #fef3c7);
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-4 text-gray-900">
+            주문 마감일 표시 방식 비교
+        </h1>
+        <div class="text-center mb-8">
+            <p class="text-lg text-gray-600">
+                현재 시각: <span class="font-bold text-brand-dark" id="currentTime"></span>
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- 현재 (Before) -->
+            <div>
+                <h2 class="text-xl font-bold mb-4 text-red-600">❌ 현재 (Before)</h2>
+                <div class="bg-white shadow-xl border-0 rounded-lg">
+                    <div class="p-6">
+                        <div class="text-center">
+                            <h2 class="text-lg font-bold text-gray-900 mb-3">
+                                베르디움 공동구매
+                            </h2>
+                            <p class="text-sm text-gray-500 mb-4">
+                                <span id="currentTimeBefore"></span>
+                            </p>
+                            <div class="flex justify-center gap-6 text-sm">
+                                <div>
+                                    <p class="text-gray-500">주문마감</p>
+                                    <p class="font-bold text-lg text-brand-dark">
+                                        2.5(목) 23:00
+                                    </p>
+                                </div>
+                                <div class="border-l border-gray-200"></div>
+                                <div>
+                                    <p class="text-gray-500">배송일</p>
+                                    <p class="font-bold text-lg text-brand">
+                                        2월 6일 (금)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 bg-red-50 border border-red-200 rounded p-4">
+                    <p class="text-sm text-red-800">
+                        <strong>문제점:</strong><br>
+                        전단지에는 "2.2(월) 마감"이라고 적혀있는데,<br>
+                        실제로는 "2.5(목) 23:00"만 표시되어<br>
+                        고객이 마감일이 연장되었다는 것을 모릅니다.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 변경 후 (After) -->
+            <div>
+                <h2 class="text-xl font-bold mb-4 text-green-600">✅ 변경 후 (After)</h2>
+                <div class="bg-white shadow-xl border-0 rounded-lg">
+                    <div class="p-6">
+                        <div class="text-center">
+                            <h2 class="text-lg font-bold text-gray-900 mb-3">
+                                베르디움 공동구매
+                            </h2>
+                            <p class="text-sm text-gray-500 mb-4">
+                                <span id="currentTimeAfter"></span>
+                            </p>
+                            <div class="flex justify-center gap-6 text-sm">
+                                <div>
+                                    <p class="text-gray-500 mb-1">주문마감</p>
+                                    <p class="font-bold text-lg text-brand-dark">
+                                        2.5(목) 23:00
+                                    </p>
+                                    <p class="text-xs text-gray-400 line-through mt-1">
+                                        전단지상: 2.2(월) 23:00
+                                    </p>
+                                </div>
+                                <div class="border-l border-gray-200"></div>
+                                <div>
+                                    <p class="text-gray-500">배송일</p>
+                                    <p class="font-bold text-lg text-brand">
+                                        2월 6일 (금)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 bg-green-50 border border-green-200 rounded p-4">
+                    <p class="text-sm text-green-800">
+                        <strong>개선점:</strong><br>
+                        변경된 마감일을 먼저 크게 보여주고,<br>
+                        전단지 마감일은 작고 취소선으로 표시하여<br>
+                        "마감일이 연장되었구나!"를 고객이 즉시 인지할 수 있습니다.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 다른 단지 예시 -->
+        <div class="mt-12">
+            <h2 class="text-2xl font-bold mb-6 text-gray-900">다른 단지 예시</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- 호반써밋 -->
+                <div class="bg-white shadow-lg rounded-lg p-4">
+                    <div class="text-center">
+                        <h3 class="font-bold text-gray-900 mb-3">호반써밋</h3>
+                        <div>
+                            <p class="text-gray-500 text-sm mb-1">주문마감</p>
+                            <p class="font-bold text-brand-dark">
+                                2.6(금) 23:00
+                            </p>
+                            <p class="text-xs text-gray-400 line-through mt-1">
+                                전단지상: 2.3(화) 23:00
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SK뷰 101-106 -->
+                <div class="bg-white shadow-lg rounded-lg p-4">
+                    <div class="text-center">
+                        <h3 class="font-bold text-gray-900 mb-3">SK뷰 (101동-106동)</h3>
+                        <div>
+                            <p class="text-gray-500 text-sm mb-1">주문마감</p>
+                            <p class="font-bold text-brand-dark">
+                                2.7(토) 23:00
+                            </p>
+                            <p class="text-xs text-gray-400 line-through mt-1">
+                                전단지상: 2.4(수) 23:00
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 랜드마크 더샵 -->
+                <div class="bg-white shadow-lg rounded-lg p-4">
+                    <div class="text-center">
+                        <h3 class="font-bold text-gray-900 mb-3">랜드마크 더샵</h3>
+                        <div>
+                            <p class="text-gray-500 text-sm mb-1">주문마감</p>
+                            <p class="font-bold text-brand-dark">
+                                2.9(월) 23:00
+                            </p>
+                            <p class="text-xs text-gray-400 line-through mt-1">
+                                전단지상: 2.6(금) 23:00
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 고객 시나리오 -->
+        <div class="mt-12 bg-blue-50 border-2 border-blue-300 rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4 text-blue-900">👥 고객 시나리오</h2>
+            <div class="space-y-3 text-gray-800">
+                <p><strong>1. 전단지를 2월 1일에 받은 고객:</strong></p>
+                <p class="ml-4">
+                    "전단지에 2.2(월)까지라고 되어있네? 내일까지니까 오늘 주문해야겠다!"<br>
+                    → <span class="text-red-600">2월 3일에 접속</span><br>
+                    → 페이지에서 <strong class="text-brand-dark">2.5(목) 23:00</strong> / <span class="line-through text-gray-400">전단지상: 2.2(월) 23:00</span> 확인<br>
+                    → <span class="text-green-600 font-bold">"아! 연장되었구나! 아직 주문 가능하네!"</span>
+                </p>
+
+                <p class="mt-4"><strong>2. QR을 빨리 찍은 고객 (2월 1일):</strong></p>
+                <p class="ml-4">
+                    → 페이지에서 <strong class="text-brand-dark">2.5(목) 23:00</strong> / <span class="line-through text-gray-400">전단지상: 2.2(월) 23:00</span> 확인<br>
+                    → <span class="text-green-600 font-bold">"마감일이 더 여유있네! 천천히 주문해도 되겠다"</span>
+                </p>
+
+                <p class="mt-4"><strong>3. 현재 상태 (변경 전):</strong></p>
+                <p class="ml-4">
+                    → "2.5(목) 23:00"만 표시<br>
+                    → <span class="text-red-600 font-bold">전단지와 다른 날짜인지, 연장된 건지 알 수 없음</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- 버튼 -->
+        <div class="mt-8 text-center">
+            <button onclick="alert('이 디자인으로 진행하시겠습니까?')" 
+                    class="bg-brand hover:bg-brand-dark text-white font-bold py-3 px-8 rounded-lg shadow-lg transition">
+                이 디자인으로 진행
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 현재 시각 업데이트
+        function updateCurrentTime() {
+            const now = new Date();
+            const options = {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                weekday: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZone: 'Asia/Seoul'
+            };
+            const formatted = now.toLocaleString('ko-KR', options);
+            document.getElementById('currentTime').textContent = formatted;
+            
+            // Before/After 섹션의 현재 시각도 업데이트
+            const timeOnlyOptions = {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZone: 'Asia/Seoul'
+            };
+            const timeOnly = now.toLocaleTimeString('ko-KR', timeOnlyOptions);
+            const beforeEl = document.getElementById('currentTimeBefore');
+            const afterEl = document.getElementById('currentTimeAfter');
+            if (beforeEl) beforeEl.textContent = `현재 시각: ${timeOnly}`;
+            if (afterEl) afterEl.textContent = `현재 시각: ${timeOnly}`;
+        }
+
+        // 페이지 로드 시 및 1초마다 업데이트
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 1000);
+    </script>
+</body>
+</html>

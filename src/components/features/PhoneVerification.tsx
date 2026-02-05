@@ -129,7 +129,7 @@ export function PhoneVerification({
               maxLength={4}
               className="flex-1 text-lg tracking-widest"
             />
-            <Button onClick={handleVerifyCode} disabled={isVerifying}>
+            <Button onClick={() => handleVerifyCode()} disabled={isVerifying}>
               {isVerifying ? '확인중...' : '확인'}
             </Button>
           </div>
