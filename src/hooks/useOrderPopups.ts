@@ -14,7 +14,7 @@ export interface UseOrderPopupsReturn {
   closePopup: () => void;
   isExpired: boolean;
   isDeliveryDatePassed: boolean;
-  daysUntilCutoff: number | null;
+  isCutoffToday: boolean;
 }
 
 /**
@@ -51,14 +51,12 @@ export function useOrderPopups(apartment: ApartmentConfig | null): UseOrderPopup
     return today >= deliveryDate;
   }, [apartment]);
 
-  // 마감일까지 남은 일수 계산
-  const daysUntilCutoff = useMemo(() => {
-    if (!apartment) return null;
+  // 마감일이 오늘인지 체크 (날짜만 비교, 시간 제외)
+  const isCutoffToday = useMemo(() => {
+    if (!apartment) return false;
     const now = new Date();
     const cutoff = new Date(apartment.cutoffAt);
-    const diffTime = cutoff.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    return now.toDateString() === cutoff.toDateString();
   }, [apartment]);
 
   // 페이지 로드 시 팝업 결정
@@ -76,15 +74,15 @@ export function useOrderPopups(apartment: ApartmentConfig | null): UseOrderPopup
     else if (isExpired) {
       setActivePopup('extendedOrder');
     }
-    // 주문 0일 전 팝업 (마감 당일)
-    else if (daysUntilCutoff === 0) {
+    // 마감 당일 팝업 (날짜 기준)
+    else if (isCutoffToday) {
       setActivePopup('zeroDayWarning');
     }
     // 마감 전이면 환영 팝업
     else {
       setActivePopup('welcome');
     }
-  }, [apartment, isExpired, isDeliveryDatePassed, daysUntilCutoff]);
+  }, [apartment, isExpired, isDeliveryDatePassed, isCutoffToday]);
 
   // 팝업 닫기
   const closePopup = () => {
@@ -96,6 +94,6 @@ export function useOrderPopups(apartment: ApartmentConfig | null): UseOrderPopup
     closePopup,
     isExpired,
     isDeliveryDatePassed,
-    daysUntilCutoff,
+    isCutoffToday,
   };
 }
