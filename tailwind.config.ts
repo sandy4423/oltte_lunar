@@ -7,6 +7,25 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    // 상태 태그 배경색
+    'bg-gray-500',
+    'bg-yellow-500',
+    'bg-green-600',
+    'bg-red-600',
+    'bg-blue-600',
+    'bg-purple-600',
+    'bg-orange-500',
+    'bg-orange-600',
+    // 상태 태그 텍스트 색상
+    'text-white',
+    // 픽업/배달 태그 색상
+    'bg-purple-500',
+    'bg-blue-500',
+    // 픽업/배달 태그 테두리
+    'border-purple-600',
+    'border-blue-600',
+  ],
   theme: {
     extend: {
       colors: {
