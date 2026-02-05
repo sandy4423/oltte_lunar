@@ -45,17 +45,12 @@ export async function POST(request: NextRequest) {
     const now = Date.now();
     const cutoffTime = new Date(order.cutoff_at).getTime();
     
-    // 주문 마감이 지났으면 배송일 새벽 6시를 입금 마감으로 설정
-    let paymentDeadline: number;
-    if (now > cutoffTime) {
-      // 추가 주문 기간: 배송일 새벽 6시까지
-      const deliveryDate = new Date(order.delivery_date);
-      deliveryDate.setHours(6, 0, 0, 0);
-      paymentDeadline = deliveryDate.getTime();
-    } else {
-      // 정상 주문 기간: 주문 마감 시간까지
-      paymentDeadline = cutoffTime;
-    }
+    // 가상계좌 유효기간: 배송일 +5일 23:59로 통일
+    // (주문 페이지 마감과 무관하게 입금은 여유롭게 가능하도록)
+    const deliveryDate = new Date(order.delivery_date);
+    deliveryDate.setDate(deliveryDate.getDate() + 5); // 배송일 +5일
+    deliveryDate.setHours(23, 59, 59, 999); // 해당일 마지막 시각
+    const paymentDeadline = deliveryDate.getTime();
     
     const validHours = Math.max(1, Math.floor((paymentDeadline - now) / (1000 * 60 * 60)));
 
