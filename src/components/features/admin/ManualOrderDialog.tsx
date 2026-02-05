@@ -47,11 +47,12 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
   const [cart, setCart] = useState<CartItem[]>([]);
 
   // 결제 정보
-  const [paymentMethod, setPaymentMethod] = useState<'vbank' | 'pos_card' | 'pos_cash' | 'pos_transfer'>('pos_card');
+  const [paymentMethod, setPaymentMethod] = useState<'pos_card' | 'pos_cash' | 'pos_transfer'>('pos_card');
 
   // UI 상태
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   // 배송 마감 상태
   const [deliveryStatus, setDeliveryStatus] = useState<'available' | 'pickup_only' | 'closed'>('available');
@@ -197,9 +198,14 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
         throw new Error(data.error || '주문 생성에 실패했습니다.');
       }
 
-      // 성공
-      onSuccess();
-      resetForm();
+      // 성공 - 메시지 표시
+      setSuccess(true);
+      // 3초 후 자동으로 다이얼로그 닫고 새로고침
+      setTimeout(() => {
+        onSuccess();
+        resetForm();
+        setSuccess(false);
+      }, 3000);
     } catch (err: any) {
       console.error('주문 생성 오류:', err);
       setError(err.message || '주문 생성 중 오류가 발생했습니다.');
@@ -238,6 +244,20 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
           <DialogTitle>수기 주문 입력</DialogTitle>
         </DialogHeader>
 
+        {/* 성공 메시지 */}
+        {success ? (
+          <div className="py-8 text-center space-y-4">
+            <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
+            <h3 className="text-xl font-bold text-green-900">주문 접수 완료!</h3>
+            <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+              <p className="text-sm font-medium text-blue-900">
+                사장님께 영수증 사진을 찍어서 올려주세요.<br />
+                직원톡방에.
+              </p>
+            </div>
+            <p className="text-sm text-gray-500">잠시 후 자동으로 닫힙니다...</p>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 1. 고객 정보 */}
           <div className="space-y-4">
@@ -421,20 +441,6 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
                 <input
                   type="radio"
                   name="paymentMethod"
-                  value="vbank"
-                  checked={paymentMethod === 'vbank'}
-                  onChange={(e) => setPaymentMethod(e.target.value as any)}
-                  className="w-4 h-4"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-sm">문자안내 (가상계좌)</div>
-                  <div className="text-xs text-gray-500">입금 대기 상태로 생성</div>
-                </div>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer p-3 border rounded hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="paymentMethod"
                   value="pos_card"
                   checked={paymentMethod === 'pos_card'}
                   onChange={(e) => setPaymentMethod(e.target.value as any)}
@@ -501,6 +507,7 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
             </Button>
           </DialogFooter>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );

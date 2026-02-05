@@ -130,17 +130,9 @@ export async function POST(request: NextRequest) {
     }
 
     // 주문 상태 결정
-    let orderStatus: string;
-    let paidAt: string | null = null;
-
-    if (paymentMethod === 'vbank') {
-      // 가상계좌: 입금 대기
-      orderStatus = 'WAITING_FOR_DEPOSIT';
-    } else {
-      // 포스기: 결제 완료
-      orderStatus = 'PAID';
-      paidAt = new Date().toISOString();
-    }
+    // 수기 주문은 모두 포스기 결제이므로 결제 완료 상태
+    const orderStatus = 'PAID';
+    const paidAt = new Date().toISOString();
 
     // 마감일 계산 (배송일 D-1 23:00)
     const cutoffAt = apartment.cutoffAt;
@@ -207,8 +199,13 @@ export async function POST(request: NextRequest) {
 
     // Slack 알림
     try {
+      const paymentMethodLabel = 
+        paymentMethod === 'pos_card' ? '포스기(카드)' :
+        paymentMethod === 'pos_cash' ? '포스기(현금)' :
+        '포스기(계좌이체)';
+
       await sendSlackAlert({
-        title: '📝 수기 주문 접수',
+        title: '📝 수기 주문 접수 (포스기)',
         fields: [
           { title: '주문 ID', value: order.id },
           { title: '고객명', value: customerName },
@@ -216,8 +213,8 @@ export async function POST(request: NextRequest) {
           { title: '단지', value: apartment.name },
           { title: '동호수', value: `${dong}동 ${ho}호` },
           { title: '배송방법', value: isPickup ? '픽업' : '배송' },
-          { title: '결제방법', value: paymentMethod === 'vbank' ? '가상계좌' : '포스기' },
-          { title: '상태', value: orderStatus === 'PAID' ? '결제완료' : '입금대기' },
+          { title: '결제방법', value: paymentMethodLabel },
+          { title: '상태', value: '결제완료' },
           { title: '금액', value: `${totalAmount.toLocaleString()}원` },
         ],
       });
