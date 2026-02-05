@@ -744,9 +744,9 @@ export default function AdminPage() {
                         handleSelectOrder(order.id, e.target.checked)
                       }
                     />
-                    <Badge className={statusInfo.color}>
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
                       {statusInfo.label}
-                    </Badge>
+                    </span>
                   </div>
 
                   {/* 주문 정보 */}
@@ -762,13 +762,13 @@ export default function AdminPage() {
                     </div>
                     <div>
                       {order.is_pickup ? (
-                        <Badge className="bg-purple-500 text-white border-purple-600">
+                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-purple-500 text-white border border-purple-600">
                           🏪 픽업
-                        </Badge>
+                        </span>
                       ) : (
-                        <Badge className="bg-blue-500 text-white border-blue-600">
+                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-blue-500 text-white border border-blue-600">
                           🚚 배달
-                        </Badge>
+                        </span>
                       )}
                     </div>
                     <div className="space-y-1">
@@ -861,9 +861,9 @@ export default function AdminPage() {
                             />
                           </TableCell>
                           <TableCell>
-                            <Badge className={statusInfo.color}>
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
                               {statusInfo.label}
-                            </Badge>
+                            </span>
                           </TableCell>
                           <TableCell className="max-w-[150px] truncate" title={order.apt_name}>
                             {order.apt_name.replace(/^[68]공구 /, '')}
@@ -877,13 +877,13 @@ export default function AdminPage() {
                           </TableCell>
                           <TableCell>
                             {order.is_pickup ? (
-                              <Badge className="bg-purple-500 text-white border-purple-600">
+                              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-purple-500 text-white border border-purple-600">
                                 🏪 픽업
-                              </Badge>
+                              </span>
                             ) : (
-                              <Badge className="bg-blue-500 text-white border-blue-600">
+                              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-blue-500 text-white border border-blue-600">
                                 🚚 배달
-                              </Badge>
+                              </span>
                             )}
                           </TableCell>
                           <TableCell>
