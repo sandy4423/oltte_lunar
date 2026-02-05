@@ -64,7 +64,7 @@ export default function OrderPage() {
   const { cart, updateQuantity, totalQty, totalAmount, isMinOrderMet } = useCart();
 
   // 팝업 관리 훅
-  const { activePopup, closePopup, isExpired } = useOrderPopups(apartment);
+  const { activePopup, closePopup, isExpired, isDeliveryDatePassed } = useOrderPopups(apartment);
 
   // 실시간 현재 시각
   const [currentTime, setCurrentTime] = useState('');
@@ -264,15 +264,48 @@ export default function OrderPage() {
               <div className="flex justify-center gap-6 text-sm">
                 <div>
                   <p className="text-gray-500 mb-1">주문마감</p>
-                  <p className="font-bold text-lg text-brand-dark">
-                    {format(new Date(apartment.cutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
-                  </p>
-                  <p className="text-xs text-gray-400 line-through mt-1">
-                    전단지상: {format(new Date(apartment.originalCutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
-                  </p>
-                  <p className="text-xs text-green-600 font-medium mt-2">
-                    📢 많은 고객님들의 요청에 따라<br />마감일이 연장되었습니다
-                  </p>
+                  
+                  {/* 마감일 지나지 않은 경우 */}
+                  {!isExpired && (
+                    <>
+                      <p className="font-bold text-lg text-brand-dark">
+                        {format(new Date(apartment.cutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
+                      </p>
+                      <p className="text-xs text-gray-400 line-through mt-1">
+                        전단지상: {format(new Date(apartment.originalCutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
+                      </p>
+                      <p className="text-xs text-green-600 font-medium mt-2">
+                        📢 많은 고객님들의 요청에 따라<br />마감일이 연장되었습니다
+                      </p>
+                    </>
+                  )}
+                  
+                  {/* 마감일 지났지만 배송일 전 (추가 주문 가능) */}
+                  {isExpired && !isDeliveryDatePassed && (
+                    <>
+                      <p className="font-bold text-lg text-orange-600">
+                        추가주문 가능!
+                      </p>
+                      <p className="text-xs text-orange-600 font-medium mt-1">
+                        {format(new Date(apartment.deliveryDate), 'M.d(EEE) 06:00', { locale: ko })}까지
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 line-through">
+                        원래 마감: {format(new Date(apartment.cutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
+                      </p>
+                    </>
+                  )}
+                  
+                  {/* 배송일 지남 (픽업만 가능) */}
+                  {isDeliveryDatePassed && (
+                    <>
+                      <p className="font-bold text-lg text-red-600">
+                        마감됨
+                      </p>
+                      <p className="text-xs text-blue-600 font-medium mt-1">
+                        픽업만 가능
+                      </p>
+                    </>
+                  )}
                 </div>
                 <div className="border-l border-gray-200" />
                 <div>
@@ -358,7 +391,7 @@ export default function OrderPage() {
 
       {/* 개인정보 수집 동의 Dialog */}
       <Dialog open={showPersonalInfoDialog} onOpenChange={setShowPersonalInfoDialog}>
-        <DialogContent>
+        <DialogContent onClose={() => setShowPersonalInfoDialog(false)}>
           <DialogHeader>
             <DialogTitle>개인정보 수집 및 이용 동의</DialogTitle>
           </DialogHeader>
@@ -384,7 +417,7 @@ export default function OrderPage() {
 
       {/* 마케팅 정보 수신 동의 Dialog */}
       <Dialog open={showMarketingDialog} onOpenChange={setShowMarketingDialog}>
-        <DialogContent>
+        <DialogContent onClose={() => setShowMarketingDialog(false)}>
           <DialogHeader>
             <DialogTitle>마케팅 정보 수신 동의</DialogTitle>
           </DialogHeader>
@@ -420,7 +453,7 @@ export default function OrderPage() {
 
       {/* 마감일 지났지만 추가 주문 받는다는 팝업 */}
       <Dialog open={activePopup === 'extendedOrder'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" onClose={closePopup}>
           <DialogHeader>
             <DialogTitle className="text-center text-xl">📢 추가 주문 안내</DialogTitle>
           </DialogHeader>
@@ -460,7 +493,7 @@ export default function OrderPage() {
 
       {/* 주문 0일 전 팝업 */}
       <Dialog open={activePopup === 'zeroDayWarning'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" onClose={closePopup}>
           <DialogHeader>
             <DialogTitle className="text-center text-xl">⏰ 주문 마감 임박!</DialogTitle>
           </DialogHeader>
@@ -496,7 +529,7 @@ export default function OrderPage() {
 
       {/* 배송일 지나서 픽업만 가능 팝업 */}
       <Dialog open={activePopup === 'pickupOnly'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" onClose={closePopup}>
           <DialogHeader>
             <DialogTitle className="text-center text-xl">🏪 매장 픽업 주문</DialogTitle>
           </DialogHeader>
@@ -529,7 +562,7 @@ export default function OrderPage() {
 
       {/* 마감 전 환영 팝업 */}
       <Dialog open={activePopup === 'welcome'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" onClose={closePopup}>
           <div className="space-y-4 py-6">
             <p className="text-center text-2xl font-bold text-brand-dark">
               QR을 찍어주셔서 감사합니다!

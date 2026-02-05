@@ -35,15 +35,17 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 
 interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  onClose?: () => void;
 }
 
-export function DialogContent({ children, className, ...props }: DialogContentProps) {
+export function DialogContent({ children, className, onClose, ...props }: DialogContentProps) {
   return (
     <div 
       className={cn(
-        "bg-white rounded-lg shadow-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto",
+        "bg-white rounded-lg shadow-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto cursor-pointer",
         className
       )}
+      onClick={onClose}
       {...props}
     >
       {children}
