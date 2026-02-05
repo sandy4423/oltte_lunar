@@ -24,7 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import { APARTMENT_LIST, APARTMENTS, ORDER_STATUS_LABEL, getProductBySku, getApartmentFullName } from '@/lib/constants';
+import { APARTMENT_LIST, APARTMENTS, ORDER_STATUS_LABEL, getProductBySku, getApartmentFullName, PICKUP_APT_CODE } from '@/lib/constants';
 import { TRAFFIC_SOURCE_LABELS } from '@/types/source';
 import { useAdminOrders } from '@/hooks/useAdminOrders';
 import { useOrderFilters } from '@/hooks/useOrderFilters';
@@ -589,6 +589,7 @@ export default function AdminPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">전체 단지</SelectItem>
+                  <SelectItem value={PICKUP_APT_CODE}>🏪 픽업주문</SelectItem>
                   {APARTMENT_LIST.map((apt) => (
                     <SelectItem key={apt.code} value={apt.code}>
                       {getApartmentFullName(apt)}
@@ -752,7 +753,15 @@ export default function AdminPage() {
                   {/* 주문 정보 */}
                   <div className="space-y-2 text-sm">
                     <div className="font-semibold text-base">
-                      {order.apt_name.replace(/^[68]공구 /, '')} / {order.dong}동 {order.ho}호
+                      {order.apt_code === PICKUP_APT_CODE ? (
+                        <>
+                          🏪 픽업주문 / {order.pickup_date ? format(new Date(order.pickup_date), 'M/d (EEE)', { locale: ko }) : ''} {order.pickup_time || ''}
+                        </>
+                      ) : (
+                        <>
+                          {order.apt_name.replace(/^[68]공구 /, '')} / {order.dong}동 {order.ho}호
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{order.customer.name}</span>
@@ -866,10 +875,17 @@ export default function AdminPage() {
                             </span>
                           </TableCell>
                           <TableCell className="max-w-[150px] truncate" title={order.apt_name}>
-                            {order.apt_name.replace(/^[68]공구 /, '')}
+                            {order.apt_code === PICKUP_APT_CODE ? '🏪 픽업주문' : order.apt_name.replace(/^[68]공구 /, '')}
                           </TableCell>
                           <TableCell className="font-medium">
-                            {order.dong}동 {order.ho}호
+                            {order.apt_code === PICKUP_APT_CODE ? (
+                              <div className="text-sm">
+                                <div>{order.pickup_date ? format(new Date(order.pickup_date), 'M/d (EEE)', { locale: ko }) : '-'}</div>
+                                <div className="text-gray-500">{order.pickup_time || '-'}</div>
+                              </div>
+                            ) : (
+                              <>{order.dong}동 {order.ho}호</>
+                            )}
                           </TableCell>
                           <TableCell>{order.customer.name}</TableCell>
                           <TableCell className="text-sm text-gray-500">

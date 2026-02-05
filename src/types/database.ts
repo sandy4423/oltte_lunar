@@ -66,6 +66,8 @@ export interface OrderRow {
   paid_at: string | null;          // timestamptz, NULLABLE
   is_pickup: boolean;              // boolean, DEFAULT false
   pickup_discount: number;         // int, DEFAULT 0
+  pickup_date: string | null;      // date, NULLABLE - 픽업 날짜
+  pickup_time: string | null;      // text, NULLABLE - 픽업 시간
   source: string | null;           // text, NULLABLE - 유입 경로
   refund_amount: number | null;    // int, NULLABLE - 환불 금액
   refund_reason: string | null;    // text, NULLABLE - 환불 사유
@@ -145,6 +147,8 @@ export interface OrderInsert {
   paid_at?: string | null;         // optional
   is_pickup?: boolean;             // optional, default: false
   pickup_discount?: number;        // optional, default: 0
+  pickup_date?: string | null;     // optional - 픽업 날짜
+  pickup_time?: string | null;     // optional - 픽업 시간
   source?: string | null;          // optional - 유입 경로
   refund_amount?: number | null;   // optional
   refund_reason?: string | null;   // optional
@@ -224,6 +228,8 @@ export interface OrderUpdate {
   paid_at?: string | null;
   is_pickup?: boolean;
   pickup_discount?: number;
+  pickup_date?: string | null;
+  pickup_time?: string | null;
   source?: string | null;
   refund_amount?: number | null;
   refund_reason?: string | null;

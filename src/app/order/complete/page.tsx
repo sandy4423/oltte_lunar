@@ -137,26 +137,39 @@ export default function OrderCompletePage() {
                 <span className="font-medium">{order.customer.phone}</span>
               </div>
               {order.is_pickup ? (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">픽업 장소</span>
-                  <span className="font-medium text-right">
-                    {STORE_INFO.address}
-                  </span>
-                </div>
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">픽업 장소</span>
+                    <span className="font-medium text-right">
+                      {STORE_INFO.address}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">픽업 일시</span>
+                    <span className="font-medium">
+                      {order.pickup_date 
+                        ? format(new Date(order.pickup_date), 'M월 d일 (EEE)', { locale: ko })
+                        : format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko })}
+                      {order.pickup_time && ` ${order.pickup_time}`}
+                    </span>
+                  </div>
+                </>
               ) : (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">배송지</span>
-                  <span className="font-medium">
-                    {order.apt_name} {order.dong}동 {order.ho}호
-                  </span>
-                </div>
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">배송지</span>
+                    <span className="font-medium">
+                      {order.apt_name} {order.dong}동 {order.ho}호
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">배송 예정일</span>
+                    <span className="font-medium">
+                      {format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko })}
+                    </span>
+                  </div>
+                </>
               )}
-              <div className="flex justify-between">
-                <span className="text-gray-500">{order.is_pickup ? '픽업 예정일' : '배송 예정일'}</span>
-                <span className="font-medium">
-                  {format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko })}
-                </span>
-              </div>
               <hr />
               <div className="flex justify-between">
                 <span className="text-gray-500">총 수량</span>

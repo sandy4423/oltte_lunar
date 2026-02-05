@@ -7,22 +7,24 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { PRODUCTS, getApartmentFullName, PICKUP_DISCOUNT } from '@/lib/constants';
+import { PRODUCTS, getApartmentFullName, PICKUP_DISCOUNT, PICKUP_APT_CODE, PICKUP_CONFIG } from '@/lib/constants';
 import { getStoredSource } from '@/lib/sourceTracking';
 import type { CartItem } from '@/types/order';
 import type { ApartmentConfig } from '@/lib/constants';
 
 interface UseOrderSubmitParams {
-  apartment: ApartmentConfig | null;
+  apartment?: ApartmentConfig | null;
   phone: string;
   name: string;
-  dong: string;
-  ho: string;
+  dong?: string;
+  ho?: string;
   personalInfoConsent: boolean;
   marketingOptIn: boolean;
   cart: CartItem[];
   totalQty: number;
   totalAmount: number;
+  pickupDate?: string;
+  pickupTime?: string;
 }
 
 export function useOrderSubmit(params: UseOrderSubmitParams) {
@@ -31,9 +33,16 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (isPickup: boolean = false) => {
-    const { apartment, phone, name, dong, ho, personalInfoConsent, marketingOptIn, cart, totalQty, totalAmount } = params;
+    const { apartment, phone, name, dong, ho, personalInfoConsent, marketingOptIn, cart, totalQty, totalAmount, pickupDate, pickupTime } = params;
     
-    if (!apartment) return;
+    // 픽업 주문인 경우: apartment가 없어도 진행 가능
+    // 일반 주문인 경우: apartment 필수
+    const isPickupOrder = !apartment && pickupDate && pickupTime;
+    
+    if (!apartment && !isPickupOrder) {
+      setError('주문 정보가 올바르지 않습니다.');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -41,8 +50,8 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
     try {
       const normalizedPhone = phone.replace(/-/g, '');
       
-      // 픽업 선택 시 할인 적용
-      const pickupDiscount = isPickup ? PICKUP_DISCOUNT : 0;
+      // 픽업 주문이거나 픽업 선택 시 할인 적용
+      const pickupDiscount = (isPickup || isPickupOrder) ? PICKUP_DISCOUNT : 0;
       const finalAmount = totalAmount - pickupDiscount;
 
       // 유입 경로 가져오기
@@ -78,24 +87,47 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
       }
 
       // 2. 주문 생성
+      const orderData: any = {
+        customer_id: customerId,
+        status: 'CREATED',
+        total_qty: totalQty,
+        total_amount: finalAmount,
+        payment_method: 'vbank',
+        source: source,
+      };
+
+      // 픽업 전용 주문
+      if (isPickupOrder) {
+        orderData.apt_code = PICKUP_APT_CODE;
+        orderData.apt_name = PICKUP_CONFIG.name;
+        orderData.dong = '-';
+        orderData.ho = '-';
+        orderData.delivery_date = PICKUP_CONFIG.deliveryDate;
+        orderData.cutoff_at = PICKUP_CONFIG.cutoffAt;
+        orderData.is_pickup = true;
+        orderData.pickup_discount = pickupDiscount;
+        orderData.pickup_date = pickupDate;
+        orderData.pickup_time = pickupTime;
+      } 
+      // 일반 주문
+      else if (apartment) {
+        orderData.apt_code = apartment.code;
+        orderData.apt_name = getApartmentFullName(apartment);
+        orderData.dong = dong || '-';
+        orderData.ho = ho || '-';
+        orderData.delivery_date = apartment.deliveryDate;
+        orderData.cutoff_at = apartment.cutoffAt;
+        orderData.is_pickup = isPickup;
+        orderData.pickup_discount = pickupDiscount;
+        if (isPickup && pickupDate && pickupTime) {
+          orderData.pickup_date = pickupDate;
+          orderData.pickup_time = pickupTime;
+        }
+      }
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          customer_id: customerId,
-          apt_code: apartment.code,
-          apt_name: getApartmentFullName(apartment),
-          dong: dong,
-          ho: ho,
-          delivery_date: apartment.deliveryDate,
-          cutoff_at: apartment.cutoffAt,
-          status: 'CREATED',
-          total_qty: totalQty,
-          total_amount: finalAmount,
-          payment_method: 'vbank',
-          is_pickup: isPickup,
-          pickup_discount: pickupDiscount,
-          source: source,
-        })
+        .insert(orderData)
         .select('id')
         .single();
 
@@ -170,7 +202,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
             errorMessage: errorMessage,
             customerName: name,
             customerPhone: phone,
-            aptName: apartment ? getApartmentFullName(apartment) : undefined,
+            aptName: apartment ? getApartmentFullName(apartment) : (isPickupOrder ? PICKUP_CONFIG.name : undefined),
           }),
         });
       } catch (alertError) {

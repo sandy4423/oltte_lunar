@@ -183,8 +183,26 @@ export function createVirtualAccountSMS(params: {
   aptName: string;
   dong: string;
   ho: string;
+  isPickup?: boolean;
+  pickupDate?: string;
+  pickupTime?: string;
 }): string {
-  const { customerName, bankName, accountNumber, amount, dueDate, deliveryDate, aptName, dong, ho } = params;
+  const { customerName, bankName, accountNumber, amount, dueDate, deliveryDate, aptName, dong, ho, isPickup, pickupDate, pickupTime } = params;
+  
+  const deliveryInfo = isPickup 
+    ? `[픽업 안내]
+- 픽업일시: ${pickupDate || deliveryDate} ${pickupTime || ''}
+- 픽업장소: e편한세상송도 후문상가 안쪽. 컴포즈 옆 (랜드마크로 113)
+- 만두는 빚은 즉시 급속냉동하여
+  신선하게 준비합니다
+- 수령 즉시 냉동 보관해주세요`
+    : `[배송 안내]
+- 배송일: ${deliveryDate}
+- 배송지: ${aptName} ${dong}동 ${ho}호
+- 만두는 빚은 즉시 급속냉동하여
+  신선하게 준비합니다
+- 수령 즉시 냉동 보관해주세요`;
+  
   return `[올때만두 공식] ${customerName}님 주문 감사합니다!
 
 [입금 정보]
@@ -192,12 +210,7 @@ ${bankName} ${accountNumber}
 입금액: ${amount.toLocaleString()}원 (정확히)
 입금기한: ${dueDate}까지
 
-[배송 안내]
-- 배송일: ${deliveryDate}
-- 배송지: ${aptName} ${dong}동 ${ho}호
-- 만두는 빚은 즉시 급속냉동하여
-  신선하게 준비합니다
-- 수령 즉시 냉동 보관해주세요
+${deliveryInfo}
 
 입금 확인 후 다시 안내드릴게요!`;
 }
@@ -211,25 +224,41 @@ export function createPaymentConfirmSMS(params: {
   aptName: string;
   dong: string;
   ho: string;
+  isPickup?: boolean;
+  pickupDate?: string;
+  pickupTime?: string;
 }): string {
-  const { customerName, deliveryDate, aptName, dong, ho } = params;
-  return `[올때만두 공식] ${customerName}님 입금 확인되었습니다!
-
-[배송 정보]
+  const { customerName, deliveryDate, aptName, dong, ho, isPickup, pickupDate, pickupTime } = params;
+  
+  const deliveryInfo = isPickup 
+    ? `[픽업 정보]
+- 픽업일시: ${pickupDate || deliveryDate} ${pickupTime || ''}
+- 픽업장소: e편한세상송도 후문상가 안쪽. 컴포즈 옆 (랜드마크로 113)
+- 만두는 빚은 즉시 급속냉동하여
+  최고의 신선도를 유지합니다`
+    : `[배송 정보]
 - 배송일: ${deliveryDate}
 - 배송지: ${aptName} ${dong}동 ${ho}호
 - 만두는 빚은 즉시 급속냉동하여
-  최고의 신선도를 유지합니다
+  최고의 신선도를 유지합니다`;
+  
+  const nextAction = isPickup 
+    ? '픽업일에 매장으로 방문해주세요!'
+    : '배송 시작 시 다시 알려드릴게요!';
+  
+  return `[올때만두 공식] ${customerName}님 입금 확인되었습니다!
+
+${deliveryInfo}
 
 [매장 안내]
 다음엔 매장에서 포장 주문하실 수 있어요
 https://toss.place/_p/bGynOJ0Bc
 
-배송 시작 시 다시 알려드릴게요!`;
+${nextAction}`;
 }
 
 /**
- * 배송 출발 SMS 생성
+ * 배송 출발 SMS 생성 (픽업 주문은 이 SMS를 보내지 않음)
  */
 export function createShippingSMS(params: {
   customerName: string;
@@ -255,8 +284,20 @@ https://toss.place/_p/bGynOJ0Bc`;
  */
 export function createDeliveredSMS(params: {
   customerName: string;
+  isPickup?: boolean;
 }): string {
-  const { customerName } = params;
+  const { customerName, isPickup } = params;
+  
+  if (isPickup) {
+    return `[올때만두 공식] ${customerName}님, 픽업해 가주셔서 감사합니다!
+
+맛있는 설 보내세요!
+
+[매장 안내]
+다음엔 더 편하게!
+https://toss.place/_p/bGynOJ0Bc`;
+  }
+  
   return `[올때만두 공식] ${customerName}님, 배송 완료되었습니다!
 
 문 앞을 확인해주세요

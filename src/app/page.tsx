@@ -51,6 +51,28 @@ export default function HomePage() {
               </Link>
             );
           })}
+
+          {/* 픽업 주문 옵션 */}
+          <div className="pt-6 border-t-2 border-dashed border-gray-300">
+            <Link href="/pickup">
+              <Button
+                className="w-full h-20 text-xl font-bold transition-all bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white hover:scale-[1.02] shadow-lg hover:shadow-2xl border-0"
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🏪</span>
+                    <span>매장 픽업 주문</span>
+                  </div>
+                  <span className="text-base font-semibold bg-white/20 px-3 py-0.5 rounded-full">
+                    3,000원 할인!
+                  </span>
+                </div>
+              </Button>
+            </Link>
+            <p className="text-center text-sm text-gray-600 mt-3">
+              단지 공구 외 일반 고객도 픽업으로 주문 가능합니다
+            </p>
+          </div>
         </div>
       </div>
 

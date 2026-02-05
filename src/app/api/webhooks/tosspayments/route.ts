@@ -157,6 +157,7 @@ export async function POST(request: NextRequest) {
       try {
         if (order.customer?.phone) {
           const deliveryDateFormatted = formatKST(order.delivery_date, 'M월 d일 (EEE)');
+          const pickupDateFormatted = order.pickup_date ? formatKST(order.pickup_date, 'M월 d일 (EEE)') : undefined;
           
           await sendSMS(order.customer.phone, createPaymentConfirmSMS({
             customerName: order.customer.name || '고객',
@@ -164,6 +165,9 @@ export async function POST(request: NextRequest) {
             aptName: order.apt_name,
             dong: order.dong,
             ho: order.ho,
+            isPickup: order.is_pickup,
+            pickupDate: pickupDateFormatted,
+            pickupTime: order.pickup_time || undefined,
           }));
           
           console.log(`[Webhook] SMS sent to ${order.customer.phone}`);
@@ -176,6 +180,7 @@ export async function POST(request: NextRequest) {
       // Slack 알림 (관리자)
       try {
         const deliveryDateFormatted = formatKST(order.delivery_date, 'M월 d일 (EEE)');
+        const pickupDateFormatted = order.pickup_date ? formatKST(order.pickup_date, 'M월 d일 (EEE)') : undefined;
         
         await sendSlackMessage(createPaymentConfirmation({
           orderId: actualOrderId,
@@ -186,6 +191,9 @@ export async function POST(request: NextRequest) {
           ho: order.ho,
           amount: order.total_amount,
           deliveryDate: deliveryDateFormatted,
+          isPickup: order.is_pickup,
+          pickupDate: pickupDateFormatted,
+          pickupTime: order.pickup_time || undefined,
         }));
         
         console.log(`[Webhook] Admin payment notification sent to Slack`);

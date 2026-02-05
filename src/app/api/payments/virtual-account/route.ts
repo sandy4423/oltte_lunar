@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     // 주문 정보 조회
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('id, cutoff_at, delivery_date, apt_name, dong, ho')
+      .select('id, cutoff_at, delivery_date, apt_name, dong, ho, is_pickup, pickup_date, pickup_time')
       .eq('id', orderId)
       .single();
 
@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       try {
         const dueDateFormatted = formatKST(payment.virtualAccount.dueDate, 'M월 d일 (EEE) HH:mm');
         const deliveryDateFormatted = formatKST(order.delivery_date, 'M월 d일 (EEE)');
+        const pickupDateFormatted = order.pickup_date ? formatKST(order.pickup_date, 'M월 d일 (EEE)') : undefined;
         
         await sendSMS(customerPhone, createVirtualAccountSMS({
           customerName,
@@ -112,6 +113,9 @@ export async function POST(request: NextRequest) {
           aptName: order.apt_name,
           dong: order.dong,
           ho: order.ho,
+          isPickup: order.is_pickup,
+          pickupDate: pickupDateFormatted,
+          pickupTime: order.pickup_time || undefined,
         }));
         
         console.log(`[API] SMS sent to ${customerPhone}`);
@@ -124,6 +128,7 @@ export async function POST(request: NextRequest) {
     // Slack 알림 (관리자)
     try {
       const deliveryDateFormatted = formatKST(order.delivery_date, 'M월 d일 (EEE)');
+      const pickupDateFormatted = order.pickup_date ? formatKST(order.pickup_date, 'M월 d일 (EEE)') : undefined;
       
       await sendSlackMessage(createOrderNotification({
         orderId: orderId.toString(),
@@ -134,6 +139,9 @@ export async function POST(request: NextRequest) {
         ho: order.ho,
         amount,
         deliveryDate: deliveryDateFormatted,
+        isPickup: order.is_pickup,
+        pickupDate: pickupDateFormatted,
+        pickupTime: order.pickup_time || undefined,
       }));
       
       console.log(`[API] Admin notification sent to Slack`);

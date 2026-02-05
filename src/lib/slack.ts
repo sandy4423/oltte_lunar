@@ -86,17 +86,24 @@ export function createOrderNotification(params: {
   ho: string;
   amount: number;
   deliveryDate: string;
+  isPickup?: boolean;
+  pickupDate?: string;
+  pickupTime?: string;
 }): string {
-  const { orderId, customerName, customerPhone, aptName, dong, ho, amount, deliveryDate } = params;
+  const { orderId, customerName, customerPhone, aptName, dong, ho, amount, deliveryDate, isPickup, pickupDate, pickupTime } = params;
+  
+  const deliveryInfo = isPickup 
+    ? `픽업: ${pickupDate || ''} ${pickupTime || ''}`
+    : `배송지: ${aptName} ${dong}동 ${ho}호`;
   
   return `🔔 신규 주문
 
 주문번호: ${orderId}
 고객명: ${customerName}
 연락처: ${customerPhone}
-배송지: ${aptName} ${dong}동 ${ho}호
+${deliveryInfo}
 금액: ${amount.toLocaleString()}원
-배송일: ${deliveryDate}`;
+${isPickup ? '픽업일' : '배송일'}: ${deliveryDate}`;
 }
 
 /**
@@ -111,17 +118,24 @@ export function createPaymentConfirmation(params: {
   ho: string;
   amount: number;
   deliveryDate: string;
+  isPickup?: boolean;
+  pickupDate?: string;
+  pickupTime?: string;
 }): string {
-  const { orderId, customerName, customerPhone, aptName, dong, ho, amount, deliveryDate } = params;
+  const { orderId, customerName, customerPhone, aptName, dong, ho, amount, deliveryDate, isPickup, pickupDate, pickupTime } = params;
+  
+  const deliveryInfo = isPickup 
+    ? `픽업: ${pickupDate || ''} ${pickupTime || ''}`
+    : `배송지: ${aptName} ${dong}동 ${ho}호`;
   
   return `💰 결제 완료
 
 주문번호: ${orderId}
 고객명: ${customerName}
 연락처: ${customerPhone}
-배송지: ${aptName} ${dong}동 ${ho}호
+${deliveryInfo}
 금액: ${amount.toLocaleString()}원
-배송일: ${deliveryDate}`;
+${isPickup ? '픽업일' : '배송일'}: ${deliveryDate}`;
 }
 
 /**
@@ -165,15 +179,22 @@ export function createCancelRequestNotification(params: {
   totalAmount: number;
   refundAmount: number;
   refundReason: string;
+  isPickup?: boolean;
+  pickupDate?: string;
+  pickupTime?: string;
 }): string {
-  const { orderId, customerName, customerPhone, aptName, dong, ho, totalAmount, refundAmount, refundReason } = params;
+  const { orderId, customerName, customerPhone, aptName, dong, ho, totalAmount, refundAmount, refundReason, isPickup, pickupDate, pickupTime } = params;
+  
+  const deliveryInfo = isPickup 
+    ? `픽업: ${pickupDate || ''} ${pickupTime || ''}`
+    : `배송지: ${aptName} ${dong}동 ${ho}호`;
   
   return `🟡 취소 요청 (계좌정보 대기)
 
 주문번호: ${orderId}
 고객명: ${customerName}
 연락처: ${customerPhone}
-배송지: ${aptName} ${dong}동 ${ho}호
+${deliveryInfo}
 주문금액: ${totalAmount.toLocaleString()}원
 환불금액: ${refundAmount.toLocaleString()}원
 취소사유: ${refundReason}
@@ -195,20 +216,27 @@ export function createRefundCompleteNotification(params: {
   bankName: string;
   accountNumber: string;
   accountHolder: string;
+  isPickup?: boolean;
+  pickupDate?: string;
+  pickupTime?: string;
 }): string {
-  const { orderId, customerName, customerPhone, aptName, dong, ho, refundAmount, bankName, accountNumber, accountHolder } = params;
+  const { orderId, customerName, customerPhone, aptName, dong, ho, refundAmount, bankName, accountNumber, accountHolder, isPickup, pickupDate, pickupTime } = params;
   
   // 계좌번호 마스킹 (뒤 4자리만 표시)
   const maskedAccount = accountNumber.length > 4 
     ? '***' + accountNumber.slice(-4) 
     : accountNumber;
   
+  const deliveryInfo = isPickup 
+    ? `픽업: ${pickupDate || ''} ${pickupTime || ''}`
+    : `배송지: ${aptName} ${dong}동 ${ho}호`;
+  
   return `✅ 환불 완료
 
 주문번호: ${orderId}
 고객명: ${customerName}
 연락처: ${customerPhone}
-배송지: ${aptName} ${dong}동 ${ho}호
+${deliveryInfo}
 환불금액: ${refundAmount.toLocaleString()}원
 환불계좌: ${bankName} ${maskedAccount} (${accountHolder})
 
