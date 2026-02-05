@@ -24,7 +24,7 @@ export const APARTMENTS: Record<string, ApartmentConfig> = {
     households: 1530,
     dongCount: 10,
     deliveryDate: '2026-02-06',
-    cutoffAt: '2026-02-02T23:00:00+09:00',
+    cutoffAt: '2026-02-05T23:00:00+09:00', // D-1: 배송일 하루 전
   },
   '83250122': {
     code: '83250122',
@@ -32,7 +32,7 @@ export const APARTMENTS: Record<string, ApartmentConfig> = {
     households: 1820,
     dongCount: 10,
     deliveryDate: '2026-02-07',
-    cutoffAt: '2026-02-03T23:00:00+09:00',
+    cutoffAt: '2026-02-06T23:00:00+09:00', // D-1: 배송일 하루 전
   },
   '83250123': {
     code: '83250123',
@@ -41,7 +41,7 @@ export const APARTMENTS: Record<string, ApartmentConfig> = {
     households: 2100,
     dongCount: 6,
     deliveryDate: '2026-02-08',
-    cutoffAt: '2026-02-04T23:00:00+09:00',
+    cutoffAt: '2026-02-07T23:00:00+09:00', // D-1: 배송일 하루 전
   },
   '83250124': {
     code: '83250124',
@@ -50,7 +50,7 @@ export const APARTMENTS: Record<string, ApartmentConfig> = {
     households: 2100,
     dongCount: 5,
     deliveryDate: '2026-02-09',
-    cutoffAt: '2026-02-05T23:00:00+09:00',
+    cutoffAt: '2026-02-08T23:00:00+09:00', // D-1: 배송일 하루 전
   },
   '83250125': {
     code: '83250125',
@@ -59,7 +59,7 @@ export const APARTMENTS: Record<string, ApartmentConfig> = {
     households: 2230,
     dongCount: 7,
     deliveryDate: '2026-02-10',
-    cutoffAt: '2026-02-06T23:00:00+09:00',
+    cutoffAt: '2026-02-09T23:00:00+09:00', // D-1: 배송일 하루 전
   },
   '83250126': {
     code: '83250126',
@@ -68,7 +68,7 @@ export const APARTMENTS: Record<string, ApartmentConfig> = {
     households: 2230,
     dongCount: 5,
     deliveryDate: '2026-02-11',
-    cutoffAt: '2026-02-07T23:00:00+09:00',
+    cutoffAt: '2026-02-10T23:00:00+09:00', // D-1: 배송일 하루 전
   },
   '83250127': {
     code: '83250127',
@@ -77,7 +77,7 @@ export const APARTMENTS: Record<string, ApartmentConfig> = {
     households: 3100,
     dongCount: 12,
     deliveryDate: '2026-02-12',
-    cutoffAt: '2026-02-08T23:00:00+09:00',
+    cutoffAt: '2026-02-11T23:00:00+09:00', // D-1: 배송일 하루 전
   },
   '83250128': {
     code: '83250128',
@@ -86,7 +86,7 @@ export const APARTMENTS: Record<string, ApartmentConfig> = {
     households: 3100,
     dongCount: 13,
     deliveryDate: '2026-02-13',
-    cutoffAt: '2026-02-09T23:00:00+09:00',
+    cutoffAt: '2026-02-12T23:00:00+09:00', // D-1: 배송일 하루 전
   },
   '83250129': {
     code: '83250129',
@@ -94,7 +94,7 @@ export const APARTMENTS: Record<string, ApartmentConfig> = {
     households: 2708,
     dongCount: 15,
     deliveryDate: '2026-02-13',
-    cutoffAt: '2026-02-09T23:00:00+09:00',
+    cutoffAt: '2026-02-12T23:00:00+09:00', // D-1: 배송일 하루 전
   },
 };
 
