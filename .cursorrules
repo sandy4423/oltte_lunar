@@ -1,7 +1,7 @@
 # .cursorrules (AI 행동 강령)
 
 ## 1. 프로젝트 원칙 (Project Principles)
-- **Tech Stack**: Next.js 14+ (App Router), TypeScript, Tailwind CSS, Supabase, PortOne V2.
+- **Tech Stack**: Next.js 14+ (App Router), TypeScript, Tailwind CSS, Supabase, Toss Payments V1.
 - **언어**: 한국어(Korean)로 대화하고 주석을 단다.
 - **목표**: "작동하는 코드"보다 "유지보수 가능한 코드"를 우선한다.
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -9,11 +9,12 @@ import { AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-import { APARTMENTS, getApartmentFullName } from '@/lib/constants';
+import { APARTMENTS, getApartmentFullName, STORE_INFO } from '@/lib/constants';
 import { Footer } from '@/components/Footer';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
 import { useCart } from '@/hooks/useCart';
 import { useOrderSubmit } from '@/hooks/useOrderSubmit';
+import { useOrderPopups } from '@/hooks/useOrderPopups';
 import { PhoneVerification } from '@/components/features/PhoneVerification';
 import { DeliveryForm } from '@/components/features/DeliveryForm';
 import { ProductSelector } from '@/components/features/ProductSelector';
@@ -58,11 +59,12 @@ export default function OrderPage() {
   const [showMarketingDialog, setShowMarketingDialog] = useState(false);
   const [highlightConsent, setHighlightConsent] = useState(false);
   const [showDeliveryMethodDialog, setShowDeliveryMethodDialog] = useState(false);
-  const [showExtendedOrderDialog, setShowExtendedOrderDialog] = useState(false);
-  const [showZeroDayDialog, setShowZeroDayDialog] = useState(false);
 
   // 장바구니 훅
   const { cart, updateQuantity, totalQty, totalAmount, isMinOrderMet } = useCart();
+
+  // 팝업 관리 훅
+  const { activePopup, closePopup } = useOrderPopups(apartment);
 
   // 고객 정보 자동 채우기
   useEffect(() => {
@@ -86,36 +88,6 @@ export default function OrderPage() {
     totalQty,
     totalAmount,
   });
-
-  // 마감 체크
-  const isExpired = useMemo(() => {
-    if (!apartment) return false;
-    return new Date() > new Date(apartment.cutoffAt);
-  }, [apartment]);
-
-  // 마감일까지 남은 일수 계산
-  const daysUntilCutoff = useMemo(() => {
-    if (!apartment) return null;
-    const now = new Date();
-    const cutoff = new Date(apartment.cutoffAt);
-    const diffTime = cutoff.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  }, [apartment]);
-
-  // 페이지 로드 시 팝업 표시
-  useEffect(() => {
-    if (!apartment) return;
-    
-    // 마감일이 지났으면 추가 주문 안내 팝업
-    if (isExpired) {
-      setShowExtendedOrderDialog(true);
-    }
-    // 주문 0일 전 팝업 (마감 당일)
-    else if (daysUntilCutoff === 0) {
-      setShowZeroDayDialog(true);
-    }
-  }, [apartment, isExpired, daysUntilCutoff]);
 
   // 폼 유효성 (동의 체크 제외 - 별도 검증)
   const isFormValid = 
@@ -342,7 +314,7 @@ export default function OrderPage() {
       )}
 
       {/* 마감일 지났지만 추가 주문 받는다는 팝업 */}
-      <Dialog open={showExtendedOrderDialog} onOpenChange={setShowExtendedOrderDialog}>
+      <Dialog open={activePopup === 'extendedOrder'} onOpenChange={closePopup}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-xl">📢 추가 주문 안내</DialogTitle>
@@ -367,7 +339,7 @@ export default function OrderPage() {
       </Dialog>
 
       {/* 주문 0일 전 팝업 */}
-      <Dialog open={showZeroDayDialog} onOpenChange={setShowZeroDayDialog}>
+      <Dialog open={activePopup === 'zeroDayWarning'} onOpenChange={closePopup}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-xl">⏰ 주문 마감 임박!</DialogTitle>
@@ -385,6 +357,70 @@ export default function OrderPage() {
             </p>
             <p className="text-brand font-medium">
               지금 바로 주문하세요! 🥟
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 배송일 지나서 픽업만 가능 팝업 */}
+      <Dialog open={activePopup === 'pickupOnly'} onOpenChange={closePopup}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">🏪 매장 픽업 주문</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-center py-4">
+            <div className="text-lg font-semibold text-gray-900">
+              배송일이 지나서<br />
+              <span className="text-brand-dark">매장 픽업만 가능</span>합니다
+            </div>
+            <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 space-y-2">
+              <div className="text-2xl font-bold text-orange-600">
+                픽업 시 3,000원 할인!
+              </div>
+              <div className="text-sm text-gray-600">
+                픽업 주소: {STORE_INFO.address}
+              </div>
+            </div>
+            <p className="text-gray-600 text-sm">
+              주문 후 매장에서 직접 픽업해 주세요.<br />
+              픽업 일시는 배송일({format(new Date(apartment.deliveryDate), 'M월 d일 (EEE)', { locale: ko })})과 동일합니다.
+            </p>
+            <p className="text-brand font-medium">
+              지금 바로 주문하세요! 🥟
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 마감 전 환영 팝업 */}
+      <Dialog open={activePopup === 'welcome'} onOpenChange={closePopup}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl">🥟 올때만두에 오신 것을 환영합니다!</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-center text-lg font-semibold text-brand-dark">
+              QR을 찍어주셔서 감사합니다!
+            </p>
+            <p className="text-center text-gray-700">
+              저는 e편한세상 후문에서<br />
+              열심히 만두 빚고있는 <span className="font-bold text-brand">올때만두</span>입니다.
+            </p>
+            <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded">
+              <p className="text-center text-gray-800">
+                이번 설을 맞아,<br />
+                정-말 정성스럽게 <span className="font-semibold">만두와 떡과 육수</span>를<br />
+                준비했습니다.
+              </p>
+            </div>
+            <p className="text-center text-gray-700">
+              아래 주문페이지에서 주문 부탁드립니다 :)
+            </p>
+            <p className="text-center text-lg font-semibold text-brand">
+              맛있게 배달해드릴게요!
+            </p>
+            <p className="text-center text-gray-600 text-sm">
+              감사합니다.
             </p>
           </div>
         </DialogContent>

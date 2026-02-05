@@ -1,0 +1,146 @@
+---
+description: 올때만두 프로젝트 핵심 정보 및 개발 가이드
+alwaysApply: true
+---
+
+# 올때만두 프로젝트 정보
+
+## 프로젝트 개요
+
+- 프로젝트명: 올때만두 설 만두 주문 시스템
+- 도메인: https://www.olttefood.com
+- 배포 환경: Vercel (자동 배포)
+- 실행: Supabase + Vercel에서 프로덕션 실행 중
+- 로컬 개발: `npm run dev` (테스트용만 사용)
+
+**중요**: 사이트는 이미 Supabase와 Vercel에서 실행 중입니다. 로컬 빌드나 서버 실행 확인이 필요하지 않습니다. 코드 변경 후 git push하면 Vercel이 자동 배포합니다.
+
+## 기술 스택
+
+### 프론트엔드
+- Next.js 14.2.35 (App Router)
+- React 18
+- TypeScript
+- Tailwind CSS
+- Radix UI (Dialog, Select, Toast 등)
+- date-fns (날짜 포맷팅)
+- Lucide React (아이콘)
+
+### 백엔드/인프라
+- Supabase (PostgreSQL, Auth, RLS)
+- Vercel (호스팅, 자동 배포)
+
+### 외부 API
+- Toss Payments V1 (가상계좌 발급 및 웹훅)
+- Solapi (SMS 인증 및 알림)
+- Slack Incoming Webhooks (관리자 알림)
+
+## 환경변수
+
+`.env.local`에 다음 환경변수 설정:
+
+```
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
+
+# Toss Payments
+NEXT_PUBLIC_TOSS_CLIENT_KEY
+TOSS_SECRET_KEY
+
+# Solapi (SMS)
+SOLAPI_API_KEY
+SOLAPI_API_SECRET
+SOLAPI_SENDER_NUMBER
+
+# Slack
+SLACK_WEBHOOK_URL
+```
+
+## 주요 기능
+
+1. 단지별 주문 시스템 (9개 아파트 단지)
+2. 휴대폰 인증 (4자리 코드, 5분 유효)
+3. 가상계좌 결제 (토스페이먼츠)
+4. 픽업 옵션 (3,000원 할인)
+5. 유입 경로 트래킹 (carrot, banner, threads, aptner, etc)
+6. 관리자 페이지 (비밀번호: 4423)
+7. Slack 알림 (신규 주문, 결제 완료, 시스템 오류)
+
+## 주요 상수 (src/lib/constants.ts)
+
+- `MIN_ORDER_QUANTITY = 3` - 최소 주문 수량
+- `FREE_SHIPPING_ELIGIBLE_SKUS` - 무료배송 대상 (만두, 떡만, 육수 제외)
+- `PICKUP_DISCOUNT = 3000` - 픽업 할인 금액
+- `STORE_INFO.address = "e편한세상송도 후문상가 안쪽. 컴포즈 옆 (랜드마크로 113)"`
+
+## 단지별 일정
+
+9개 단지, 각각 다른 배송일과 마감일:
+- 마감 시간: 배송일 하루 전(D-1) 23:00
+- 배송일: 2/6 ~ 2/13
+
+전체 단지 목록: 베르디움, 호반써밋, SK뷰(2개 구역), 랜드마크 더샵(2개 구역), 마리나베이(2개 구역), e편한세상
+
+## 알림 시스템
+
+### 고객 SMS (Solapi)
+- 인증번호 (4자리)
+- 가상계좌 발급 안내
+- 결제 확인
+- 배송 출발/완료
+
+### 관리자 Slack
+- 신규 주문 알림 (가상계좌 발급 시)
+- 결제 완료 알림 (입금 확인 시)
+- 시스템 오류 알림 (주문 제출, 가상계좌 발급, 웹훅 처리 오류)
+
+## 개발 규칙
+
+### Excel/파일 작업
+DRM 정책 준수:
+- 중간 저장 금지
+- 모든 연산은 메모리에서 처리
+- 최종 산출물만 한 번 저장
+- 저장 후 파일 재열기 금지
+
+### 응답 언어
+- 모든 응답은 한국어로 작성
+
+## 주요 파일 구조
+
+```
+src/
+├── app/
+│   ├── page.tsx (홈/단지 선택)
+│   ├── order/page.tsx (주문 페이지)
+│   ├── admin/page.tsx (관리자 페이지)
+│   └── api/
+│       ├── payments/ (토스페이먼츠 연동)
+│       ├── webhooks/ (결제 웹훅)
+│       ├── verification/ (휴대폰 인증)
+│       └── analytics/ (접속 통계)
+├── components/
+│   └── features/ (주요 기능 컴포넌트)
+├── hooks/ (커스텀 훅)
+├── lib/ (유틸리티, 상수, API 연동)
+└── types/ (TypeScript 타입)
+```
+
+## 데이터베이스 (Supabase)
+
+주요 테이블:
+- `customers` - 고객 정보
+- `orders` - 주문 정보
+- `order_items` - 주문 상품
+- `page_views` - 페이지 방문 기록
+- `phone_verifications` - 휴대폰 인증
+
+## Git 워크플로우
+
+1. 코드 수정
+2. `git add .`
+3. `git commit -m "메시지"`
+4. `git push`
+5. Vercel 자동 배포 (수 분 소요)
