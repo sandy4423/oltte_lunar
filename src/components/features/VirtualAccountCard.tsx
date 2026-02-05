@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Copy, Check, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { formatAccountNumber } from '@/lib/utils';
 
 interface VirtualAccountCardProps {
   hasVirtualAccount: boolean;
@@ -27,8 +28,10 @@ export function VirtualAccountCard({
   const handleCopyAccount = async () => {
     if (!vbankNum) return;
 
+    const formatted = formatAccountNumber(vbankNum);
+    
     try {
-      await navigator.clipboard.writeText(vbankNum);
+      await navigator.clipboard.writeText(formatted);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -66,8 +69,8 @@ export function VirtualAccountCard({
           
           <div className="text-center">
             <p className="text-sm text-gray-500 mb-1">계좌번호</p>
-            <p className="text-3xl font-bold text-brand-dark tracking-wider">
-              {vbankNum}
+            <p className="text-xl sm:text-2xl font-bold text-brand-dark">
+              {formatAccountNumber(vbankNum || '')}
             </p>
           </div>
 
