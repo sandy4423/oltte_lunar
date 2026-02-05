@@ -320,6 +320,9 @@ export default function OrderPage() {
             <DialogTitle className="text-center text-xl">📢 추가 주문 안내</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 text-center py-4">
+            <p className="text-center text-xl font-bold text-brand-dark">
+              QR을 찍어주셔서 감사합니다!
+            </p>
             <div className="text-lg font-semibold text-brand">
               주문 마감일이 지났지만,<br />
               많은 분들의 요청에 따라
@@ -345,6 +348,9 @@ export default function OrderPage() {
             <DialogTitle className="text-center text-xl">⏰ 주문 마감 임박!</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 text-center py-4">
+            <p className="text-center text-xl font-bold text-brand-dark">
+              QR을 찍어주셔서 감사합니다!
+            </p>
             <div className="text-2xl font-bold text-red-600">
               {getApartmentFullName(apartment)} 오늘 주문 마감입니다!
             </div>
@@ -369,6 +375,9 @@ export default function OrderPage() {
             <DialogTitle className="text-center text-xl">🏪 매장 픽업 주문</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 text-center py-4">
+            <p className="text-center text-xl font-bold text-brand-dark">
+              QR을 찍어주셔서 감사합니다!
+            </p>
             <div className="text-lg font-semibold text-gray-900">
               배송일이 지나서<br />
               <span className="text-brand-dark">매장 픽업만 가능</span>합니다
