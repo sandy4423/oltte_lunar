@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { 
   RefreshCw, Truck, CheckCircle, Printer, Download,
-  Filter, Search, BarChart3, Lock, TrendingUp, ChevronDown, ChevronUp
+  Filter, Search, BarChart3, Lock, TrendingUp, ChevronDown, ChevronUp, Plus
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,7 @@ import { useOrderFilters } from '@/hooks/useOrderFilters';
 import { useOrderSelection } from '@/hooks/useOrderSelection';
 import { useOrderStatusChange } from '@/hooks/useOrderStatusChange';
 import { CancelRequestDialog } from '@/components/features/admin/CancelRequestDialog';
+import { ManualOrderDialog } from '@/components/features/admin/ManualOrderDialog';
 
 // ============================================
 // 비밀번호 인증 상수
@@ -85,6 +86,9 @@ export default function AdminPage() {
   // 취소 요청 다이얼로그
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedOrderForCancel, setSelectedOrderForCancel] = useState<any | null>(null);
+
+  // 수기 주문 입력 다이얼로그
+  const [manualOrderDialogOpen, setManualOrderDialogOpen] = useState(false);
 
   // 통계 조회
   const fetchPageStats = async () => {
@@ -284,10 +288,16 @@ export default function AdminPage() {
               </p>
             )}
           </div>
-          <Button onClick={fetchOrders} variant="outline" disabled={loading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            새로고침
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setManualOrderDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
+              <Plus className="mr-2 h-4 w-4" />
+              수기 주문 입력
+            </Button>
+            <Button onClick={fetchOrders} variant="outline" disabled={loading}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              새로고침
+            </Button>
+          </div>
         </div>
 
         {/* 페이지 방문 통계 섹션 */}
@@ -733,6 +743,16 @@ export default function AdminPage() {
         onSuccess={() => {
           fetchOrders();
           clearSelection();
+        }}
+      />
+
+      {/* 수기 주문 입력 다이얼로그 */}
+      <ManualOrderDialog
+        open={manualOrderDialogOpen}
+        onOpenChange={setManualOrderDialogOpen}
+        onSuccess={() => {
+          fetchOrders();
+          setManualOrderDialogOpen(false);
         }}
       />
     </main>
