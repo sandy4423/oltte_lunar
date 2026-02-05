@@ -307,6 +307,7 @@ export default function AdminPage() {
             </button>
             
             {showPageStats && (
+            <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               {/* 총 방문 수 */}
               <Card>
@@ -385,6 +386,7 @@ export default function AdminPage() {
                 </Card>
               )}
             </div>
+            </>
             )}
           </div>
         )}
