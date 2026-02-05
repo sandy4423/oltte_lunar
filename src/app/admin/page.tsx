@@ -67,6 +67,8 @@ export default function AdminPage() {
     setFilterDeliveryDate,
     searchQuery,
     setSearchQuery,
+    showHidden,
+    setShowHidden,
     filteredOrders,
     uniqueDeliveryDates,
   } = useOrderFilters(orders);
@@ -357,6 +359,14 @@ export default function AdminPage() {
             )}
           </div>
           <div className="flex gap-2">
+            <Button 
+              onClick={() => setShowHidden(!showHidden)} 
+              variant={showHidden ? "default" : "outline"}
+              className={showHidden ? "bg-gray-700 hover:bg-gray-800" : ""}
+            >
+              {showHidden ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
+              {showHidden ? '일반 주문 보기' : '숨긴 주문 보기'}
+            </Button>
             <Button onClick={() => setManualOrderDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
               <Plus className="mr-2 h-4 w-4" />
               수기 주문 입력
@@ -609,7 +619,6 @@ export default function AdminPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">전체 상태</SelectItem>
-                  <SelectItem value="hidden">숨긴 주문</SelectItem>
                   {Object.entries(ORDER_STATUS_LABEL).map(([key, { label }]) => (
                     <SelectItem key={key} value={key}>
                       {label}
@@ -670,7 +679,7 @@ export default function AdminPage() {
               >
                 취소 요청 {selectedOrders.size === 1 ? '(1)' : ''}
               </Button>
-              {filterStatus !== 'hidden' ? (
+              {!showHidden ? (
                 <Button
                   onClick={() => handleHideOrders(true)}
                   disabled={selectedOrders.size === 0}

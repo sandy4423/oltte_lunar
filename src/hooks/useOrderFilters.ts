@@ -12,19 +12,18 @@ export function useOrderFilters(orders: OrderFull[]) {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterDeliveryDate, setFilterDeliveryDate] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showHidden, setShowHidden] = useState<boolean>(false);
 
   // 필터링된 주문
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      // 숨긴 주문 필터
-      if (filterStatus === 'hidden') {
-        if (!order.is_hidden) return false;
-      } else {
-        // 일반 필터: 숨기지 않은 주문만
-        if (order.is_hidden) return false;
-        if (filterStatus !== 'all' && order.status !== filterStatus) return false;
-      }
+      // 숨긴 주문 토글: showHidden이 false면 숨긴 주문 제외
+      if (!showHidden && order.is_hidden) return false;
+      // showHidden이 true면 숨긴 주문만 표시
+      if (showHidden && !order.is_hidden) return false;
       
+      // 일반 필터
+      if (filterStatus !== 'all' && order.status !== filterStatus) return false;
       if (filterApt !== 'all' && order.apt_code !== filterApt) return false;
       if (filterDeliveryDate !== 'all' && order.delivery_date !== filterDeliveryDate) return false;
       if (searchQuery) {
@@ -37,7 +36,7 @@ export function useOrderFilters(orders: OrderFull[]) {
       }
       return true;
     });
-  }, [orders, filterApt, filterStatus, filterDeliveryDate, searchQuery]);
+  }, [orders, filterApt, filterStatus, filterDeliveryDate, searchQuery, showHidden]);
 
   // 고유 배송일 목록
   const uniqueDeliveryDates = useMemo(() => {
@@ -54,6 +53,8 @@ export function useOrderFilters(orders: OrderFull[]) {
     setFilterDeliveryDate,
     searchQuery,
     setSearchQuery,
+    showHidden,
+    setShowHidden,
     filteredOrders,
     uniqueDeliveryDates,
   };
