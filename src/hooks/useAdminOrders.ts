@@ -10,6 +10,7 @@ import type { OrderFull } from '@/types/database';
 export function useAdminOrders() {
   const [orders, setOrders] = useState<OrderFull[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastFetchTime, setLastFetchTime] = useState<string | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -21,7 +22,14 @@ export function useAdminOrders() {
       }
       
       const data = await response.json();
-      setOrders((data as OrderFull[]) || []);
+      
+      if (data.success) {
+        setOrders(data.data || []);
+        setLastFetchTime(data.timestamp);
+      } else {
+        console.error('API error:', data.error);
+        setOrders([]);
+      }
     } catch (err) {
       console.error('Fetch orders error:', err);
     } finally {
@@ -37,5 +45,6 @@ export function useAdminOrders() {
     orders,
     loading,
     fetchOrders,
+    lastFetchTime,
   };
 }

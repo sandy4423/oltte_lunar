@@ -45,7 +45,7 @@ export default function AdminPage() {
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState(false);
   // 주문 조회 훅
-  const { orders, loading, fetchOrders } = useAdminOrders();
+  const { orders, loading, fetchOrders, lastFetchTime } = useAdminOrders();
 
   // 페이지 통계 상태
   const [pageStats, setPageStats] = useState<any>(null);
@@ -271,6 +271,11 @@ export default function AdminPage() {
           <div>
             <h1 className="text-2xl font-bold">🥟 올때만두 관리자</h1>
             <p className="text-gray-500">주문 관리 및 배송 처리</p>
+            {lastFetchTime && (
+              <p className="text-xs text-gray-400 mt-1">
+                마지막 업데이트: {format(new Date(lastFetchTime), 'M월 d일 HH:mm:ss', { locale: ko })}
+              </p>
+            )}
           </div>
           <Button onClick={fetchOrders} variant="outline" disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />

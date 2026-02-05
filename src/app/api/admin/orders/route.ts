@@ -20,16 +20,33 @@ export async function GET() {
     if (error) {
       console.error('[Admin API] Fetch orders error:', error);
       return NextResponse.json(
-        { error: '주문 목록 조회에 실패했습니다.' },
+        {
+          success: false,
+          timestamp: new Date().toISOString(),
+          error: '주문 목록 조회에 실패했습니다.',
+          count: 0,
+          data: [],
+        },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(data || []);
+    return NextResponse.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      count: data?.length || 0,
+      data: data || [],
+    });
   } catch (error: any) {
     console.error('[Admin API] Unexpected error:', error);
     return NextResponse.json(
-      { error: error.message || '서버 오류가 발생했습니다.' },
+      {
+        success: false,
+        timestamp: new Date().toISOString(),
+        error: error.message || '서버 오류가 발생했습니다.',
+        count: 0,
+        data: [],
+      },
       { status: 500 }
     );
   }
