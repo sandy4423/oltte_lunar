@@ -52,6 +52,17 @@ export function usePhoneVerification() {
 
       setVerificationSent(true);
       console.log('[SMS] 인증번호 발송 성공');
+
+      // 테스트 전화번호인 경우 자동 인증 진행
+      if (result.isTestPhone) {
+        console.log('[TEST] 테스트 계정 감지 - 자동 인증 시작');
+        setVerificationCode('0000');
+        
+        // 짧은 딜레이 후 자동 인증 (사용자가 무슨 일이 일어나는지 볼 수 있도록)
+        setTimeout(async () => {
+          await handleVerifyCode('0000');
+        }, 500);
+      }
     } catch (err) {
       console.error('[SMS] 발송 오류:', err);
       setError('인증번호 발송 중 오류가 발생했습니다.');
@@ -60,9 +71,11 @@ export function usePhoneVerification() {
     }
   };
 
-  // 인증번호 확인
-  const handleVerifyCode = async () => {
-    if (verificationCode.length !== 4) {
+  // 인증번호 확인 (자동 인증용 파라미터 추가)
+  const handleVerifyCode = async (autoCode?: string) => {
+    const codeToVerify = autoCode || verificationCode;
+    
+    if (codeToVerify.length !== 4) {
       setError('인증번호 4자리를 입력해주세요.');
       return;
     }
@@ -74,7 +87,7 @@ export function usePhoneVerification() {
       const response = await fetch('/api/verification/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code: verificationCode }),
+        body: JSON.stringify({ phone, code: codeToVerify }),
       });
 
       const result = await response.json();

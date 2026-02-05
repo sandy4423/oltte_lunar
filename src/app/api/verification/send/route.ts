@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { sendSMS, createVerificationSMS } from '@/lib/sms';
+import { TEST_PHONE_NUMBER, TEST_VERIFICATION_CODE } from '@/lib/constants';
 
 // Node.js 런타임 사용 (crypto 모듈 필요)
 export const runtime = 'nodejs';
@@ -25,8 +26,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4자리 인증번호 생성
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    // 테스트 전화번호 체크
+    const isTestPhone = normalizedPhone === TEST_PHONE_NUMBER;
+    
+    // 4자리 인증번호 생성 (테스트 번호는 0000 고정)
+    const code = isTestPhone ? TEST_VERIFICATION_CODE : Math.floor(1000 + Math.random() * 9000).toString();
 
     // Supabase에 인증 코드 저장 (5분 만료)
     const expiresAt = new Date();
@@ -56,21 +60,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // SMS 발송
-    const smsText = createVerificationSMS(code);
-    const smsResult = await sendSMS(normalizedPhone, smsText);
+    // SMS 발송 (테스트 번호는 스킵)
+    if (!isTestPhone) {
+      const smsText = createVerificationSMS(code);
+      const smsResult = await sendSMS(normalizedPhone, smsText);
 
-    if (!smsResult.success) {
-      console.error('[API] SMS 발송 실패:', smsResult.error);
-      return NextResponse.json(
-        { error: `SMS 발송 실패: ${smsResult.error}` },
-        { status: 500 }
-      );
+      if (!smsResult.success) {
+        console.error('[API] SMS 발송 실패:', smsResult.error);
+        return NextResponse.json(
+          { error: `SMS 발송 실패: ${smsResult.error}` },
+          { status: 500 }
+        );
+      }
+    } else {
+      console.log('[API] 테스트 전화번호 - SMS 발송 스킵');
     }
 
     return NextResponse.json({
       success: true,
-      message: '인증번호가 발송되었습니다.',
+      message: isTestPhone ? '테스트 계정 - 인증번호가 자동으로 입력됩니다.' : '인증번호가 발송되었습니다.',
+      isTestPhone, // 프론트엔드에서 자동 인증 트리거용
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
