@@ -64,7 +64,54 @@ export default function OrderPage() {
   const { cart, updateQuantity, totalQty, totalAmount, isMinOrderMet } = useCart();
 
   // 팝업 관리 훅
-  const { activePopup, closePopup } = useOrderPopups(apartment);
+  const { activePopup, closePopup, isExpired } = useOrderPopups(apartment);
+
+  // 실시간 현재 시각
+  const [currentTime, setCurrentTime] = useState('');
+  const [timeRemaining, setTimeRemaining] = useState('');
+
+  // 현재 시각 업데이트 (1초마다)
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(format(now, 'M월 d일 HH:mm:ss', { locale: ko }));
+    };
+    
+    updateTime(); // 초기 설정
+    const timer = setInterval(updateTime, 1000);
+    
+    return () => clearInterval(timer); // cleanup
+  }, []);
+
+  // 마감까지 남은 시간 계산
+  useEffect(() => {
+    if (!apartment) return;
+
+    const updateRemaining = () => {
+      const now = new Date();
+      const cutoff = new Date(apartment.cutoffAt);
+      const diff = cutoff.getTime() - now.getTime();
+      
+      if (diff <= 0) {
+        setTimeRemaining('마감됨');
+        return;
+      }
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      if (hours > 0) {
+        setTimeRemaining(`${hours}시간 ${minutes}분`);
+      } else {
+        setTimeRemaining(`${minutes}분`);
+      }
+    };
+    
+    updateRemaining(); // 초기 설정
+    const timer = setInterval(updateRemaining, 1000);
+    
+    return () => clearInterval(timer); // cleanup
+  }, [apartment]);
 
   // 고객 정보 자동 채우기
   useEffect(() => {
@@ -162,6 +209,19 @@ export default function OrderPage() {
               <h2 className="text-lg font-bold text-gray-900 mb-3">
                 {getApartmentFullName(apartment)} 공동구매
               </h2>
+              
+              {/* 현재 시각 및 남은 시간 */}
+              <div className="mb-4 space-y-1">
+                <p className="text-sm text-gray-500">
+                  현재 시각: <span className="font-semibold text-gray-700">{currentTime}</span>
+                </p>
+                {!isExpired && timeRemaining !== '마감됨' && (
+                  <p className="text-sm text-orange-600 font-medium">
+                    ⏰ 마감까지 {timeRemaining}
+                  </p>
+                )}
+              </div>
+              
               <div className="flex justify-center gap-6 text-sm">
                 <div>
                   <p className="text-gray-500 mb-1">주문마감</p>
@@ -357,9 +417,18 @@ export default function OrderPage() {
             <div className="text-2xl font-bold text-red-600">
               {getApartmentFullName(apartment)} 오늘 주문 마감입니다!
             </div>
-            <div className="text-lg font-semibold text-gray-900">
-              {format(new Date(apartment.cutoffAt), 'HH:mm', { locale: ko })}에 마감됩니다!
+            
+            {/* 현재 시각 및 남은 시간 강조 */}
+            <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 space-y-2">
+              <p className="text-sm text-gray-600">현재 시각: {currentTime}</p>
+              <div className="text-2xl font-bold text-red-600">
+                {format(new Date(apartment.cutoffAt), 'HH:mm', { locale: ko })}에 마감!
+              </div>
+              <p className="text-lg font-semibold text-orange-600">
+                ⏰ {timeRemaining} 남음
+              </p>
             </div>
+            
             <p className="text-gray-600 text-sm">
               마감 시간 이후에는<br />
               주문이 불가능합니다.
