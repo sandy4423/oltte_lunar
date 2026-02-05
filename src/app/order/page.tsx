@@ -395,11 +395,8 @@ export default function OrderPage() {
       {/* 마감 전 환영 팝업 */}
       <Dialog open={activePopup === 'welcome'} onOpenChange={closePopup}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">🥟 올때만두에 오신 것을 환영합니다!</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-center text-lg font-semibold text-brand-dark">
+          <div className="space-y-4 py-6">
+            <p className="text-center text-2xl font-bold text-brand-dark">
               QR을 찍어주셔서 감사합니다!
             </p>
             <p className="text-center text-gray-700">
