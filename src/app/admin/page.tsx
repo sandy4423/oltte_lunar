@@ -744,7 +744,7 @@ export default function AdminPage() {
                         handleSelectOrder(order.id, e.target.checked)
                       }
                     />
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
+                    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
                       {statusInfo.label}
                     </span>
                   </div>
@@ -861,7 +861,7 @@ export default function AdminPage() {
                             />
                           </TableCell>
                           <TableCell>
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
+                            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
                               {statusInfo.label}
                             </span>
                           </TableCell>
