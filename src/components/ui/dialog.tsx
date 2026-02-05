@@ -78,3 +78,27 @@ export function DialogTitle({ children, className, ...props }: DialogTitleProps)
     </h2>
   );
 }
+
+interface DialogDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {
+  children: React.ReactNode;
+}
+
+export function DialogDescription({ children, className, ...props }: DialogDescriptionProps) {
+  return (
+    <p className={cn("text-sm text-gray-500", className)} {...props}>
+      {children}
+    </p>
+  );
+}
+
+interface DialogFooterProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+}
+
+export function DialogFooter({ children, className, ...props }: DialogFooterProps) {
+  return (
+    <div className={cn("flex items-center justify-end gap-2 mt-6", className)} {...props}>
+      {children}
+    </div>
+  );
+}
