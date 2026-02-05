@@ -164,9 +164,12 @@ export default function OrderPage() {
               </h2>
               <div className="flex justify-center gap-6 text-sm">
                 <div>
-                  <p className="text-gray-500">주문마감</p>
+                  <p className="text-gray-500 mb-1">주문마감</p>
                   <p className="font-bold text-lg text-brand-dark">
-                    {format(new Date(apartment.cutoffAt), 'M월 d일 HH:mm', { locale: ko })}
+                    {format(new Date(apartment.cutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
+                  </p>
+                  <p className="text-xs text-gray-400 line-through mt-1">
+                    전단지상: {format(new Date(apartment.originalCutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
                   </p>
                 </div>
                 <div className="border-l border-gray-200" />
