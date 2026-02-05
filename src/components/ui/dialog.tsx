@@ -36,16 +36,18 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   onClose?: () => void;
+  clickToClose?: boolean; // 클릭으로 닫기 여부
 }
 
-export function DialogContent({ children, className, onClose, ...props }: DialogContentProps) {
+export function DialogContent({ children, className, onClose, clickToClose = false, ...props }: DialogContentProps) {
   return (
     <div 
       className={cn(
-        "bg-white rounded-lg shadow-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto cursor-pointer",
+        "bg-white rounded-lg shadow-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto",
+        clickToClose && "cursor-pointer",
         className
       )}
-      onClick={onClose}
+      onClick={clickToClose ? onClose : undefined}
       {...props}
     >
       {children}

@@ -1,11 +1,10 @@
 /**
  * 주문 상태 변경 훅
  * 
- * 선택된 주문들의 상태를 일괄 변경합니다.
+ * 서버 API를 통해 선택된 주문들의 상태를 일괄 변경합니다.
  */
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
 import { ORDER_STATUS_LABEL } from '@/lib/constants';
 import type { OrderStatus } from '@/types/database';
 
@@ -26,17 +25,24 @@ export function useOrderStatusChange(params: UseOrderStatusChangeParams) {
     try {
       const orderIds = Array.from(selectedOrders);
 
-      // DB 업데이트 (Supabase 타입 이슈로 any 캐스팅)
-      const updateData = { status: newStatus, updated_at: new Date().toISOString() };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const query = (supabase as any).from('orders').update(updateData).in('id', orderIds);
-      const { error } = await query;
+      // 서버 API 호출
+      const response = await fetch('/api/admin/orders/status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderIds,
+          status: newStatus,
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('상태 변경에 실패했습니다.');
+      }
 
-      // SMS 발송 API 호출 (TODO: 실제 구현)
-      console.log(`[Admin] Status changed to ${newStatus} for ${orderIds.length} orders`);
-      console.log('[Admin] SMS would be sent to:', orderIds);
+      const result = await response.json();
+      console.log(`[Admin] Status changed to ${newStatus} for ${result.updatedCount} orders`);
 
       // 새로고침
       await onSuccess();

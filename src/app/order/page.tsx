@@ -453,7 +453,7 @@ export default function OrderPage() {
 
       {/* 마감일 지났지만 추가 주문 받는다는 팝업 */}
       <Dialog open={activePopup === 'extendedOrder'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md" onClose={closePopup}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-xl">📢 추가 주문 안내</DialogTitle>
           </DialogHeader>
@@ -493,7 +493,7 @@ export default function OrderPage() {
 
       {/* 주문 0일 전 팝업 */}
       <Dialog open={activePopup === 'zeroDayWarning'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md" onClose={closePopup}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-xl">⏰ 주문 마감 임박!</DialogTitle>
           </DialogHeader>
@@ -529,7 +529,7 @@ export default function OrderPage() {
 
       {/* 배송일 지나서 픽업만 가능 팝업 */}
       <Dialog open={activePopup === 'pickupOnly'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md" onClose={closePopup}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-center text-xl">🏪 매장 픽업 주문</DialogTitle>
           </DialogHeader>
@@ -562,7 +562,7 @@ export default function OrderPage() {
 
       {/* 마감 전 환영 팝업 */}
       <Dialog open={activePopup === 'welcome'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md" onClose={closePopup}>
+        <DialogContent className="sm:max-w-md" onClose={closePopup} clickToClose={true}>
           <div className="space-y-4 py-6">
             <p className="text-center text-2xl font-bold text-brand-dark">
               QR을 찍어주셔서 감사합니다!

@@ -50,7 +50,7 @@ export function DeliveryMethodDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" onClose={() => onOpenChange(false)}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center text-xl">배달 방법을 선택해주세요</DialogTitle>
         </DialogHeader>

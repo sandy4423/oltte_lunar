@@ -1,11 +1,10 @@
 /**
  * 관리자 주문 조회 훅
  * 
- * 주문 목록을 Supabase에서 조회하고 관리합니다.
+ * 서버 API를 통해 주문 목록을 조회하고 관리합니다.
  */
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import type { OrderFull } from '@/types/database';
 
 export function useAdminOrders() {
@@ -15,12 +14,13 @@ export function useAdminOrders() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, customer:customers(*), order_items(*)')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const response = await fetch('/api/admin/orders');
+      
+      if (!response.ok) {
+        throw new Error('주문 목록 조회에 실패했습니다.');
+      }
+      
+      const data = await response.json();
       setOrders((data as OrderFull[]) || []);
     } catch (err) {
       console.error('Fetch orders error:', err);

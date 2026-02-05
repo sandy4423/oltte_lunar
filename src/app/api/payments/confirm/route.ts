@@ -9,6 +9,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { confirmPayment } from '@/lib/tosspayments';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendOrderNotification } from '@/lib/sms';
+import { sendSlackMessage, createPaymentConfirmation } from '@/lib/slack';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 
 export async function POST(request: NextRequest) {
   try {
@@ -100,7 +103,7 @@ export async function POST(request: NextRequest) {
       throw new Error('주문 정보 업데이트에 실패했습니다.');
     }
 
-    // SMS 발송
+    // SMS 발송 (고객)
     try {
       if (order.customer?.phone) {
         await sendOrderNotification({
@@ -118,6 +121,27 @@ export async function POST(request: NextRequest) {
     } catch (smsError) {
       // SMS 실패는 로그만 남기고 계속 진행
       console.error('[API] SMS error:', smsError);
+    }
+
+    // Slack 알림 (관리자)
+    try {
+      const deliveryDateFormatted = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
+      
+      await sendSlackMessage(createPaymentConfirmation({
+        orderId: actualOrderId,
+        customerName: order.customer?.name || '고객',
+        customerPhone: order.customer?.phone || '미입력',
+        aptName: order.apt_name,
+        dong: order.dong,
+        ho: order.ho,
+        amount: order.total_amount,
+        deliveryDate: deliveryDateFormatted,
+      }));
+      
+      console.log(`[API] Admin payment notification sent to Slack`);
+    } catch (slackError) {
+      // Slack 실패는 로그만 남기고 계속 진행
+      console.error('[API] Slack error:', slackError);
     }
 
     return NextResponse.json({
