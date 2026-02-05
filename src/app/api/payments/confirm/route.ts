@@ -10,8 +10,7 @@ import { confirmPayment } from '@/lib/tosspayments';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendOrderNotification } from '@/lib/sms';
 import { sendSlackMessage, createPaymentConfirmation } from '@/lib/slack';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { formatKST } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -125,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     // Slack 알림 (관리자)
     try {
-      const deliveryDateFormatted = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
+      const deliveryDateFormatted = formatKST(order.delivery_date, 'M월 d일 (EEE)');
       
       await sendSlackMessage(createPaymentConfirmation({
         orderId: actualOrderId,

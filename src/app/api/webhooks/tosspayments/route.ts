@@ -12,8 +12,7 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 import { verifyWebhookSecret } from '@/lib/tosspayments';
 import { sendSMS, createPaymentConfirmSMS } from '@/lib/sms';
 import { sendSlackMessage, createPaymentConfirmation, createErrorAlert } from '@/lib/slack';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { formatKST } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -114,7 +113,7 @@ export async function POST(request: NextRequest) {
       // SMS 발송 (고객)
       try {
         if (order.customer?.phone) {
-          const deliveryDateFormatted = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
+          const deliveryDateFormatted = formatKST(order.delivery_date, 'M월 d일 (EEE)');
           
           await sendSMS(order.customer.phone, createPaymentConfirmSMS({
             customerName: order.customer.name || '고객',
@@ -133,7 +132,7 @@ export async function POST(request: NextRequest) {
 
       // Slack 알림 (관리자)
       try {
-        const deliveryDateFormatted = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
+        const deliveryDateFormatted = formatKST(order.delivery_date, 'M월 d일 (EEE)');
         
         await sendSlackMessage(createPaymentConfirmation({
           orderId: actualOrderId,
