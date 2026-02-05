@@ -29,6 +29,7 @@ import { useAdminOrders } from '@/hooks/useAdminOrders';
 import { useOrderFilters } from '@/hooks/useOrderFilters';
 import { useOrderSelection } from '@/hooks/useOrderSelection';
 import { useOrderStatusChange } from '@/hooks/useOrderStatusChange';
+import { CancelRequestDialog } from '@/components/features/admin/CancelRequestDialog';
 
 // ============================================
 // 비밀번호 인증 상수
@@ -78,6 +79,10 @@ export default function AdminPage() {
 
   // 라벨 인쇄 모드
   const [printMode, setPrintMode] = useState(false);
+
+  // 취소 요청 다이얼로그
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedOrderForCancel, setSelectedOrderForCancel] = useState<any | null>(null);
 
   // 통계 조회
   const fetchPageStats = async () => {
@@ -543,6 +548,26 @@ export default function AdminPage() {
                 배송완료 ({selectedOrders.size})
               </Button>
               <Button
+                onClick={() => {
+                  // 선택된 주문이 1개일 때만 취소 요청 가능
+                  if (selectedOrders.size === 1) {
+                    const orderId = Array.from(selectedOrders)[0];
+                    const order = orders.find(o => o.id === orderId);
+                    if (order && ['PAID', 'OUT_FOR_DELIVERY', 'LATE_DEPOSIT'].includes(order.status)) {
+                      setSelectedOrderForCancel(order);
+                      setCancelDialogOpen(true);
+                    } else {
+                      alert('결제 완료 또는 배송 중인 주문만 취소 요청할 수 있습니다.');
+                    }
+                  }
+                }}
+                disabled={selectedOrders.size !== 1 || actionLoading}
+                variant="outline"
+                className="text-orange-600 border-orange-200 hover:bg-orange-50"
+              >
+                취소 요청 {selectedOrders.size === 1 ? '(1)' : ''}
+              </Button>
+              <Button
                 onClick={handlePrintMode}
                 disabled={selectedOrders.size === 0}
                 variant="outline"
@@ -675,6 +700,17 @@ export default function AdminPage() {
           총 {filteredOrders.length}건 / 선택 {selectedOrders.size}건
         </div>
       </div>
+
+      {/* 취소 요청 다이얼로그 */}
+      <CancelRequestDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        order={selectedOrderForCancel}
+        onSuccess={() => {
+          fetchOrders();
+          clearSelection();
+        }}
+      />
     </main>
   );
 }

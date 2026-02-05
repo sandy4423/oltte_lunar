@@ -267,3 +267,47 @@ export function createDeliveredSMS(params: {
 https://toss.place/_p/bGynOJ0Bc`;
 }
 
+/**
+ * 취소 요청 및 계좌입력 안내 SMS 생성
+ */
+export function createRefundAccountRequestSMS(params: {
+  customerName: string;
+  refundAmount: number;
+  token: string;
+}): string {
+  const { customerName, refundAmount, token } = params;
+  const domain = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.olttefood.com';
+  return `[올때만두] ${customerName}님 주문 취소가 접수되었습니다.
+
+환불 예정 금액: ${refundAmount.toLocaleString()}원
+
+아래 링크에 환불 계좌정보를 입력해주세요.
+${domain}/refund/account/${token}
+
+(7일 이내 입력 필요)`;
+}
+
+/**
+ * 환불 완료 SMS 생성
+ */
+export function createRefundCompleteSMS(params: {
+  customerName: string;
+  refundAmount: number;
+  bankName: string;
+  accountNumber: string;
+}): string {
+  const { customerName, refundAmount, bankName, accountNumber } = params;
+  // 계좌번호 마스킹 (뒤 4자리만 표시)
+  const maskedAccount = accountNumber.length > 4 
+    ? '***' + accountNumber.slice(-4) 
+    : accountNumber;
+  
+  return `[올때만두] ${customerName}님 환불이 완료되었습니다.
+
+환불금액: ${refundAmount.toLocaleString()}원
+입금계좌: ${bankName} ${maskedAccount}
+
+영업일 기준 3일 이내 입금됩니다.
+감사합니다.`;
+}
+

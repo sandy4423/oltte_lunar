@@ -186,6 +186,9 @@ export const ORDER_STATUS_LABEL: Record<string, { label: string; color: string }
   OUT_FOR_DELIVERY: { label: '배송중', color: 'bg-blue-100 text-blue-800' },
   DELIVERED: { label: '배송완료', color: 'bg-purple-100 text-purple-800' },
   LATE_DEPOSIT: { label: '마감후입금', color: 'bg-orange-100 text-orange-800' },
+  CANCEL_REQUESTED: { label: '계좌정보 대기', color: 'bg-yellow-100 text-yellow-800' },
+  REFUND_PROCESSING: { label: '환불처리중', color: 'bg-orange-100 text-orange-800' },
+  REFUNDED: { label: '환불완료', color: 'bg-gray-100 text-gray-800' },
 };
 
 // ============================================

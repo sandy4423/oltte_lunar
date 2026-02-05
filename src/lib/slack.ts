@@ -151,3 +151,66 @@ export function createErrorAlert(params: {
 
   return message;
 }
+
+/**
+ * 취소 요청 알림 메시지 생성
+ */
+export function createCancelRequestNotification(params: {
+  orderId: string;
+  customerName: string;
+  customerPhone: string;
+  aptName: string;
+  dong: string;
+  ho: string;
+  totalAmount: number;
+  refundAmount: number;
+  refundReason: string;
+}): string {
+  const { orderId, customerName, customerPhone, aptName, dong, ho, totalAmount, refundAmount, refundReason } = params;
+  
+  return `🟡 취소 요청 (계좌정보 대기)
+
+주문번호: ${orderId}
+고객명: ${customerName}
+연락처: ${customerPhone}
+배송지: ${aptName} ${dong}동 ${ho}호
+주문금액: ${totalAmount.toLocaleString()}원
+환불금액: ${refundAmount.toLocaleString()}원
+취소사유: ${refundReason}
+
+고객에게 계좌입력 링크를 발송했습니다.`;
+}
+
+/**
+ * 환불 완료 알림 메시지 생성
+ */
+export function createRefundCompleteNotification(params: {
+  orderId: string;
+  customerName: string;
+  customerPhone: string;
+  aptName: string;
+  dong: string;
+  ho: string;
+  refundAmount: number;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+}): string {
+  const { orderId, customerName, customerPhone, aptName, dong, ho, refundAmount, bankName, accountNumber, accountHolder } = params;
+  
+  // 계좌번호 마스킹 (뒤 4자리만 표시)
+  const maskedAccount = accountNumber.length > 4 
+    ? '***' + accountNumber.slice(-4) 
+    : accountNumber;
+  
+  return `✅ 환불 완료
+
+주문번호: ${orderId}
+고객명: ${customerName}
+연락처: ${customerPhone}
+배송지: ${aptName} ${dong}동 ${ho}호
+환불금액: ${refundAmount.toLocaleString()}원
+환불계좌: ${bankName} ${maskedAccount} (${accountHolder})
+
+토스페이먼츠를 통해 환불 처리되었습니다.`;
+}

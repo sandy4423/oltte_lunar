@@ -17,7 +17,10 @@ export type OrderStatus =
   | 'AUTO_CANCELED'       // 마감 미입금 자동 취소
   | 'OUT_FOR_DELIVERY'    // 배송중
   | 'DELIVERED'           // 배송완료
-  | 'LATE_DEPOSIT';       // (예외) 마감 후 입금
+  | 'LATE_DEPOSIT'        // (예외) 마감 후 입금
+  | 'CANCEL_REQUESTED'    // 취소 요청됨 (계좌정보 대기)
+  | 'REFUND_PROCESSING'   // 환불 처리 중
+  | 'REFUNDED';           // 환불 완료
 
 /** 상품 SKU - schema.sql line 6 */
 export type ProductSku =
@@ -64,6 +67,12 @@ export interface OrderRow {
   is_pickup: boolean;              // boolean, DEFAULT false
   pickup_discount: number;         // int, DEFAULT 0
   source: string | null;           // text, NULLABLE - 유입 경로
+  refund_amount: number | null;    // int, NULLABLE - 환불 금액
+  refund_reason: string | null;    // text, NULLABLE - 환불 사유
+  refund_bank_code: string | null; // text, NULLABLE - 환불 계좌 은행 코드
+  refund_account_number: string | null; // text, NULLABLE - 환불 계좌번호
+  refund_account_holder: string | null; // text, NULLABLE - 환불 계좌 예금주
+  refunded_at: string | null;      // timestamptz, NULLABLE - 환불 처리 일시
   created_at: string;              // timestamptz, DEFAULT now()
   updated_at: string;              // timestamptz, DEFAULT now()
 }
@@ -76,6 +85,21 @@ export interface OrderItemRow {
   qty: number;                     // int, NOT NULL, DEFAULT 1
   unit_price: number;              // int, NOT NULL
   line_amount: number;             // int, NOT NULL (qty * unit_price)
+}
+
+/** refund_tokens 테이블 Row */
+export interface RefundTokenRow {
+  id: string;                      // uuid, PK
+  order_id: string;                // uuid, FK → orders(id), NOT NULL
+  token: string;                   // text, NOT NULL, UNIQUE
+  refund_amount: number;           // int, NOT NULL
+  refund_reason: string;           // text, NOT NULL
+  bank_code: string | null;        // text, NULLABLE
+  account_number: string | null;   // text, NULLABLE
+  account_holder: string | null;   // text, NULLABLE
+  used: boolean;                   // boolean, DEFAULT false
+  expires_at: string;              // timestamptz, NOT NULL
+  created_at: string;              // timestamptz, DEFAULT now()
 }
 
 // ============================================
@@ -116,6 +140,12 @@ export interface OrderInsert {
   is_pickup?: boolean;             // optional, default: false
   pickup_discount?: number;        // optional, default: 0
   source?: string | null;          // optional - 유입 경로
+  refund_amount?: number | null;   // optional
+  refund_reason?: string | null;   // optional
+  refund_bank_code?: string | null; // optional
+  refund_account_number?: string | null; // optional
+  refund_account_holder?: string | null; // optional
+  refunded_at?: string | null;     // optional
   created_at?: string;             // optional, default: now()
   updated_at?: string;             // optional, default: now()
 }
@@ -128,6 +158,21 @@ export interface OrderItemInsert {
   qty?: number;                    // optional, default: 1
   unit_price: number;              // required
   line_amount: number;             // required
+}
+
+/** refund_tokens INSERT 타입 */
+export interface RefundTokenInsert {
+  id?: string;                     // auto-generated
+  order_id: string;                // required
+  token: string;                   // required
+  refund_amount: number;           // required
+  refund_reason: string;           // required
+  bank_code?: string | null;       // optional
+  account_number?: string | null;  // optional
+  account_holder?: string | null;  // optional
+  used?: boolean;                  // optional, default: false
+  expires_at: string;              // required
+  created_at?: string;             // optional, default: now()
 }
 
 // ============================================
@@ -168,6 +213,12 @@ export interface OrderUpdate {
   is_pickup?: boolean;
   pickup_discount?: number;
   source?: string | null;
+  refund_amount?: number | null;
+  refund_reason?: string | null;
+  refund_bank_code?: string | null;
+  refund_account_number?: string | null;
+  refund_account_holder?: string | null;
+  refunded_at?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -180,6 +231,21 @@ export interface OrderItemUpdate {
   qty?: number;
   unit_price?: number;
   line_amount?: number;
+}
+
+/** refund_tokens UPDATE 타입 */
+export interface RefundTokenUpdate {
+  id?: string;
+  order_id?: string;
+  token?: string;
+  refund_amount?: number;
+  refund_reason?: string;
+  bank_code?: string | null;
+  account_number?: string | null;
+  account_holder?: string | null;
+  used?: boolean;
+  expires_at?: string;
+  created_at?: string;
 }
 
 // ============================================
@@ -204,6 +270,11 @@ export interface Database {
         Insert: OrderItemInsert;
         Update: OrderItemUpdate;
       };
+      refund_tokens: {
+        Row: RefundTokenRow;
+        Insert: RefundTokenInsert;
+        Update: RefundTokenUpdate;
+      };
     };
     Views: {
       [_ in never]: never;
@@ -226,6 +297,7 @@ export interface Database {
 export type Customer = CustomerRow;
 export type Order = OrderRow;
 export type OrderItem = OrderItemRow;
+export type RefundToken = RefundTokenRow;
 
 /** 주문 + 고객정보 조인 결과 */
 export interface OrderWithCustomer extends OrderRow {
