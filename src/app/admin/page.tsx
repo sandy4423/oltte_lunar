@@ -32,6 +32,7 @@ import { useOrderSelection } from '@/hooks/useOrderSelection';
 import { useOrderStatusChange } from '@/hooks/useOrderStatusChange';
 import { CancelRequestDialog } from '@/components/features/admin/CancelRequestDialog';
 import { ManualOrderDialog } from '@/components/features/admin/ManualOrderDialog';
+import { OrderDetailDialog } from '@/components/features/admin/OrderDetailDialog';
 
 // ============================================
 // 비밀번호 인증 상수
@@ -92,6 +93,44 @@ export default function AdminPage() {
 
   // 수기 주문 입력 다이얼로그
   const [manualOrderDialogOpen, setManualOrderDialogOpen] = useState(false);
+
+  // 상세보기 다이얼로그
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedOrderForDetail, setSelectedOrderForDetail] = useState<any | null>(null);
+  const [detailActionLoading, setDetailActionLoading] = useState(false);
+
+  // 상세보기에서 전달완료 처리
+  const handleDetailDelivered = async (orderId: string) => {
+    setDetailActionLoading(true);
+    try {
+      const response = await fetch('/api/admin/orders/status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': sessionStorage.getItem('admin_password') || '',
+        },
+        body: JSON.stringify({
+          orderIds: [orderId],
+          status: 'DELIVERED',
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || '전달완료 처리에 실패했습니다.');
+      }
+
+      await fetchOrders();
+      setDetailDialogOpen(false);
+      setSelectedOrderForDetail(null);
+      alert('전달완료 처리되었습니다. 고객에게 SMS가 발송되었습니다.');
+    } catch (error: any) {
+      console.error('[DetailDelivered] Error:', error);
+      alert(error.message || '전달완료 처리 중 오류가 발생했습니다.');
+    } finally {
+      setDetailActionLoading(false);
+    }
+  };
 
   // 통계 조회
   const fetchPageStats = async () => {
@@ -810,17 +849,17 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* 배송완료 버튼 */}
-                  {(order.status === 'PAID' || order.status === 'OUT_FOR_DELIVERY') && (
-                    <Button
-                      onClick={() => handleSingleDelivered(order.id)}
-                      className="w-full mt-3"
-                      variant="outline"
-                    >
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      배송완료
-                    </Button>
-                  )}
+                  {/* 상세보기 버튼 */}
+                  <Button
+                    onClick={() => {
+                      setSelectedOrderForDetail(order);
+                      setDetailDialogOpen(true);
+                    }}
+                    className="w-full mt-3"
+                    variant="outline"
+                  >
+                    상세보기
+                  </Button>
                 </Card>
               );
             })
@@ -870,7 +909,19 @@ export default function AdminPage() {
                       };
 
                       return (
-                        <TableRow key={order.id}>
+                        <TableRow key={order.id} className="relative group cursor-pointer">
+                          {/* 상세보기 오버레이 */}
+                          <td
+                            className="absolute inset-0 z-10 hidden group-hover:flex items-center justify-center bg-gray-900/40 rounded"
+                            onClick={() => {
+                              setSelectedOrderForDetail(order);
+                              setDetailDialogOpen(true);
+                            }}
+                          >
+                            <span className="bg-white text-gray-900 font-semibold px-5 py-2.5 rounded-lg shadow-lg text-sm">
+                              상세보기
+                            </span>
+                          </td>
                           <TableCell>
                             <Checkbox
                               checked={selectedOrders.has(order.id)}
@@ -972,6 +1023,15 @@ export default function AdminPage() {
           fetchOrders();
           setManualOrderDialogOpen(false);
         }}
+      />
+
+      {/* 주문 상세보기 다이얼로그 */}
+      <OrderDetailDialog
+        open={detailDialogOpen}
+        onOpenChange={setDetailDialogOpen}
+        order={selectedOrderForDetail}
+        onDelivered={handleDetailDelivered}
+        actionLoading={detailActionLoading}
       />
     </main>
   );
