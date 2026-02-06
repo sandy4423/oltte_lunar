@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { AlertCircle } from 'lucide-react';
@@ -245,7 +246,15 @@ export default function OrderPage() {
       {/* 헤더 */}
       <header className="bg-brand text-white p-6 shadow-lg">
         <div className="max-w-lg mx-auto text-center">
-          <h1 className="text-2xl font-bold mb-1">🥟 올때만두</h1>
+          <div className="flex justify-center mb-1">
+            <Image
+              src="/images/logo.png"
+              alt="올때만두"
+              width={200}
+              height={53}
+              priority
+            />
+          </div>
           <p className="text-orange-100 text-sm">설 만두는 제가 빚을게요</p>
         </div>
       </header>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { APARTMENT_LIST, getApartmentFullName, type ApartmentConfig } from '@/lib/constants';
@@ -51,7 +52,15 @@ export default function HomePage() {
       {/* 헤더 */}
       <header className="bg-brand text-white p-8 shadow-lg">
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-4xl font-bold mb-2">🥟 올때만두</h1>
+          <div className="flex justify-center mb-2">
+            <Image
+              src="/images/logo.png"
+              alt="올때만두"
+              width={300}
+              height={80}
+              priority
+            />
+          </div>
           <p className="text-orange-100 text-lg">설 만두는 제가 빚을게요</p>
         </div>
       </header>

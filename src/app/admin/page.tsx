@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import Image from 'next/image';
 import { 
   RefreshCw, Truck, CheckCircle, Printer, Download,
   Filter, Search, BarChart3, Lock, TrendingUp, ChevronDown, ChevronUp, Plus,
@@ -395,7 +396,15 @@ export default function AdminPage() {
         {/* 헤더 */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-2xl font-bold">🥟 올때만두 관리자</h1>
+            <div className="flex items-center gap-2 mb-1">
+              <Image
+                src="/images/logo.png"
+                alt="올때만두"
+                width={150}
+                height={40}
+              />
+              <span className="text-xl font-bold">관리자</span>
+            </div>
             <p className="text-gray-500">주문 관리 및 배송 처리</p>
             {lastFetchTime && (
               <p className="text-xs text-gray-400 mt-1">
