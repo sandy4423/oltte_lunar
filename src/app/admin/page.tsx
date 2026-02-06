@@ -797,12 +797,14 @@ export default function AdminPage() {
                       <span className="font-bold text-lg">
                         {order.total_amount.toLocaleString()}원
                       </span>
-                      <span className="text-gray-600 text-right">
-                        <div>{format(new Date(order.delivery_date), 'M/d (EEE)', { locale: ko })}</div>
-                        {order.apt_code === PICKUP_APT_CODE && order.pickup_date && (
-                          <div className="text-xs text-purple-600 font-medium">
-                            🏪 {format(new Date(order.pickup_date), 'M/d', { locale: ko })} {order.pickup_time || ''}
+                      <span className="text-right">
+                        {order.apt_code === PICKUP_APT_CODE ? (
+                          <div className="text-purple-600 font-medium">
+                            {order.pickup_date ? format(new Date(order.pickup_date), 'M/d (EEE)', { locale: ko }) : '-'}
+                            {order.pickup_time ? ` ${order.pickup_time}` : ''}
                           </div>
+                        ) : (
+                          <div className="text-gray-600">{format(new Date(order.delivery_date), 'M/d (EEE)', { locale: ko })}</div>
                         )}
                       </span>
                     </div>
@@ -887,10 +889,7 @@ export default function AdminPage() {
                           </TableCell>
                           <TableCell className="font-medium">
                             {order.apt_code === PICKUP_APT_CODE ? (
-                              <div className="text-sm">
-                                <div>{order.pickup_date ? format(new Date(order.pickup_date), 'M/d (EEE)', { locale: ko }) : '-'}</div>
-                                <div className="text-gray-500">{order.pickup_time || '-'}</div>
-                              </div>
+                              <span className="text-sm text-purple-600">- (픽업주문)</span>
                             ) : (
                               <>{order.dong}동 {order.ho}호</>
                             )}
@@ -926,11 +925,13 @@ export default function AdminPage() {
                             {order.total_amount.toLocaleString()}원
                           </TableCell>
                           <TableCell>
-                            <div>{format(new Date(order.delivery_date), 'M/d (EEE)', { locale: ko })}</div>
-                            {order.apt_code === PICKUP_APT_CODE && order.pickup_date && (
-                              <div className="text-xs text-purple-600 font-medium">
-                                🏪 {format(new Date(order.pickup_date), 'M/d', { locale: ko })} {order.pickup_time || ''}
+                            {order.apt_code === PICKUP_APT_CODE ? (
+                              <div className="text-purple-600 font-medium">
+                                {order.pickup_date ? format(new Date(order.pickup_date), 'M/d (EEE)', { locale: ko }) : '-'}
+                                {order.pickup_time ? ` ${order.pickup_time}` : ''}
                               </div>
+                            ) : (
+                              <div>{format(new Date(order.delivery_date), 'M/d (EEE)', { locale: ko })}</div>
                             )}
                           </TableCell>
                           <TableCell className="text-sm text-gray-500">
