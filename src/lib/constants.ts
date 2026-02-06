@@ -133,6 +133,20 @@ export interface Product {
 
 export const PRODUCTS: Product[] = [
   {
+    sku: 'ricecake_1kg',
+    name: '떡국떡',
+    description: '1kg',
+    price: 10000,
+    emoji: '🍚',
+  },
+  {
+    sku: 'broth_1200ml',
+    name: '양지육수',
+    description: '1200ml',
+    price: 5000,
+    emoji: '🍲',
+  },
+  {
     sku: 'meat',
     name: '고기만두',
     description: '1팩 8알',
@@ -152,20 +166,6 @@ export const PRODUCTS: Product[] = [
     description: '고기4 + 김치4',
     price: 10000,
     emoji: '🥟',
-  },
-  {
-    sku: 'ricecake_1kg',
-    name: '떡국떡',
-    description: '1kg',
-    price: 10000,
-    emoji: '🍚',
-  },
-  {
-    sku: 'broth_1200ml',
-    name: '양지육수',
-    description: '1200ml',
-    price: 5000,
-    emoji: '🍲',
   },
 ];
 
