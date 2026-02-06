@@ -797,8 +797,13 @@ export default function AdminPage() {
                       <span className="font-bold text-lg">
                         {order.total_amount.toLocaleString()}원
                       </span>
-                      <span className="text-gray-600">
-                        {format(new Date(order.delivery_date), 'M/d (EEE)', { locale: ko })}
+                      <span className="text-gray-600 text-right">
+                        <div>{format(new Date(order.delivery_date), 'M/d (EEE)', { locale: ko })}</div>
+                        {order.apt_code === PICKUP_APT_CODE && order.pickup_date && (
+                          <div className="text-xs text-purple-600 font-medium">
+                            🏪 {format(new Date(order.pickup_date), 'M/d', { locale: ko })} {order.pickup_time || ''}
+                          </div>
+                        )}
                       </span>
                     </div>
                   </div>
@@ -921,7 +926,12 @@ export default function AdminPage() {
                             {order.total_amount.toLocaleString()}원
                           </TableCell>
                           <TableCell>
-                            {format(new Date(order.delivery_date), 'M/d (EEE)', { locale: ko })}
+                            <div>{format(new Date(order.delivery_date), 'M/d (EEE)', { locale: ko })}</div>
+                            {order.apt_code === PICKUP_APT_CODE && order.pickup_date && (
+                              <div className="text-xs text-purple-600 font-medium">
+                                🏪 {format(new Date(order.pickup_date), 'M/d', { locale: ko })} {order.pickup_time || ''}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell className="text-sm text-gray-500">
                             {format(new Date(order.created_at), 'M/d HH:mm')}
