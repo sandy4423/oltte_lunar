@@ -1,4 +1,5 @@
 import { Footer } from '@/components/Footer';
+import { STORE_INFO } from '@/lib/constants';
 
 export default function RefundPage() {
   return (
@@ -123,9 +124,9 @@ export default function RefundPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-3">6. 고객센터 안내</h2>
             <div className="p-4 bg-gray-100 rounded-lg text-sm">
               <p className="font-bold mb-2">📞 환불 관련 문의</p>
-              <p className="text-xs text-gray-500">전화: 010-2592-4423</p>
-              <p>이메일: info@olttefood.com</p>
-              <p>운영시간: 평일 09:00 - 18:00</p>
+              <p className="text-xs text-gray-500">전화: {STORE_INFO.phone}</p>
+              <p>이메일: {STORE_INFO.email}</p>
+              <p>운영시간: {STORE_INFO.businessHours}</p>
             </div>
           </section>
 

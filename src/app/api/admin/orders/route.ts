@@ -5,15 +5,18 @@
  * RLS를 우회하여 관리자 권한으로 접근합니다.
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { verifyAdminAuth } from '@/lib/adminAuth';
 
 // 캐싱 비활성화 - 항상 최신 데이터 조회
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const authError = verifyAdminAuth(request);
+    if (authError) return authError;
     const supabase = createServerSupabaseClient();
 
     const { data, error } = await supabase

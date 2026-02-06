@@ -2,7 +2,7 @@
  * 가상계좌 정보 카드 컴포넌트
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Copy, Check, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,6 +24,13 @@ export function VirtualAccountCard({
   totalAmount,
 }: VirtualAccountCardProps) {
   const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   const handleCopyAccount = async () => {
     if (!vbankNum) return;
@@ -33,7 +40,11 @@ export function VirtualAccountCard({
     try {
       await navigator.clipboard.writeText(formatted);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => {
+        setCopied(false);
+        copyTimerRef.current = null;
+      }, 2000);
     } catch (err) {
       console.error('Copy failed:', err);
     }

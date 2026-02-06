@@ -89,6 +89,7 @@ export function CancelRequestDialog({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-password': typeof window !== 'undefined' ? sessionStorage.getItem('admin_password') || '' : '',
         },
         body: JSON.stringify({
           orderId: order.id,

@@ -140,6 +140,7 @@ export default function AdminPage() {
     if (passwordInput === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
       sessionStorage.setItem('admin_auth', 'true');
+      sessionStorage.setItem('admin_password', passwordInput);
       setPasswordError(false);
     } else {
       setPasswordError(true);
@@ -172,6 +173,7 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-password': sessionStorage.getItem('admin_password') || '',
         },
         body: JSON.stringify({
           orderIds,
@@ -203,6 +205,7 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-password': sessionStorage.getItem('admin_password') || '',
         },
         body: JSON.stringify({
           orderIds: [orderId],

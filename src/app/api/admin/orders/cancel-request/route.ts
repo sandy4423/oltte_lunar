@@ -9,10 +9,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendSMS, createRefundAccountRequestSMS } from '@/lib/sms';
 import { sendSlackMessage, createCancelRequestNotification } from '@/lib/slack';
+import { verifyAdminAuth } from '@/lib/adminAuth';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
+    const authError = verifyAdminAuth(request);
+    if (authError) return authError;
+
     const body = await request.json();
     const { orderId, refundAmount, refundReason } = body as {
       orderId: string;

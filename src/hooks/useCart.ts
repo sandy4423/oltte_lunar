@@ -37,7 +37,7 @@ export function useCart() {
         amount += product.price * item.qty;
         
         // 만두, 떡만 무료배송 조건에 카운트
-        if (FREE_SHIPPING_ELIGIBLE_SKUS.includes(item.sku as any)) {
+        if ((FREE_SHIPPING_ELIGIBLE_SKUS as readonly string[]).includes(item.sku)) {
           eligible += item.qty;
         }
       }

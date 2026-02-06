@@ -1,4 +1,5 @@
 import { Footer } from '@/components/Footer';
+import { STORE_INFO } from '@/lib/constants';
 
 export default function PrivacyPage() {
   return (
@@ -127,10 +128,10 @@ export default function PrivacyPage() {
             </p>
             <div className="mt-3 p-4 bg-gray-50 rounded-lg text-sm">
               <p><strong>개인정보 보호책임자</strong></p>
-              <p>성명: 성하경</p>
+              <p>성명: {STORE_INFO.ceo}</p>
               <p>직책: 대표</p>
-              <p className="text-xs text-gray-500">연락처: 010-2592-4423</p>
-              <p>이메일: info@olttefood.com</p>
+              <p className="text-xs text-gray-500">연락처: {STORE_INFO.phone}</p>
+              <p>이메일: {STORE_INFO.email}</p>
             </div>
           </section>
 

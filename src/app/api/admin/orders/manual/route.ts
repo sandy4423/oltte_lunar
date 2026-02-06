@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { APARTMENTS, PRODUCTS, PICKUP_DISCOUNT } from '@/lib/constants';
 import { sendSlackAlert } from '@/lib/slack';
+import { verifyAdminAuth } from '@/lib/adminAuth';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,6 +26,9 @@ const supabase = createClient(
  */
 export async function POST(request: NextRequest) {
   try {
+    const authError = verifyAdminAuth(request);
+    if (authError) return authError;
+
     const body = await request.json();
     const {
       customerName,

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Footer } from '@/components/Footer';
+import { STORE_INFO } from '@/lib/constants';
 
 interface OrderInfo {
   id: string;
@@ -156,7 +157,7 @@ export default function RefundAccountPage() {
             <CardContent>
               <p className="text-red-700 mb-4">{error}</p>
               <p className="text-sm text-gray-600">
-                문제가 지속되면 고객센터(010-2592-4423)로 문의해주세요.
+                문제가 지속되면 고객센터({STORE_INFO.phone})로 문의해주세요.
               </p>
             </CardContent>
           </Card>
@@ -325,7 +326,7 @@ export default function RefundAccountPage() {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
-            문의: 010-2592-4423
+            문의: {STORE_INFO.phone}
           </p>
         </div>
       </div>

@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
           orderName: `올때만두 - ${order.apt_name}`,
           customerName: order.customer.name,
           type,
-          registrationNumber: number,
+          customerIdentityNumber: number,
         });
 
         // 발급 성공 시 정보 저장

@@ -7,10 +7,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { verifyAdminAuth } from '@/lib/adminAuth';
 import type { OrderStatus } from '@/types/database';
 
 export async function POST(request: NextRequest) {
   try {
+    const authError = verifyAdminAuth(request);
+    if (authError) return authError;
+
     const body = await request.json();
     const { orderIds, status } = body as { orderIds: string[]; status: OrderStatus };
 

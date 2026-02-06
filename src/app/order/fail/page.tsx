@@ -8,6 +8,7 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AlertCircle } from 'lucide-react';
+import { STORE_INFO } from '@/lib/constants';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -60,7 +61,7 @@ export default function PaymentFailPage() {
             </Button>
 
             <p className="text-xs text-gray-400">
-              문의: 010-2592-4423
+              문의: {STORE_INFO.phone}
             </p>
           </div>
         </CardContent>

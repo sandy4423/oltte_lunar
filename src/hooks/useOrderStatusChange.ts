@@ -26,10 +26,12 @@ export function useOrderStatusChange(params: UseOrderStatusChangeParams) {
       const orderIds = Array.from(selectedOrders);
 
       // 서버 API 호출
+      const adminPassword = typeof window !== 'undefined' ? sessionStorage.getItem('admin_password') || '' : '';
       const response = await fetch('/api/admin/orders/status', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-password': adminPassword,
         },
         body: JSON.stringify({
           orderIds,

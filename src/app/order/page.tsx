@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -40,6 +40,13 @@ export default function OrderPage() {
     captureSource(searchParams);
   }, []); // 빈 배열로 한 번만 실행
 
+  // setTimeout cleanup
+  useEffect(() => {
+    return () => {
+      if (consentTimerRef.current) clearTimeout(consentTimerRef.current);
+    };
+  }, []);
+
   // 페이지 방문 추적
   useEffect(() => {
     trackPageView('/order', aptCode || undefined);
@@ -59,6 +66,7 @@ export default function OrderPage() {
   const [showMarketingDialog, setShowMarketingDialog] = useState(false);
   const [highlightConsent, setHighlightConsent] = useState(false);
   const [showDeliveryMethodDialog, setShowDeliveryMethodDialog] = useState(false);
+  const consentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 장바구니 훅
   const { cart, updateQuantity, totalQty, totalAmount, isMinOrderMet } = useCart();
@@ -196,10 +204,12 @@ export default function OrderPage() {
     if (!personalInfoConsent) {
       setHighlightConsent(true);
       setError('개인정보 수집 및 이용에 동의해주세요.');
-      // 3초 후 강조 해제
-      setTimeout(() => {
+      // 3초 후 강조 해제 (기존 타이머 정리)
+      if (consentTimerRef.current) clearTimeout(consentTimerRef.current);
+      consentTimerRef.current = setTimeout(() => {
         setHighlightConsent(false);
         setError(null);
+        consentTimerRef.current = null;
       }, 3000);
       return;
     }

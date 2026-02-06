@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Plus, Minus, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
@@ -53,6 +53,14 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // cleanup
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
+  }, []);
 
   // 배송 마감 상태
   const [deliveryStatus, setDeliveryStatus] = useState<'available' | 'pickup_only' | 'closed'>('available');
@@ -180,6 +188,7 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-admin-password': typeof window !== 'undefined' ? sessionStorage.getItem('admin_password') || '' : '',
         },
         body: JSON.stringify({
           customerName: customerName.trim(),
@@ -201,10 +210,12 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
       // 성공 - 메시지 표시
       setSuccess(true);
       // 3초 후 자동으로 다이얼로그 닫고 새로고침
-      setTimeout(() => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      successTimerRef.current = setTimeout(() => {
         onSuccess();
         resetForm();
         setSuccess(false);
+        successTimerRef.current = null;
       }, 3000);
     } catch (err: any) {
       console.error('주문 생성 오류:', err);

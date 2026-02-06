@@ -87,7 +87,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
       }
 
       // 2. 주문 생성
-      const orderData: any = {
+      const orderData: Record<string, unknown> = {
         customer_id: customerId,
         status: 'CREATED',
         total_qty: totalQty,

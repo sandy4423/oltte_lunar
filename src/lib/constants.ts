@@ -215,6 +215,12 @@ export const PICKUP_DISCOUNT = 3000;
 export const STORE_INFO = {
   name: '올때만두',
   address: 'e편한세상송도 후문상가 안쪽. 컴포즈 옆 (랜드마크로 113)',
+  fullAddress: '인천광역시 연수구 랜드마크로 113 e편한세상송도 후문상가 제114호 일부호',
+  phone: '010-2592-4423',
+  email: 'info@olttefood.com',
+  businessHours: '평일 09:00-18:00',
+  businessNumber: '286-34-01627',
+  ceo: '성하경',
 };
 
 // ============================================

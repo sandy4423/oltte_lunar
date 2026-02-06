@@ -203,6 +203,22 @@ ${deliveryInfo}
 }
 
 /**
+ * 범용 Slack 알림 전송 (구조화된 필드 지원)
+ * 
+ * @param params - title과 fields 배열로 Slack 메시지를 구성
+ * @returns 전송 결과
+ */
+export async function sendSlackAlert(params: {
+  title: string;
+  fields: { title: string; value: string }[];
+}): Promise<SlackResult> {
+  const { title, fields } = params;
+  const fieldLines = fields.map(f => `${f.title}: ${f.value}`).join('\n');
+  const text = `${title}\n\n${fieldLines}`;
+  return sendSlackMessage(text);
+}
+
+/**
  * 환불 완료 알림 메시지 생성
  */
 export function createRefundCompleteNotification(params: {

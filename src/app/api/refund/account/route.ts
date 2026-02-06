@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { cancelPayment, getBankName } from '@/lib/tosspayments';
+import { STORE_INFO } from '@/lib/constants';
 import { sendSMS, createRefundCompleteSMS } from '@/lib/sms';
 import { sendSlackMessage, createRefundCompleteNotification, createErrorAlert } from '@/lib/slack';
 import type { Database } from '@/types/database';
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
     const expiresAt = new Date(refundToken.expires_at);
     if (now > expiresAt) {
       return NextResponse.json(
-        { error: '만료된 링크입니다. 고객센터(010-2592-4423)로 문의해주세요.' },
+        { error: `만료된 링크입니다. 고객센터(${STORE_INFO.phone})로 문의해주세요.` },
         { status: 410 }
       );
     }
@@ -173,7 +174,7 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date(refundToken.expires_at);
     if (now > expiresAt) {
       return NextResponse.json(
-        { error: '만료된 링크입니다. 고객센터(010-2592-4423)로 문의해주세요.' },
+        { error: `만료된 링크입니다. 고객센터(${STORE_INFO.phone})로 문의해주세요.` },
         { status: 410 }
       );
     }
@@ -290,7 +291,7 @@ export async function POST(request: NextRequest) {
       }));
 
       return NextResponse.json(
-        { error: '환불 처리에 실패했습니다. 고객센터(010-2592-4423)로 문의해주세요.' },
+        { error: `환불 처리에 실패했습니다. 고객센터(${STORE_INFO.phone})로 문의해주세요.` },
         { status: 500 }
       );
     }
