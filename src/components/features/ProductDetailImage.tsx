@@ -20,13 +20,23 @@ export function ProductDetailImage() {
           isExpanded ? 'max-h-none' : 'max-h-[400px]'
         }`}
       >
+        {/* 첫 번째 이미지 */}
         <Image
           src="/product-detail.png"
-          alt="올때만두 상품 상세"
+          alt="올때만두 상품 상세 1"
           width={1200}
           height={3246}
           className="w-full h-auto"
           priority
+        />
+        
+        {/* 두 번째 이미지 */}
+        <Image
+          src="/images/detail-2.png"
+          alt="올때만두 상품 상세 2"
+          width={1200}
+          height={5451}
+          className="w-full h-auto"
         />
         
         {/* 페이드아웃 그라데이션 (축소 상태일 때만) */}
