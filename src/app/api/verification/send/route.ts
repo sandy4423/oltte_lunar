@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendSMS, createVerificationSMS } from '@/lib/sms';
 import { TEST_PHONE_NUMBER, TEST_VERIFICATION_CODE } from '@/lib/constants';
 
@@ -13,6 +13,7 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createServerSupabaseClient();
     const { phone } = await request.json();
 
     // 전화번호 정규화

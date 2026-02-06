@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 
 /**
  * POST /api/analytics/page-view
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
+    const supabase = createServerSupabaseClient();
     const { error } = await supabase.from('page_views').insert({
       page,
       apt_code: aptCode || null,

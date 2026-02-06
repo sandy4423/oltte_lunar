@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 
 /**
  * GET /api/analytics/order-stats
@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
  */
 export async function GET(req: NextRequest) {
   try {
+    const supabase = createServerSupabaseClient();
     const searchParams = req.nextUrl.searchParams;
     const days = parseInt(searchParams.get('days') || '30');
     

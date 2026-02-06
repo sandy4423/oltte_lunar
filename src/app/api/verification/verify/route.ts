@@ -4,13 +4,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServerSupabaseClient } from '@/lib/supabase';
 
 // Node.js 런타임 사용
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = createServerSupabaseClient();
     const { phone, code } = await request.json();
 
     // 전화번호 정규화
