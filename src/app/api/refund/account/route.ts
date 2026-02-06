@@ -13,14 +13,7 @@ import { sendSMS, createRefundCompleteSMS } from '@/lib/sms';
 import { sendSlackMessage, createRefundCompleteNotification, createErrorAlert } from '@/lib/slack';
 import type { Database } from '@/types/database';
 
-// 클라이언트용 Supabase (RLS 적용)
-function createPublicSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  return createClient<Database>(supabaseUrl, supabaseAnonKey);
-}
-
-// 서버용 Supabase (RLS 우회, 환불 처리용)
+// 서버용 Supabase (RLS 우회, 토큰 조회 및 환불 처리용)
 function createServiceSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -29,6 +22,7 @@ function createServiceSupabaseClient() {
 
 // ============================================
 // GET: 토큰 검증 및 주문 정보 조회
+// Service Role Key 사용 (토큰 자체가 보안 역할)
 // ============================================
 
 export async function GET(request: NextRequest) {
@@ -43,7 +37,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = createPublicSupabaseClient();
+    const supabase = createServiceSupabaseClient();
 
     // 토큰으로 환불 정보 조회
     const { data: refundToken, error: tokenError } = await supabase
