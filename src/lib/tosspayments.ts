@@ -221,7 +221,7 @@ export async function issueCashReceipt(params: {
   orderName: string;
   customerName?: string;
   type: '소득공제' | '지출증빙';
-  registrationNumber: string;
+  customerIdentityNumber: string;
   taxFreeAmount?: number;
 }) {
   try {

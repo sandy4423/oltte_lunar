@@ -11,12 +11,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { verifyWebhookSecret, issueCashReceipt } from '@/lib/tosspayments';
 import { sendSMS, createPaymentConfirmSMS } from '@/lib/sms';
-import { sendSlackMessage, createPaymentConfirmation, createErrorAlert, sendSlackAlert } from '@/lib/slack';
+import { sendSlackMessage, createPaymentConfirmation, createErrorAlert } from '@/lib/slack';
 import { formatKST } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
+  let body: any = null;
   try {
-    const body = await request.json();
+    body = await request.json();
     console.log('[Webhook] Toss Payments webhook received:', body);
 
     const { createdAt, secret, status, orderId, transactionKey } = body;
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
             orderName: `올때만두 - ${order.apt_name}`,
             customerName: order.customer?.name,
             type: order.cash_receipt_type as '소득공제' | '지출증빙',
-            registrationNumber: order.cash_receipt_number,
+            customerIdentityNumber: order.cash_receipt_number,
           });
 
           // 발급 성공 시 정보 저장
@@ -140,16 +141,15 @@ export async function POST(request: NextRequest) {
           console.error('[Webhook] Cash receipt issue failed:', cashReceiptError);
           
           // Slack 알림
-          await sendSlackAlert({
-            title: '⚠️ 현금영수증 자동 발급 실패',
-            fields: [
-              { title: '주문 ID', value: actualOrderId },
-              { title: '고객명', value: order.customer?.name || '미입력' },
-              { title: '금액', value: `${order.total_amount.toLocaleString()}원` },
-              { title: '유형', value: order.cash_receipt_type },
-              { title: '오류', value: cashReceiptError.message },
-            ],
-          }).catch(e => console.error('[Slack Alert]', e));
+          await sendSlackMessage(createErrorAlert({
+            errorType: '현금영수증 자동 발급 실패',
+            errorMessage: cashReceiptError.message || '현금영수증 발급 실패',
+            orderId: actualOrderId,
+            customerName: order.customer?.name,
+            customerPhone: order.customer?.phone,
+            aptName: order.apt_name,
+            timestamp: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
+          })).catch(e => console.error('[Slack Alert]', e));
         }
       }
 
@@ -230,10 +230,11 @@ export async function POST(request: NextRequest) {
     console.error('[Webhook] Error:', error);
     
     // Slack 에러 알림
+    const orderId = body?.orderId ? body.orderId.replace('ORDER_', '') : undefined;
     await sendSlackMessage(createErrorAlert({
       errorType: '웹훅 처리 오류',
       errorMessage: error.message || 'Webhook processing failed',
-      orderId: body?.orderId?.replace('ORDER_', ''),
+      orderId: orderId,
       timestamp: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
     })).catch(e => console.error('[Error Alert]', e));
     
