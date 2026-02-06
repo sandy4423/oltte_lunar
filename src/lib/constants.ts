@@ -254,6 +254,20 @@ export const PICKUP_TIME_SLOTS = [
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00',
 ];
 
+// 조기 마감 날짜별 마지막 픽업 가능 시간
+export const PICKUP_EARLY_CLOSE_DATES: Record<string, string> = {
+  '2026-02-14': '13:00', // 토요일 오후 1시 마감
+};
+
+// 선택된 날짜에 따라 가능한 픽업 시간 슬롯 반환
+export function getAvailableTimeSlots(date: string): string[] {
+  const closeTime = PICKUP_EARLY_CLOSE_DATES[date];
+  if (closeTime) {
+    return PICKUP_TIME_SLOTS.filter(time => time <= closeTime);
+  }
+  return PICKUP_TIME_SLOTS;
+}
+
 // ============================================
 // 테스트 계정 (카드사 심사 및 개발 테스트용)
 // ============================================

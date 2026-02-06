@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PICKUP_AVAILABLE_DATES, PICKUP_TIME_SLOTS, STORE_INFO, PICKUP_DISCOUNT } from '@/lib/constants';
+import { PICKUP_AVAILABLE_DATES, STORE_INFO, PICKUP_DISCOUNT, PICKUP_EARLY_CLOSE_DATES, getAvailableTimeSlots } from '@/lib/constants';
 
 interface PickupDateTimeSelectorProps {
   pickupDate: string;
@@ -28,6 +28,18 @@ export function PickupDateTimeSelector({
   pickupTime,
   setPickupTime,
 }: PickupDateTimeSelectorProps) {
+  const availableTimeSlots = getAvailableTimeSlots(pickupDate);
+  const earlyCloseTime = PICKUP_EARLY_CLOSE_DATES[pickupDate];
+
+  // 날짜 변경 핸들러: 조기 마감 날짜로 변경 시 선택된 시간이 범위 밖이면 초기화
+  const handleDateChange = (date: string) => {
+    setPickupDate(date);
+    const slots = getAvailableTimeSlots(date);
+    if (pickupTime && !slots.includes(pickupTime)) {
+      setPickupTime('');
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -55,7 +67,7 @@ export function PickupDateTimeSelector({
           <Label htmlFor="pickup-date" className="text-base font-semibold">
             픽업 날짜 <span className="text-destructive">*</span>
           </Label>
-          <Select value={pickupDate} onValueChange={setPickupDate}>
+          <Select value={pickupDate} onValueChange={handleDateChange}>
             <SelectTrigger id="pickup-date" className="h-12">
               <SelectValue placeholder="픽업 날짜를 선택해주세요" />
             </SelectTrigger>
@@ -86,7 +98,7 @@ export function PickupDateTimeSelector({
               <SelectValue placeholder="픽업 시간을 선택해주세요" />
             </SelectTrigger>
             <SelectContent>
-              {PICKUP_TIME_SLOTS.map((time) => (
+              {availableTimeSlots.map((time) => (
                 <SelectItem key={time} value={time}>
                   {time}
                 </SelectItem>
@@ -94,7 +106,8 @@ export function PickupDateTimeSelector({
             </SelectContent>
           </Select>
           <p className="text-xs text-gray-500">
-            영업시간: 09:00 ~ 21:00
+            영업시간: 09:00 ~ {earlyCloseTime || '21:00'}
+            {earlyCloseTime && ' (조기 마감)'}
           </p>
         </div>
 
