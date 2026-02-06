@@ -98,6 +98,9 @@ export default function AdminPage() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedOrderForDetail, setSelectedOrderForDetail] = useState<any | null>(null);
   const [detailActionLoading, setDetailActionLoading] = useState(false);
+  
+  // 테이블 행 클릭 시 상세보기 버튼 표시
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
   // 상세보기에서 전달완료 처리
   const handleDetailDelivered = async (orderId: string) => {
@@ -909,13 +912,27 @@ export default function AdminPage() {
                       };
 
                       return (
-                        <TableRow key={order.id} className="relative group cursor-pointer">
+                        <TableRow 
+                          key={order.id} 
+                          className="relative group cursor-pointer"
+                          onClick={(e) => {
+                            // 체크박스나 다른 인터랙티브 요소 클릭 시 무시
+                            const target = e.target as HTMLElement;
+                            if (target.closest('input, button, a')) return;
+                            
+                            setSelectedRowId(selectedRowId === order.id ? null : order.id);
+                          }}
+                        >
                           {/* 상세보기 오버레이 */}
                           <td
-                            className="absolute inset-0 z-10 hidden group-hover:flex items-center justify-center bg-gray-900/40 rounded"
-                            onClick={() => {
+                            className={`absolute inset-0 z-10 items-center justify-center bg-gray-900/40 rounded ${
+                              selectedRowId === order.id ? 'flex' : 'hidden'
+                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation(); // 행 클릭 이벤트 전파 방지
                               setSelectedOrderForDetail(order);
                               setDetailDialogOpen(true);
+                              setSelectedRowId(null); // 다이얼로그 열면 선택 해제
                             }}
                           >
                             <span className="bg-white text-gray-900 font-semibold px-5 py-2.5 rounded-lg shadow-lg text-sm">
