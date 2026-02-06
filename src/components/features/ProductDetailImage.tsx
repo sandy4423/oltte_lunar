@@ -22,7 +22,7 @@ export function ProductDetailImage() {
       >
         {/* 첫 번째 이미지 */}
         <Image
-          src="/product-detail.png"
+          src="/images/detail-1.png"
           alt="올때만두 상품 상세 1"
           width={1200}
           height={3246}
