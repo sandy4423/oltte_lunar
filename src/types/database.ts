@@ -300,6 +300,11 @@ export interface Database {
         Insert: RefundTokenInsert;
         Update: RefundTokenUpdate;
       };
+      product_shipment_quantities: {
+        Row: ProductShipmentQuantityRow;
+        Insert: ProductShipmentQuantityInsert;
+        Update: ProductShipmentQuantityUpdate;
+      };
     };
     Views: {
       [_ in never]: never;
@@ -312,6 +317,40 @@ export interface Database {
       product_sku: ProductSku;
     };
   };
+}
+
+// ============================================
+// product_shipment_quantities 테이블 (출하 수량 관리)
+// ============================================
+
+/** product_shipment_quantities 테이블 Row */
+export interface ProductShipmentQuantityRow {
+  id: string;                      // uuid, PK
+  sku: ProductSku;                 // product_sku, NOT NULL
+  shipment_date: string;           // date, NOT NULL
+  quantity: number;                // integer, NOT NULL, DEFAULT 0
+  created_at: string;              // timestamptz, DEFAULT now()
+  updated_at: string;              // timestamptz, DEFAULT now()
+}
+
+/** product_shipment_quantities INSERT 타입 */
+export interface ProductShipmentQuantityInsert {
+  id?: string;
+  sku: ProductSku;
+  shipment_date: string;
+  quantity?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** product_shipment_quantities UPDATE 타입 */
+export interface ProductShipmentQuantityUpdate {
+  id?: string;
+  sku?: ProductSku;
+  shipment_date?: string;
+  quantity?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // ============================================

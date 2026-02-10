@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import { APARTMENT_LIST, APARTMENTS, ORDER_STATUS_LABEL, getProductBySku, getApartmentFullName, PICKUP_APT_CODE } from '@/lib/constants';
 import { TRAFFIC_SOURCE_LABELS } from '@/types/source';
@@ -31,9 +32,14 @@ import { useAdminOrders } from '@/hooks/useAdminOrders';
 import { useOrderFilters } from '@/hooks/useOrderFilters';
 import { useOrderSelection } from '@/hooks/useOrderSelection';
 import { useOrderStatusChange } from '@/hooks/useOrderStatusChange';
+import { useAdminStats } from '@/hooks/useAdminStats';
 import { CancelRequestDialog } from '@/components/features/admin/CancelRequestDialog';
 import { ManualOrderDialog } from '@/components/features/admin/ManualOrderDialog';
 import { OrderDetailDialog } from '@/components/features/admin/OrderDetailDialog';
+import { DateRangeFilter } from '@/components/features/admin/stats/DateRangeFilter';
+import { ProductStats } from '@/components/features/admin/stats/ProductStats';
+import { SalesStats } from '@/components/features/admin/stats/SalesStats';
+import { DeliveryCalendar } from '@/components/features/admin/stats/DeliveryCalendar';
 
 // ============================================
 // 비밀번호 인증 상수
@@ -102,6 +108,17 @@ export default function AdminPage() {
   
   // 테이블 행 클릭 시 상세보기 버튼 표시
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+
+  // 통계 훅
+  const {
+    stats,
+    loading: statsLoading2,
+    error: statsError,
+    dateRange,
+    setDateRange,
+    fetchStats,
+    updateShipmentQuantity,
+  } = useAdminStats();
 
   // 상세보기에서 전달완료 처리
   const handleDetailDelivered = async (orderId: string) => {
@@ -431,6 +448,18 @@ export default function AdminPage() {
             </Button>
           </div>
         </div>
+
+        {/* 탭 네비게이션 */}
+        <Tabs defaultValue="orders" className="mb-6">
+          <TabsList className="mb-4">
+            <TabsTrigger value="orders" className="px-6">주문관리</TabsTrigger>
+            <TabsTrigger value="stats" className="px-6">통계분석</TabsTrigger>
+          </TabsList>
+
+          {/* ============================================ */}
+          {/* 주문관리 탭 */}
+          {/* ============================================ */}
+          <TabsContent value="orders">
 
         {/* 페이지 방문 통계 섹션 */}
         {pageStats && (
@@ -1028,6 +1057,69 @@ export default function AdminPage() {
         <div className="mt-6 text-center text-sm text-gray-400">
           총 {filteredOrders.length}건 / 선택 {selectedOrders.size}건
         </div>
+
+          </TabsContent>
+
+          {/* ============================================ */}
+          {/* 통계분석 탭 */}
+          {/* ============================================ */}
+          <TabsContent value="stats">
+            {/* 기간 선택 필터 */}
+            <DateRangeFilter
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              loading={statsLoading2}
+            />
+
+            {/* 로딩 상태 */}
+            {statsLoading2 && (
+              <div className="text-center py-12">
+                <RefreshCw className="h-8 w-8 animate-spin text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500">통계 데이터를 불러오는 중...</p>
+              </div>
+            )}
+
+            {/* 에러 상태 */}
+            {statsError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-red-700">{statsError}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchStats}
+                  className="mt-2"
+                >
+                  다시 시도
+                </Button>
+              </div>
+            )}
+
+            {/* 통계 데이터 */}
+            {stats && !statsLoading2 && (
+              <>
+                {/* 상품별 통계 */}
+                <ProductStats
+                  products={stats.products}
+                  shipmentDates={stats.shipmentDates}
+                  onUpdateShipment={updateShipmentQuantity}
+                />
+
+                {/* 매출 통계 */}
+                <SalesStats sales={stats.sales} />
+
+                {/* 배송 캘린더 */}
+                <DeliveryCalendar calendar={stats.calendar} />
+              </>
+            )}
+
+            {/* 데이터 없음 */}
+            {!stats && !statsLoading2 && !statsError && (
+              <div className="text-center py-12 text-gray-400">
+                통계 데이터가 없습니다.
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* 취소 요청 다이얼로그 */}
