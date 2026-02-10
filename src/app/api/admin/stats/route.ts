@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
       const orderRevenue = isPaid ? order.total_amount : 0;
       
       // 픽업 할인 금액 (할인 전 금액 계산용)
-      const discount = order.is_pickup ? (order.pickup_discount || 3000) : 0;
+      const discount = isPaid && order.is_pickup ? (order.pickup_discount || 3000) : 0;
       const revenueBeforeDiscount = orderRevenue + discount;
 
       // 전체 매출
