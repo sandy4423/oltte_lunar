@@ -14,7 +14,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PRODUCTS } from '@/lib/constants';
 
 interface DeliveryCalendarProps {
-  calendar: Record<string, Record<string, number>>;
+  calendar: Record<string, {
+    items: Record<string, number>;
+    orderCount: {
+      delivery: number;
+      pickup: number;
+    };
+  }>;
 }
 
 // 상품 정보 매핑
@@ -79,10 +85,14 @@ export function DeliveryCalendar({ calendar }: DeliveryCalendarProps) {
               const dayOfWeek = dayDate.getDay();
               const isCurrentMonth = isSameMonth(dayDate, currentMonth);
               const isCurrentDay = isToday(dayDate);
-              const hasData = calendar[dateStr] && Object.keys(calendar[dateStr]).length > 0;
+              const dateData = calendar[dateStr];
+              const hasData = dateData && Object.keys(dateData.items || {}).length > 0;
               const totalQty = hasData
-                ? Object.values(calendar[dateStr]).reduce((sum, qty) => sum + qty, 0)
+                ? Object.values(dateData.items).reduce((sum, qty) => sum + qty, 0)
                 : 0;
+              const deliveryCount = dateData?.orderCount.delivery || 0;
+              const pickupCount = dateData?.orderCount.pickup || 0;
+              const totalOrders = deliveryCount + pickupCount;
 
               return (
                 <div
@@ -104,21 +114,29 @@ export function DeliveryCalendar({ calendar }: DeliveryCalendarProps) {
                   {/* 상품 수량 */}
                   {hasData && isCurrentMonth && (
                     <div className="space-y-0.5">
-                      {Object.entries(calendar[dateStr]).map(([sku, qty]) => {
+                      {Object.entries(dateData.items).map(([sku, qty]) => {
                         const info = PRODUCT_INFO[sku];
                         if (!info || qty === 0) return null;
 
                         return (
-                          <div key={sku} className="text-[10px] md:text-xs text-gray-700 truncate">
-                            {info.emoji}{qty}
+                          <div key={sku} className="text-[10px] md:text-xs text-gray-700">
+                            {info.emoji} {info.name} {qty}개
                           </div>
                         );
                       })}
 
-                      {/* 총 수량 */}
-                      {totalQty > 0 && (
-                        <div className="text-[10px] font-bold text-blue-700 border-t border-blue-200 mt-0.5 pt-0.5">
-                          계: {totalQty}
+                      {/* 구분선 */}
+                      {totalOrders > 0 && (
+                        <div className="border-t border-gray-300 pt-0.5 mt-0.5">
+                          {/* 주문 건수 */}
+                          <div className="text-[10px] text-gray-600 space-y-0.5">
+                            {deliveryCount > 0 && (
+                              <div>🚚 배송 {deliveryCount}건</div>
+                            )}
+                            {pickupCount > 0 && (
+                              <div>🏪 픽업 {pickupCount}건</div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>

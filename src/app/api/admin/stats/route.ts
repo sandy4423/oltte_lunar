@@ -120,6 +120,8 @@ export async function GET(request: NextRequest) {
     const sales = {
       totalRevenue: 0,
       totalOrders: 0,
+      totalDiscount: 0,
+      netRevenue: 0,
       byApt: {} as Record<string, { revenue: number; orders: number; name: string }>,
       byProduct: {} as Record<string, { revenue: number; qty: number }>,
       byStatus: {
@@ -137,9 +139,11 @@ export async function GET(request: NextRequest) {
     // 배송 캘린더 데이터
     const calendar: Record<string, {
       items: Record<string, number>;
-      aptName?: string;
-      isPickup: boolean;
-    }[]> = {};
+      orderCount: {
+        delivery: number;
+        pickup: number;
+      };
+    }> = {};
 
     // 상품 정보 매핑
     const PRODUCT_INFO: Record<string, { name: string; emoji: string }> = {
@@ -176,18 +180,24 @@ export async function GET(request: NextRequest) {
     for (const order of allOrders) {
       const isPaid = PAID_STATUSES.includes(order.status);
       const orderRevenue = isPaid ? order.total_amount : 0;
+      
+      // 픽업 할인 금액 (할인 전 금액 계산용)
+      const discount = order.is_pickup ? (order.pickup_discount || 3000) : 0;
+      const revenueBeforeDiscount = orderRevenue + discount;
 
       // 전체 매출
       sales.totalOrders++;
-      sales.totalRevenue += orderRevenue;
+      sales.totalRevenue += revenueBeforeDiscount;
+      sales.totalDiscount += discount;
+      sales.netRevenue += orderRevenue;
 
       // 상태별 매출
       if (order.status === 'WAITING_FOR_DEPOSIT') {
         sales.byStatus.waitingDeposit += order.total_amount;
       } else if (isPaid) {
-        sales.byStatus.paid += order.total_amount;
+        sales.byStatus.paid += orderRevenue;
         if (order.status === 'DELIVERED') {
-          sales.byStatus.delivered += order.total_amount;
+          sales.byStatus.delivered += orderRevenue;
         }
       }
 
@@ -215,68 +225,61 @@ export async function GET(request: NextRequest) {
 
       if (deliveryDate && isPaid) {
         if (!calendar[deliveryDate]) {
-          calendar[deliveryDate] = [];
-        }
-
-        // 주문별 상품 목록
-        const orderItems: Record<string, number> = {};
-        for (const item of (order.order_items || [])) {
-          orderItems[item.sku] = (orderItems[item.sku] || 0) + item.qty;
-        }
-
-        calendar[deliveryDate].push({
-          items: orderItems,
-          aptName: order.apt_name,
-          isPickup: order.is_pickup || false,
-        });
-      }
-
-      // 상품별 집계
-      for (const item of (order.order_items || [])) {
-        const sku = item.sku;
-
-        if (!products[sku]) {
-          const info = PRODUCT_INFO[sku] || { name: sku, emoji: '📦' };
-          products[sku] = {
-            name: info.name,
-            emoji: info.emoji,
-            totalQty: 0,
-            totalRevenue: 0,
-            byApt: {},
-            shipmentByDate: {},
+          calendar[deliveryDate] = {
+            items: {},
+            orderCount: { delivery: 0, pickup: 0 },
           };
-          for (const date of SHIPMENT_DATES) {
-            products[sku].shipmentByDate[date] = 0;
-          }
         }
 
-        products[sku].totalQty += item.qty;
-        products[sku].totalRevenue += item.line_amount;
-
-        // 단지별 상품 수량
-        if (!products[sku].byApt[aptCode]) {
-          products[sku].byApt[aptCode] = 0;
+        // 주문 건수 집계
+        if (order.is_pickup) {
+          calendar[deliveryDate].orderCount.pickup++;
+        } else {
+          calendar[deliveryDate].orderCount.delivery++;
         }
-        products[sku].byApt[aptCode] += item.qty;
 
-        // 상품별 매출
-        if (!sales.byProduct[sku]) {
-          sales.byProduct[sku] = { revenue: 0, qty: 0 };
+        // 상품별 수량 집계
+        for (const item of (order.order_items || [])) {
+          const currentQty = calendar[deliveryDate].items[item.sku] || 0;
+          calendar[deliveryDate].items[item.sku] = currentQty + item.qty;
         }
-        sales.byProduct[sku].revenue += item.line_amount;
-        sales.byProduct[sku].qty += item.qty;
       }
-    }
 
-    // ============================================
-    // 4. 캘린더 데이터 변환 (날짜별 상품 수량 합계)
-    // ============================================
-    const calendarSummary: Record<string, Record<string, number>> = {};
-    for (const [date, entries] of Object.entries(calendar)) {
-      calendarSummary[date] = {};
-      for (const entry of entries) {
-        for (const [sku, qty] of Object.entries(entry.items)) {
-          calendarSummary[date][sku] = (calendarSummary[date][sku] || 0) + qty;
+      // 상품별 집계 (결제완료 건만)
+      if (isPaid) {
+        for (const item of (order.order_items || [])) {
+          const sku = item.sku;
+
+          if (!products[sku]) {
+            const info = PRODUCT_INFO[sku] || { name: sku, emoji: '📦' };
+            products[sku] = {
+              name: info.name,
+              emoji: info.emoji,
+              totalQty: 0,
+              totalRevenue: 0,
+              byApt: {},
+              shipmentByDate: {},
+            };
+            for (const date of SHIPMENT_DATES) {
+              products[sku].shipmentByDate[date] = 0;
+            }
+          }
+
+          products[sku].totalQty += item.qty;
+          products[sku].totalRevenue += item.line_amount;
+
+          // 단지별 상품 수량
+          if (!products[sku].byApt[aptCode]) {
+            products[sku].byApt[aptCode] = 0;
+          }
+          products[sku].byApt[aptCode] += item.qty;
+
+          // 상품별 매출
+          if (!sales.byProduct[sku]) {
+            sales.byProduct[sku] = { revenue: 0, qty: 0 };
+          }
+          sales.byProduct[sku].revenue += item.line_amount;
+          sales.byProduct[sku].qty += item.qty;
         }
       }
     }
@@ -286,7 +289,7 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
       products,
       sales,
-      calendar: calendarSummary,
+      calendar,
       shipmentDates: SHIPMENT_DATES,
     });
   } catch (error: any) {

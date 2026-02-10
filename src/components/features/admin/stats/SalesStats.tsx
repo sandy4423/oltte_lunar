@@ -38,10 +38,10 @@ export function SalesStats({ sales }: SalesStatsProps) {
       </div>
 
       {/* 총 매출 요약 */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
         <Card>
           <CardContent className="pt-4">
-            <p className="text-sm text-gray-500">총 매출</p>
+            <p className="text-sm text-gray-500">총 매출 (할인 전)</p>
             <p className="text-2xl font-bold text-green-600">
               {sales.totalRevenue.toLocaleString()}원
             </p>
@@ -50,17 +50,25 @@ export function SalesStats({ sales }: SalesStatsProps) {
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <p className="text-sm text-gray-500">입금대기</p>
-            <p className="text-2xl font-bold text-yellow-600">
-              {sales.byStatus.waitingDeposit.toLocaleString()}원
+            <p className="text-sm text-gray-500">픽업 할인</p>
+            <p className="text-2xl font-bold text-red-600">
+              -{sales.totalDiscount.toLocaleString()}원
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
-            <p className="text-sm text-gray-500">결제완료</p>
+            <p className="text-sm text-gray-500">실제 매출</p>
             <p className="text-2xl font-bold text-blue-600">
-              {sales.byStatus.paid.toLocaleString()}원
+              {sales.netRevenue.toLocaleString()}원
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-gray-500">입금대기</p>
+            <p className="text-2xl font-bold text-yellow-600">
+              {sales.byStatus.waitingDeposit.toLocaleString()}원
             </p>
           </CardContent>
         </Card>

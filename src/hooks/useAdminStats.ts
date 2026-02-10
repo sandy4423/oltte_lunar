@@ -23,6 +23,8 @@ export interface ProductStat {
 export interface SalesStats {
   totalRevenue: number;
   totalOrders: number;
+  totalDiscount: number;
+  netRevenue: number;
   byApt: Record<string, { revenue: number; orders: number; name: string }>;
   byProduct: Record<string, { revenue: number; qty: number }>;
   byStatus: {
