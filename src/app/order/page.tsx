@@ -587,7 +587,7 @@ export default function OrderPage() {
               QR을 찍어주셔서 감사합니다!
             </p>
             <p className="text-center text-gray-700">
-              저는 e편한세상 후문에서<br />
+              저희는 e편한세상 후문에서<br />
               열심히 만두 빚고있는 <span className="font-bold text-brand">올때만두</span>입니다.
             </p>
             <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded">
