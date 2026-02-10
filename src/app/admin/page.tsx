@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { 
   RefreshCw, Truck, CheckCircle, Printer, Download,
   Filter, Search, BarChart3, Lock, TrendingUp, ChevronDown, ChevronUp, Plus,
-  EyeOff, Eye
+  EyeOff, Eye, Bell
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -283,6 +283,69 @@ export default function AdminPage() {
     } catch (error: any) {
       console.error('[SingleDelivered] Error:', error);
       alert(error.message || '배송완료 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 입금 독려 메시지 발송
+  const [remindLoading, setRemindLoading] = useState(false);
+
+  const handleRemindDeposit = async () => {
+    if (selectedOrders.size === 0) return;
+
+    // 선택된 주문 중 입금대기 상태만 필터링
+    const waitingOrders = orders.filter(
+      (o) => selectedOrders.has(o.id) && o.status === 'WAITING_FOR_DEPOSIT'
+    );
+
+    if (waitingOrders.length === 0) {
+      alert('선택한 주문 중 입금대기 상태의 주문이 없습니다.');
+      return;
+    }
+
+    const customerList = waitingOrders
+      .map((o) => `• ${o.customer.name} (${o.total_amount.toLocaleString()}원)`)
+      .join('\n');
+
+    const confirmed = confirm(
+      `입금 독려 메시지를 발송합니다.\n\n` +
+      `[발송 대상: ${waitingOrders.length}명]\n${customerList}\n\n` +
+      `발송하시겠습니까?`
+    );
+
+    if (!confirmed) return;
+
+    setRemindLoading(true);
+    try {
+      const response = await fetch('/api/admin/orders/remind-deposit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': sessionStorage.getItem('admin_password') || '',
+        },
+        body: JSON.stringify({
+          orderIds: waitingOrders.map((o) => o.id),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '입금 독려 메시지 발송에 실패했습니다.');
+      }
+
+      const { summary } = data;
+      alert(
+        `입금 독려 메시지 발송 완료\n\n` +
+        `성공: ${summary.success}명\n` +
+        `실패: ${summary.failed}명`
+      );
+
+      clearSelection();
+    } catch (error: any) {
+      console.error('[RemindDeposit] Error:', error);
+      alert(error.message || '입금 독려 메시지 발송 중 오류가 발생했습니다.');
+    } finally {
+      setRemindLoading(false);
     }
   };
 
@@ -725,6 +788,15 @@ export default function AdminPage() {
 
             {/* 액션 버튼 */}
             <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={handleRemindDeposit}
+                disabled={selectedOrders.size === 0 || remindLoading}
+                variant="outline"
+                className="text-orange-600 border-orange-200 hover:bg-orange-50"
+              >
+                <Bell className={`mr-2 h-4 w-4 ${remindLoading ? 'animate-pulse' : ''}`} />
+                입금 안내 ({selectedOrders.size})
+              </Button>
               <Button
                 onClick={() => handleStatusChange('OUT_FOR_DELIVERY')}
                 disabled={selectedOrders.size === 0 || actionLoading}
