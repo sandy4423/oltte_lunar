@@ -10,6 +10,7 @@
  */
 
 import crypto from 'crypto';
+import { formatAccountNumber } from './utils';
 
 const API_KEY = process.env.SOLAPI_API_KEY || '';
 const API_SECRET = process.env.SOLAPI_API_SECRET || '';
@@ -206,7 +207,7 @@ export function createVirtualAccountSMS(params: {
   return `[올때만두 공식] ${customerName}님 주문 감사합니다!
 
 [입금 정보]
-${bankName} ${accountNumber}
+${bankName} ${formatAccountNumber(accountNumber)}
 입금액: ${amount.toLocaleString()}원 (정확히)
 입금기한: ${dueDate}까지
 

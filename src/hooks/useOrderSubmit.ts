@@ -168,7 +168,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
           amount: finalAmount,
           customerName: name,
           customerPhone: normalizedPhone,
-          bank: '20', // 우리은행 (기본값)
+          bank: '88', // 신한은행 (기본값)
         }),
       });
 

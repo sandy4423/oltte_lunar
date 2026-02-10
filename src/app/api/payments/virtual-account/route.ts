@@ -14,7 +14,7 @@ import { formatKST } from '@/lib/utils';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { orderId, amount, customerName, customerPhone, bank = '20' } = body;
+    const { orderId, amount, customerName, customerPhone, bank = '88' } = body;
 
     // 필수 파라미터 검증
     if (!orderId || !amount || !customerName) {
