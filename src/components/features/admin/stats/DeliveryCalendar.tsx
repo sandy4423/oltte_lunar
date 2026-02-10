@@ -23,11 +23,16 @@ interface DeliveryCalendarProps {
   }>;
 }
 
-// 상품 정보 매핑
-const PRODUCT_INFO: Record<string, { name: string; emoji: string }> = {};
-for (const p of PRODUCTS) {
-  PRODUCT_INFO[p.sku] = { name: p.name, emoji: p.emoji };
-}
+// 상품 정보 매핑 (캘린더용 간결한 이름)
+const PRODUCT_INFO: Record<string, { name: string; emoji: string }> = {
+  meat: { name: '고기', emoji: '🥟' },
+  kimchi: { name: '김치', emoji: '🌶️' },
+  tteokguk: { name: '떡국', emoji: '🍚' },
+  yuksu: { name: '육수', emoji: '🍲' },
+};
+
+// 상품 표시 순서
+const PRODUCT_ORDER = ['meat', 'kimchi', 'tteokguk', 'yuksu'];
 
 // 요일 헤더
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -114,9 +119,10 @@ export function DeliveryCalendar({ calendar }: DeliveryCalendarProps) {
                   {/* 상품 수량 */}
                   {hasData && isCurrentMonth && (
                     <div className="space-y-0.5">
-                      {Object.entries(dateData.items).map(([sku, qty]) => {
+                      {PRODUCT_ORDER.map((sku) => {
+                        const qty = dateData.items[sku];
                         const info = PRODUCT_INFO[sku];
-                        if (!info || qty === 0) return null;
+                        if (!info || !qty || qty === 0) return null;
 
                         return (
                           <div key={sku} className="text-[10px] md:text-xs text-gray-700">
