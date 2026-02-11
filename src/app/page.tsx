@@ -56,8 +56,8 @@ export default function HomePage() {
             <Image
               src="/images/logo.png"
               alt="올때만두"
-              width={300}
-              height={80}
+              width={220}
+              height={60}
               priority
             />
           </div>
