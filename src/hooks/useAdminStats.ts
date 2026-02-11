@@ -106,9 +106,14 @@ export function useAdminStats() {
     }
   }, [dateRange]);
 
-  // 날짜 범위 변경 시 자동 조회
+  // 날짜 범위 변경 시 자동 조회 (인증된 경우에만)
   useEffect(() => {
-    fetchStats();
+    const adminPassword = typeof window !== 'undefined'
+      ? sessionStorage.getItem('admin_password')
+      : null;
+    if (adminPassword) {
+      fetchStats();
+    }
   }, [fetchStats]);
 
   // 출하 수량 수정

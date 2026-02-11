@@ -4,12 +4,12 @@
  * 서버 API를 통해 주문 목록을 조회하고 관리합니다.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { OrderFull } from '@/types/database';
 
 export function useAdminOrders() {
   const [orders, setOrders] = useState<OrderFull[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [lastFetchTime, setLastFetchTime] = useState<string | null>(null);
 
   const fetchOrders = async () => {
@@ -43,10 +43,8 @@ export function useAdminOrders() {
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
+  // 마운트 시 자동 호출 제거 - admin/page.tsx에서 isAuthenticated 변경 시 호출
+  
   return {
     orders,
     loading,

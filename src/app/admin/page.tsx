@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import { 
   RefreshCw, Truck, CheckCircle, Printer, Download,
   Filter, Search, BarChart3, Lock, TrendingUp, ChevronDown, ChevronUp, Plus,
-  EyeOff, Eye, Bell
+  EyeOff, Eye, Bell, Package
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -186,11 +186,13 @@ export default function AdminPage() {
     }
   }, []);
 
-  // 초기 로드 시 통계 조회
+  // 인증 후 모든 데이터 로드
   useEffect(() => {
     if (isAuthenticated) {
-      fetchPageStats();
-      fetchOrderStats();
+      fetchOrders();        // 주문 데이터
+      fetchStats();         // 통계분석 데이터
+      fetchPageStats();     // 페이지 방문 통계
+      fetchOrderStats();    // 주문 통계
     }
   }, [isAuthenticated]);
 
@@ -352,6 +354,31 @@ export default function AdminPage() {
   // 선택된 주문들
   const selectedOrdersData = orders.filter((o) => selectedOrders.has(o.id));
 
+  // 전달 필요 상품 집계 (결제완료이지만 DELIVERED가 아닌 주문)
+  const pendingDeliveryItems = useMemo(() => {
+    const items: Record<string, number> = {};
+    
+    orders
+      .filter(o => 
+        !o.is_hidden && 
+        ['PAID', 'OUT_FOR_DELIVERY', 'LATE_DEPOSIT'].includes(o.status)
+      )
+      .forEach(order => {
+        order.order_items.forEach(item => {
+          items[item.sku] = (items[item.sku] || 0) + item.qty;
+        });
+      });
+    
+    return items;
+  }, [orders]);
+
+  const pendingDeliveryOrderCount = useMemo(() => {
+    return orders.filter(o => 
+      !o.is_hidden && 
+      ['PAID', 'OUT_FOR_DELIVERY', 'LATE_DEPOSIT'].includes(o.status)
+    ).length;
+  }, [orders]);
+
   // 비밀번호 인증 화면
   if (!isAuthenticated) {
     return (
@@ -492,21 +519,23 @@ export default function AdminPage() {
               </p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button 
               onClick={() => setShowHidden(!showHidden)} 
               variant={showHidden ? "default" : "outline"}
-              className={showHidden ? "bg-gray-700 hover:bg-gray-800" : ""}
+              className={`${showHidden ? "bg-gray-700 hover:bg-gray-800" : ""} text-sm md:text-base px-2 md:px-4`}
             >
-              {showHidden ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
-              {showHidden ? '일반 주문 보기' : '숨긴 주문 보기'}
+              {showHidden ? <Eye className="mr-1 md:mr-2 h-4 w-4" /> : <EyeOff className="mr-1 md:mr-2 h-4 w-4" />}
+              <span className="hidden sm:inline">{showHidden ? '일반 주문 보기' : '숨긴 주문 보기'}</span>
+              <span className="sm:hidden">{showHidden ? '일반' : '숨김'}</span>
             </Button>
-            <Button onClick={() => setManualOrderDialogOpen(true)} className="bg-green-600 hover:bg-green-700">
-              <Plus className="mr-2 h-4 w-4" />
-              수기 주문 입력
+            <Button onClick={() => setManualOrderDialogOpen(true)} className="bg-green-600 hover:bg-green-700 text-sm md:text-base px-2 md:px-4">
+              <Plus className="mr-1 md:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">수기 주문 입력</span>
+              <span className="sm:hidden">수기</span>
             </Button>
-            <Button onClick={fetchOrders} variant="outline" disabled={loading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <Button onClick={fetchOrders} variant="outline" disabled={loading} className="text-sm md:text-base px-2 md:px-4">
+              <RefreshCw className={`mr-1 md:mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               새로고침
             </Button>
           </div>
@@ -717,6 +746,35 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* 전달 필요 수량 (결제완료, 미전달) */}
+        {pendingDeliveryOrderCount > 0 && (
+          <Card className="mb-6 border-orange-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Package className="h-5 w-5 text-orange-600" />
+                전달 필요 수량
+              </CardTitle>
+              <p className="text-sm text-gray-500">
+                결제 완료되었지만 고객에게 전달되지 않은 상품 ({pendingDeliveryOrderCount}건)
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {Object.entries(pendingDeliveryItems).map(([sku, qty]) => {
+                  const product = getProductBySku(sku);
+                  return (
+                    <div key={sku} className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center">
+                      <div className="text-2xl mb-1">{product?.emoji || '📦'}</div>
+                      <p className="text-xs text-gray-600 mb-1">{product?.name || sku}</p>
+                      <p className="text-2xl font-bold text-orange-600">{qty}개</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 필터 & 액션 */}
         <Card className="mb-6">
