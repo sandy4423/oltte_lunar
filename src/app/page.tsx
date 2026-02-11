@@ -67,7 +67,7 @@ export default function HomePage() {
 
       {/* 사장님 손글씨 인사말 */}
       <div className="max-w-2xl mx-auto px-4 mt-6">
-        <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-100">
+        <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-4 sm:p-6 shadow-sm border border-orange-100">
           <Image
             src="/images/handwriting-greeting.png"
             alt="사장님 손글씨 인사말"
