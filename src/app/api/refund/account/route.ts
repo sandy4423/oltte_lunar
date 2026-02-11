@@ -183,12 +183,16 @@ export async function POST(request: NextRequest) {
 
     orderId = refundToken.order_id;
 
-    // 2. 주문 정보 조회
+    // 2. 주문 정보 조회 (order_items 포함)
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
         *,
-        customer:customers(*)
+        customer:customers(*),
+        order_items (
+          sku,
+          qty
+        )
       `)
       .eq('id', orderId)
       .single();
@@ -343,6 +347,7 @@ export async function POST(request: NextRequest) {
       bankName: bankName,
       accountNumber: account_number,
       accountHolder: account_holder,
+      orderItems: order.order_items || [],
     });
 
     const slackResult = await sendSlackMessage(slackMessage);

@@ -48,12 +48,16 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerSupabaseClient();
 
-    // 1. 주문 조회 및 검증
+    // 1. 주문 조회 및 검증 (order_items 포함)
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
         *,
-        customer:customers(*)
+        customer:customers(*),
+        order_items (
+          sku,
+          qty
+        )
       `)
       .eq('id', orderId)
       .single();
@@ -147,6 +151,7 @@ export async function POST(request: NextRequest) {
       totalAmount: order.total_amount,
       refundAmount: refundAmount,
       refundReason: refundReason,
+      orderItems: order.order_items || [],
     });
 
     const slackResult = await sendSlackMessage(slackMessage);

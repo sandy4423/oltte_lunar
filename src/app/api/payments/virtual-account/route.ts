@@ -26,10 +26,16 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerSupabaseClient();
 
-    // 주문 정보 조회
+    // 주문 정보 조회 (order_items 포함)
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('id, cutoff_at, delivery_date, apt_name, dong, ho, is_pickup, pickup_date, pickup_time')
+      .select(`
+        id, cutoff_at, delivery_date, apt_name, dong, ho, is_pickup, pickup_date, pickup_time,
+        order_items (
+          sku,
+          qty
+        )
+      `)
       .eq('id', orderId)
       .single();
 
@@ -142,6 +148,7 @@ export async function POST(request: NextRequest) {
         isPickup: order.is_pickup,
         pickupDate: pickupDateFormatted,
         pickupTime: order.pickup_time || undefined,
+        orderItems: order.order_items || [],
       }));
       
       console.log(`[API] Admin notification sent to Slack`);

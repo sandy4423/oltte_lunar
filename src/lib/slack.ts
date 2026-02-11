@@ -8,7 +8,30 @@
  * - SLACK_WEBHOOK_URL: Slack Incoming Webhook URL
  */
 
+import { getProductBySku } from '@/lib/constants';
+
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || '';
+
+/** 주문 상품 아이템 (슬랙 알림용) */
+export interface SlackOrderItem {
+  sku: string;
+  qty: number;
+}
+
+/**
+ * 주문 상품 목록을 슬랙 메시지용 문자열로 포맷팅
+ */
+function formatOrderItems(items: SlackOrderItem[]): string {
+  if (!items || items.length === 0) return '';
+  
+  const lines = items.map(item => {
+    const product = getProductBySku(item.sku);
+    const name = product ? product.name : item.sku;
+    return `- ${name} x ${item.qty}`;
+  });
+  
+  return `\n\n[주문상품]\n${lines.join('\n')}`;
+}
 
 export interface SlackMessage {
   text: string;
@@ -89,12 +112,15 @@ export function createOrderNotification(params: {
   isPickup?: boolean;
   pickupDate?: string;
   pickupTime?: string;
+  orderItems?: SlackOrderItem[];
 }): string {
-  const { orderId, customerName, customerPhone, aptName, dong, ho, amount, deliveryDate, isPickup, pickupDate, pickupTime } = params;
+  const { orderId, customerName, customerPhone, aptName, dong, ho, amount, deliveryDate, isPickup, pickupDate, pickupTime, orderItems } = params;
   
   const deliveryInfo = isPickup 
     ? `픽업: ${pickupDate || ''} ${pickupTime || ''}`
     : `배송지: ${aptName} ${dong}동 ${ho}호`;
+  
+  const itemsText = orderItems ? formatOrderItems(orderItems) : '';
   
   return `🔔 신규 주문
 
@@ -103,7 +129,7 @@ export function createOrderNotification(params: {
 연락처: ${customerPhone}
 ${deliveryInfo}
 금액: ${amount.toLocaleString()}원
-${isPickup ? '픽업일' : '배송일'}: ${deliveryDate}`;
+${isPickup ? '픽업일' : '배송일'}: ${deliveryDate}${itemsText}`;
 }
 
 /**
@@ -121,12 +147,15 @@ export function createPaymentConfirmation(params: {
   isPickup?: boolean;
   pickupDate?: string;
   pickupTime?: string;
+  orderItems?: SlackOrderItem[];
 }): string {
-  const { orderId, customerName, customerPhone, aptName, dong, ho, amount, deliveryDate, isPickup, pickupDate, pickupTime } = params;
+  const { orderId, customerName, customerPhone, aptName, dong, ho, amount, deliveryDate, isPickup, pickupDate, pickupTime, orderItems } = params;
   
   const deliveryInfo = isPickup 
     ? `픽업: ${pickupDate || ''} ${pickupTime || ''}`
     : `배송지: ${aptName} ${dong}동 ${ho}호`;
+  
+  const itemsText = orderItems ? formatOrderItems(orderItems) : '';
   
   return `💰 결제 완료
 
@@ -135,7 +164,7 @@ export function createPaymentConfirmation(params: {
 연락처: ${customerPhone}
 ${deliveryInfo}
 금액: ${amount.toLocaleString()}원
-${isPickup ? '픽업일' : '배송일'}: ${deliveryDate}`;
+${isPickup ? '픽업일' : '배송일'}: ${deliveryDate}${itemsText}`;
 }
 
 /**
@@ -182,12 +211,15 @@ export function createCancelRequestNotification(params: {
   isPickup?: boolean;
   pickupDate?: string;
   pickupTime?: string;
+  orderItems?: SlackOrderItem[];
 }): string {
-  const { orderId, customerName, customerPhone, aptName, dong, ho, totalAmount, refundAmount, refundReason, isPickup, pickupDate, pickupTime } = params;
+  const { orderId, customerName, customerPhone, aptName, dong, ho, totalAmount, refundAmount, refundReason, isPickup, pickupDate, pickupTime, orderItems } = params;
   
   const deliveryInfo = isPickup 
     ? `픽업: ${pickupDate || ''} ${pickupTime || ''}`
     : `배송지: ${aptName} ${dong}동 ${ho}호`;
+  
+  const itemsText = orderItems ? formatOrderItems(orderItems) : '';
   
   return `🟡 취소 요청 (계좌정보 대기)
 
@@ -197,7 +229,7 @@ export function createCancelRequestNotification(params: {
 ${deliveryInfo}
 주문금액: ${totalAmount.toLocaleString()}원
 환불금액: ${refundAmount.toLocaleString()}원
-취소사유: ${refundReason}
+취소사유: ${refundReason}${itemsText}
 
 고객에게 계좌입력 링크를 발송했습니다.`;
 }
@@ -235,8 +267,9 @@ export function createRefundCompleteNotification(params: {
   isPickup?: boolean;
   pickupDate?: string;
   pickupTime?: string;
+  orderItems?: SlackOrderItem[];
 }): string {
-  const { orderId, customerName, customerPhone, aptName, dong, ho, refundAmount, bankName, accountNumber, accountHolder, isPickup, pickupDate, pickupTime } = params;
+  const { orderId, customerName, customerPhone, aptName, dong, ho, refundAmount, bankName, accountNumber, accountHolder, isPickup, pickupDate, pickupTime, orderItems } = params;
   
   // 계좌번호 마스킹 (뒤 4자리만 표시)
   const maskedAccount = accountNumber.length > 4 
@@ -247,6 +280,8 @@ export function createRefundCompleteNotification(params: {
     ? `픽업: ${pickupDate || ''} ${pickupTime || ''}`
     : `배송지: ${aptName} ${dong}동 ${ho}호`;
   
+  const itemsText = orderItems ? formatOrderItems(orderItems) : '';
+  
   return `✅ 환불 완료
 
 주문번호: ${orderId}
@@ -254,7 +289,7 @@ export function createRefundCompleteNotification(params: {
 연락처: ${customerPhone}
 ${deliveryInfo}
 환불금액: ${refundAmount.toLocaleString()}원
-환불계좌: ${bankName} ${maskedAccount} (${accountHolder})
+환불계좌: ${bankName} ${maskedAccount} (${accountHolder})${itemsText}
 
 토스페이먼츠를 통해 환불 처리되었습니다.`;
 }

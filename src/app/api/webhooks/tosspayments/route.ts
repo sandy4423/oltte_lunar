@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     // orderId는 'ORDER_123' 형식이므로 'ORDER_' 접두사 제거
     const actualOrderId = orderId.replace('ORDER_', '');
 
-    // 주문 조회
+    // 주문 조회 (order_items 포함)
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
@@ -43,6 +43,10 @@ export async function POST(request: NextRequest) {
         customer:customers (
           phone,
           name
+        ),
+        order_items (
+          sku,
+          qty
         )
       `)
       .eq('id', actualOrderId)
@@ -194,6 +198,7 @@ export async function POST(request: NextRequest) {
           isPickup: order.is_pickup,
           pickupDate: pickupDateFormatted,
           pickupTime: order.pickup_time || undefined,
+          orderItems: order.order_items || [],
         }));
         
         console.log(`[Webhook] Admin payment notification sent to Slack`);
