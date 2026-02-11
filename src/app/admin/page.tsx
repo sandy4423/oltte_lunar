@@ -63,7 +63,7 @@ export default function AdminPage() {
   const [orderStats, setOrderStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [showPageStats, setShowPageStats] = useState(false);
-  const [showSourceAnalysis, setShowSourceAnalysis] = useState(false);
+  const [showSourceAnalysis, setShowSourceAnalysis] = useState(true);
 
   // 필터링 훅
   const {
@@ -655,63 +655,64 @@ export default function AdminPage() {
         )}
 
         {/* 유입 경로별 통계 */}
-        {(pageStats?.sourceBreakdown || orderStats?.sourceBreakdown) && (
-          <div className="mb-8">
-            <button 
-              onClick={() => setShowSourceAnalysis(!showSourceAnalysis)}
-              className="flex items-center gap-2 mb-4 w-full hover:opacity-70 transition-opacity"
-            >
-              <TrendingUp className="h-5 w-5 text-purple-600" />
-              <h2 className="text-xl font-bold">유입 경로 분석 (최근 30일)</h2>
-              {showSourceAnalysis ? (
-                <ChevronUp className="h-5 w-5 text-gray-400 ml-auto" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-gray-400 ml-auto" />
-              )}
-            </button>
-            
-            {showSourceAnalysis && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>유입 경로별 방문 및 주문</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {Object.entries(TRAFFIC_SOURCE_LABELS).map(([key, label]) => {
-                      const visits = pageStats?.sourceBreakdown?.[key] || 0;
-                      const orders = orderStats?.sourceBreakdown?.[key]?.total || 0;
-                      const paidOrders = orderStats?.sourceBreakdown?.[key]?.paid || 0;
-                      const conversion = visits > 0 ? ((orders / visits) * 100).toFixed(1) : '0.0';
-                      
-                      return (
-                        <div key={key} className="border-b pb-3 last:border-0">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="font-semibold">{label}</span>
-                            <span className="text-sm text-gray-500">전환율: {conversion}%</span>
+        <div className="mb-8">
+          <button 
+            onClick={() => setShowSourceAnalysis(!showSourceAnalysis)}
+            className="flex items-center gap-2 mb-4 w-full hover:opacity-70 transition-opacity"
+          >
+            <TrendingUp className="h-5 w-5 text-purple-600" />
+            <h2 className="text-xl font-bold">유입 경로 분석 (최근 30일)</h2>
+            {showSourceAnalysis ? (
+              <ChevronUp className="h-5 w-5 text-gray-400 ml-auto" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-gray-400 ml-auto" />
+            )}
+          </button>
+          
+          {showSourceAnalysis && (
+            <Card>
+              <CardHeader>
+                <CardTitle>유입 경로별 방문 및 주문</CardTitle>
+                <p className="text-xs text-gray-400 mt-1">
+                  ?source= 파라미터가 포함된 URL로 접속해야 추적됩니다
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {Object.entries(TRAFFIC_SOURCE_LABELS).map(([key, label]) => {
+                    const visits = pageStats?.sourceBreakdown?.[key] || 0;
+                    const orderCount = orderStats?.sourceBreakdown?.[key]?.total || 0;
+                    const paidOrders = orderStats?.sourceBreakdown?.[key]?.paid || 0;
+                    const conversion = visits > 0 ? ((orderCount / visits) * 100).toFixed(1) : '0.0';
+                    
+                    return (
+                      <div key={key} className="border-b pb-3 last:border-0">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="font-semibold">{label}</span>
+                          <span className="text-sm text-gray-500">전환율: {conversion}%</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <div className="text-gray-500">방문</div>
+                            <div className="text-lg font-bold text-blue-600">{visits}</div>
                           </div>
-                          <div className="grid grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <div className="text-gray-500">방문</div>
-                              <div className="text-lg font-bold text-blue-600">{visits}</div>
-                            </div>
-                            <div>
-                              <div className="text-gray-500">주문</div>
-                              <div className="text-lg font-bold text-green-600">{orders}</div>
-                            </div>
-                            <div>
-                              <div className="text-gray-500">결제완료</div>
-                              <div className="text-lg font-bold text-purple-600">{paidOrders}</div>
-                            </div>
+                          <div>
+                            <div className="text-gray-500">주문</div>
+                            <div className="text-lg font-bold text-green-600">{orderCount}</div>
+                          </div>
+                          <div>
+                            <div className="text-gray-500">결제완료</div>
+                            <div className="text-lg font-bold text-purple-600">{paidOrders}</div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         {/* 주문 통계 카드 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
