@@ -70,19 +70,19 @@ export default function HomePage() {
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 sm:p-6 shadow-sm">
           <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
             <span>🎊</span>
-            <span>설날 떡국/만두 예약주문 진행중</span>
+            <span>설 명절 특별 주문 - 단지별 마감 임박</span>
           </h3>
           <p className="text-sm sm:text-base text-gray-700 mb-4 leading-relaxed">
-            올때만두에서 설 명절을 위한 떡국떡, 양지육수, 수제만두를 예약 주문하실 수 있습니다.
+            설날 음식 준비 걱정 끝! 떡국떡, 양지육수, 수제만두를 한 번에
           </p>
           <ul className="space-y-2 text-sm sm:text-base text-gray-800">
             <li className="flex items-start gap-2">
               <span className="text-brand font-semibold">•</span>
-              <span><span className="font-semibold">단지별 배송:</span> 아래에서 해당 단지를 선택해주세요 (이번엔 8공구만)</span>
+              <span><span className="font-semibold">단지별 배송:</span> 우리 아파트 선택하기</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-brand font-semibold">•</span>
-              <span><span className="font-semibold">매장 픽업:</span> 픽업 주문 버튼을 이용해주세요 (3,000원 할인!)</span>
+              <span><span className="font-semibold">픽업 할인:</span> 매장에서 직접 수령하고 3,000원 아끼기</span>
             </li>
           </ul>
         </div>
@@ -101,7 +101,7 @@ export default function HomePage() {
                 3,000원 할인!
               </div>
               <p className="text-orange-50 text-xs sm:text-sm">
-                단지 공구 외 일반 고객도 픽업으로 주문 가능합니다
+                누구나 주문 가능 - 송도 내 모든분들 환영!
               </p>
             </div>
           </div>
