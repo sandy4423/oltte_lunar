@@ -65,6 +65,49 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* 설날 예약주문 안내 */}
+      <div className="max-w-2xl mx-auto px-4 mt-8">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 sm:p-6 shadow-sm">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+            <span>🎊</span>
+            <span>설날 떡국/만두 예약주문 진행중</span>
+          </h3>
+          <p className="text-sm sm:text-base text-gray-700 mb-4 leading-relaxed">
+            올때만두에서 설 명절을 위한 떡국떡, 양지육수, 수제만두를 예약 주문하실 수 있습니다.
+          </p>
+          <ul className="space-y-2 text-sm sm:text-base text-gray-800">
+            <li className="flex items-start gap-2">
+              <span className="text-brand font-semibold">•</span>
+              <span><span className="font-semibold">단지별 배송:</span> 아래에서 해당 단지를 선택해주세요 (이번엔 8공구만)</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-brand font-semibold">•</span>
+              <span><span className="font-semibold">매장 픽업:</span> 픽업 주문 버튼을 이용해주세요 (3,000원 할인!)</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      {/* 픽업 주문 안내 섹션 */}
+      <div className="max-w-2xl mx-auto px-4 mt-6">
+        <Link href="/pickup">
+          <div className="bg-gradient-to-r from-orange-400 to-amber-400 rounded-lg p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all hover:scale-[1.01] cursor-pointer">
+            <div className="text-center text-white">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <span className="text-2xl sm:text-3xl">🏪</span>
+                <h3 className="text-xl sm:text-2xl font-bold">매장 픽업 주문</h3>
+              </div>
+              <div className="inline-block bg-white/90 text-orange-600 font-bold text-lg sm:text-xl px-3 sm:px-4 py-1.5 sm:py-2 rounded-full mb-3">
+                3,000원 할인!
+              </div>
+              <p className="text-orange-50 text-xs sm:text-sm">
+                단지 공구 외 일반 고객도 픽업으로 주문 가능합니다
+              </p>
+            </div>
+          </div>
+        </Link>
+      </div>
+
       {/* 단지 선택 */}
       <div className="max-w-2xl mx-auto px-4 mt-12">
         <div className="text-center mb-10">
@@ -87,26 +130,21 @@ export default function HomePage() {
             );
           })}
 
-          {/* 픽업 주문 옵션 */}
+          {/* 픽업 주문 재진입 옵션 */}
           <div className="pt-6 border-t-2 border-dashed border-gray-300">
+            <p className="text-center text-sm text-gray-600 mb-3">
+              혹시 픽업도 고려중이신가요?
+            </p>
             <Link href="/pickup">
               <Button
-                className="w-full h-20 text-xl font-bold transition-all bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white hover:scale-[1.02] shadow-lg hover:shadow-2xl border-0"
+                className="w-full h-16 text-base sm:text-lg font-semibold transition-all bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white hover:scale-[1.02] shadow-lg hover:shadow-xl border-0"
               >
-                <div className="flex flex-col items-center gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">🏪</span>
-                    <span>매장 픽업 주문</span>
-                  </div>
-                  <span className="text-base font-semibold bg-white/20 px-3 py-0.5 rounded-full">
-                    3,000원 할인!
-                  </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg sm:text-xl">🏪</span>
+                  <span className="whitespace-nowrap">매장 픽업 주문 (3,000원 할인)</span>
                 </div>
               </Button>
             </Link>
-            <p className="text-center text-sm text-gray-600 mt-3">
-              단지 공구 외 일반 고객도 픽업으로 주문 가능합니다
-            </p>
           </div>
         </div>
       </div>
