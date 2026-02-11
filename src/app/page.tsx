@@ -65,6 +65,19 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* 사장님 손글씨 인사말 */}
+      <div className="max-w-2xl mx-auto px-4 mt-6">
+        <div className="bg-white rounded-lg p-4 sm:p-6 shadow-sm border border-gray-100">
+          <Image
+            src="/images/handwriting-greeting.png"
+            alt="사장님 손글씨 인사말"
+            width={800}
+            height={400}
+            className="w-full h-auto"
+          />
+        </div>
+      </div>
+
       {/* 설날 예약주문 안내 */}
       <div className="max-w-2xl mx-auto px-4 mt-8">
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 sm:p-6 shadow-sm">
