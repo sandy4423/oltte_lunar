@@ -68,9 +68,10 @@ export default function HomePage() {
       {/* 설날 예약주문 안내 */}
       <div className="max-w-2xl mx-auto px-4 mt-8">
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 sm:p-6 shadow-sm">
-          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 flex items-center gap-2 flex-wrap">
             <span>🎊</span>
-            <span>설 명절 특별 주문 - 단지별 마감 임박</span>
+            <span>설 명절 특별 주문</span>
+            <span className="text-sm sm:text-base font-semibold text-orange-600">- 단지별 마감 임박</span>
           </h3>
           <p className="text-sm sm:text-base text-gray-700 mb-4 leading-relaxed">
             설날 음식 준비 걱정 끝! 떡국떡, 양지육수, 수제만두를 한 번에
