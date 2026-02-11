@@ -69,6 +69,7 @@ export interface OrderRow {
   pickup_discount: number;         // int, DEFAULT 0
   pickup_date: string | null;      // date, NULLABLE - 픽업 날짜
   pickup_time: string | null;      // text, NULLABLE - 픽업 시간
+  dangol_discount: number;         // int, DEFAULT 0 - 단골톡방 할인
   source: string | null;           // text, NULLABLE - 유입 경로
   refund_amount: number | null;    // int, NULLABLE - 환불 금액
   refund_reason: string | null;    // text, NULLABLE - 환불 사유
@@ -150,6 +151,7 @@ export interface OrderInsert {
   pickup_discount?: number;        // optional, default: 0
   pickup_date?: string | null;     // optional - 픽업 날짜
   pickup_time?: string | null;     // optional - 픽업 시간
+  dangol_discount?: number;        // optional, default: 0 - 단골톡방 할인
   source?: string | null;          // optional - 유입 경로
   refund_amount?: number | null;   // optional
   refund_reason?: string | null;   // optional
@@ -231,6 +233,7 @@ export interface OrderUpdate {
   pickup_discount?: number;
   pickup_date?: string | null;
   pickup_time?: string | null;
+  dangol_discount?: number;
   source?: string | null;
   refund_amount?: number | null;
   refund_reason?: string | null;

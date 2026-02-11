@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { PRODUCTS, getApartmentFullName, PICKUP_DISCOUNT, PICKUP_APT_CODE, PICKUP_CONFIG } from '@/lib/constants';
+import { PRODUCTS, getApartmentFullName, PICKUP_DISCOUNT, DANGOL_DISCOUNT, PICKUP_APT_CODE, PICKUP_CONFIG } from '@/lib/constants';
 import { getStoredSource } from '@/lib/sourceTracking';
 import type { CartItem } from '@/types/order';
 import type { ApartmentConfig } from '@/lib/constants';
@@ -50,12 +50,14 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
     try {
       const normalizedPhone = phone.replace(/-/g, '');
       
-      // 픽업 주문이거나 픽업 선택 시 할인 적용
-      const pickupDiscount = (isPickup || isPickupOrder) ? PICKUP_DISCOUNT : 0;
-      const finalAmount = totalAmount - pickupDiscount;
-
       // 유입 경로 가져오기
       const source = getStoredSource();
+
+      // 픽업 주문이거나 픽업 선택 시 할인 적용
+      const pickupDiscount = (isPickup || isPickupOrder) ? PICKUP_DISCOUNT : 0;
+      // 단골톡방 할인 적용
+      const dangolDiscount = (source === 'dangol') ? DANGOL_DISCOUNT : 0;
+      const finalAmount = totalAmount - pickupDiscount - dangolDiscount;
 
       // 1. 고객 생성 또는 조회
       let customerId: string;
@@ -106,6 +108,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
         orderData.cutoff_at = PICKUP_CONFIG.cutoffAt;
         orderData.is_pickup = true;
         orderData.pickup_discount = pickupDiscount;
+        orderData.dangol_discount = dangolDiscount;
         orderData.pickup_date = pickupDate;
         orderData.pickup_time = pickupTime;
       } 
@@ -119,6 +122,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
         orderData.cutoff_at = apartment.cutoffAt;
         orderData.is_pickup = isPickup;
         orderData.pickup_discount = pickupDiscount;
+        orderData.dangol_discount = dangolDiscount;
         if (isPickup && pickupDate && pickupTime) {
           orderData.pickup_date = pickupDate;
           orderData.pickup_time = pickupTime;

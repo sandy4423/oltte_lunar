@@ -9,7 +9,7 @@ import { AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-import { PICKUP_CONFIG, PICKUP_DISCOUNT } from '@/lib/constants';
+import { PICKUP_CONFIG, PICKUP_DISCOUNT, DANGOL_DISCOUNT } from '@/lib/constants';
 import { Footer } from '@/components/Footer';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
 import { useCart } from '@/hooks/useCart';
@@ -20,6 +20,7 @@ import { OrderSummaryBar } from '@/components/features/OrderSummaryBar';
 import { ProductDetailImage } from '@/components/features/ProductDetailImage';
 import { PickupDateTimeSelector } from '@/components/features/PickupDateTimeSelector';
 import { trackPageView } from '@/lib/trackPageView';
+import { getStoredSource } from '@/lib/sourceTracking';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -31,6 +32,15 @@ export default function PickupPage() {
   // 페이지 방문 추적
   useEffect(() => {
     trackPageView('/pickup');
+  }, []);
+
+  // 단골톡방 할인 감지
+  const [dangolDiscount, setDangolDiscount] = useState(0);
+  useEffect(() => {
+    const source = getStoredSource();
+    if (source === 'dangol') {
+      setDangolDiscount(DANGOL_DISCOUNT);
+    }
   }, []);
 
   // 전화번호 인증 훅
@@ -335,6 +345,7 @@ export default function PickupPage() {
         isFormValid={isFormValid}
         isSubmitting={orderSubmit.isSubmitting}
         onSubmit={handleOrderSubmit}
+        dangolDiscount={dangolDiscount}
       />
 
       {/* 개인정보 수집 동의 Dialog */}

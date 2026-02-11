@@ -211,6 +211,7 @@ export const FREE_SHIPPING_ELIGIBLE_SKUS = ['meat', 'kimchi', 'half', 'ricecake_
 // ============================================
 
 export const PICKUP_DISCOUNT = 3000;
+export const DANGOL_DISCOUNT = 1000;
 
 export const STORE_INFO = {
   name: '올때만두',

@@ -181,6 +181,12 @@ export default function OrderCompletePage() {
                   <span className="font-medium">-{order.pickup_discount.toLocaleString()}원</span>
                 </div>
               )}
+              {order.dangol_discount > 0 && (
+                <div className="flex justify-between text-sm text-red-600">
+                  <span>단골톡방 할인</span>
+                  <span className="font-medium">-{order.dangol_discount.toLocaleString()}원</span>
+                </div>
+              )}
               <div className="flex justify-between text-base">
                 <span className="font-medium">결제 금액</span>
                 <span className="font-bold text-brand">

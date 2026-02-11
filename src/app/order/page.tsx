@@ -10,7 +10,7 @@ import { AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-import { APARTMENTS, getApartmentFullName, STORE_INFO } from '@/lib/constants';
+import { APARTMENTS, getApartmentFullName, STORE_INFO, DANGOL_DISCOUNT } from '@/lib/constants';
 import { Footer } from '@/components/Footer';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
 import { useCart } from '@/hooks/useCart';
@@ -23,7 +23,7 @@ import { OrderSummaryBar } from '@/components/features/OrderSummaryBar';
 import { ProductDetailImage } from '@/components/features/ProductDetailImage';
 import { DeliveryMethodDialog } from '@/components/features/DeliveryMethodDialog';
 import { trackPageView } from '@/lib/trackPageView';
-import { captureSource } from '@/lib/sourceTracking';
+import { captureSource, getStoredSource } from '@/lib/sourceTracking';
 
 // ============================================
 // Page Component
@@ -40,6 +40,15 @@ export default function OrderPage() {
   useEffect(() => {
     captureSource(searchParams);
   }, []); // 빈 배열로 한 번만 실행
+
+  // 단골톡방 할인 감지
+  const [dangolDiscount, setDangolDiscount] = useState(0);
+  useEffect(() => {
+    const source = getStoredSource();
+    if (source === 'dangol') {
+      setDangolDiscount(DANGOL_DISCOUNT);
+    }
+  }, []);
 
   // setTimeout cleanup
   useEffect(() => {
@@ -406,6 +415,7 @@ export default function OrderPage() {
         isFormValid={isFormValid}
         isSubmitting={orderSubmit.isSubmitting}
         onSubmit={handleOrderSubmit}
+        dangolDiscount={dangolDiscount}
       />
 
       {/* 개인정보 수집 동의 Dialog */}
