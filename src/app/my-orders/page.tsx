@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Footer } from '@/components/Footer';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
-import { ORDER_STATUS_LABEL, getProductBySku, PICKUP_APT_CODE, getAvailablePickupDates, getAvailableTimeSlots } from '@/lib/constants';
+import { ORDER_STATUS_LABEL, getProductBySku, getAvailablePickupDates, getAvailableTimeSlots } from '@/lib/constants';
 import { trackPageView } from '@/lib/trackPageView';
 import { PickupDateTimeSelector } from '@/components/features/PickupDateTimeSelector';
 import { CashReceiptForm } from '@/components/features/CashReceiptForm';
@@ -453,7 +453,7 @@ export default function MyOrdersPage() {
                   label: order.status,
                   color: 'bg-gray-500 text-white',
                 };
-                const isPickup = order.apt_code === PICKUP_APT_CODE;
+                const isPickup = order.is_pickup;
 
                 return (
                   <Card key={order.id} className="overflow-hidden">

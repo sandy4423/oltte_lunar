@@ -1085,7 +1085,7 @@ export default function AdminPage() {
                   {/* 주문 정보 */}
                   <div className="space-y-2 text-sm">
                     <div className="font-semibold text-base">
-                      {order.apt_code === PICKUP_APT_CODE ? (
+                      {order.is_pickup ? (
                         <>
                           🏪 픽업주문 / {order.pickup_date ? format(new Date(order.pickup_date), 'M/d (EEE)', { locale: ko }) : ''} {order.pickup_time || ''}
                         </>
@@ -1127,7 +1127,7 @@ export default function AdminPage() {
                         {order.total_amount.toLocaleString()}원
                       </span>
                       <span className="text-right">
-                        {order.apt_code === PICKUP_APT_CODE ? (
+                        {order.is_pickup ? (
                           <div className="text-purple-600 font-medium">
                             {order.pickup_date ? format(new Date(order.pickup_date), 'M/d (EEE)', { locale: ko }) : '-'}
                             {order.pickup_time ? ` ${order.pickup_time}` : ''}
@@ -1243,10 +1243,10 @@ export default function AdminPage() {
                             </span>
                           </TableCell>
                           <TableCell className="max-w-[150px] truncate" title={order.apt_name}>
-                            {order.apt_code === PICKUP_APT_CODE ? '🏪 픽업주문' : order.apt_name.replace(/^[68]공구 /, '')}
+                            {order.is_pickup ? '🏪 픽업주문' : order.apt_name.replace(/^[68]공구 /, '')}
                           </TableCell>
                           <TableCell className="font-medium">
-                            {order.apt_code === PICKUP_APT_CODE ? (
+                            {order.is_pickup ? (
                               <span className="text-sm text-purple-600">- (픽업주문)</span>
                             ) : (
                               <>{order.dong}동 {order.ho}호</>
@@ -1283,7 +1283,7 @@ export default function AdminPage() {
                             {order.total_amount.toLocaleString()}원
                           </TableCell>
                           <TableCell>
-                            {order.apt_code === PICKUP_APT_CODE ? (
+                            {order.is_pickup ? (
                               <div className="text-purple-600 font-medium">
                                 {order.pickup_date ? format(new Date(order.pickup_date), 'M/d (EEE)', { locale: ko }) : '-'}
                                 {order.pickup_time ? ` ${order.pickup_time}` : ''}

@@ -6,6 +6,7 @@
 
 import { useState, useMemo } from 'react';
 import type { OrderFull } from '@/types/database';
+import { PICKUP_APT_CODE } from '@/lib/constants';
 
 export function useOrderFilters(orders: OrderFull[]) {
   const [filterApt, setFilterApt] = useState<string>('all');
@@ -27,7 +28,14 @@ export function useOrderFilters(orders: OrderFull[]) {
       
       // 일반 필터
       if (filterStatus !== 'all' && order.status !== filterStatus) return false;
-      if (filterApt !== 'all' && order.apt_code !== filterApt) return false;
+      if (filterApt !== 'all') {
+        if (filterApt === PICKUP_APT_CODE) {
+          // 픽업주문 필터: is_pickup 기준으로 판별
+          if (!order.is_pickup) return false;
+        } else {
+          if (order.apt_code !== filterApt) return false;
+        }
+      }
       if (filterDeliveryDate !== 'all' && order.delivery_date !== filterDeliveryDate) return false;
       
       // 배달방법 필터
