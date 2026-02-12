@@ -42,7 +42,7 @@ export default function MyOrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verification.isPhoneVerified]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (retryCount = 0) => {
     setLoading(true);
     setFetchError(null);
 
@@ -51,6 +51,13 @@ export default function MyOrdersPage() {
         `/api/orders/my?phone=${encodeURIComponent(verification.phone)}`
       );
       const result = await response.json();
+
+      // 401 에러이고 첫 시도인 경우 재시도
+      if (response.status === 401 && retryCount === 0) {
+        console.log('[MyOrders] 401 error, retrying after 500ms...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return fetchOrders(1);
+      }
 
       if (!response.ok || !result.success) {
         setFetchError(result.error || '주문 조회에 실패했습니다.');

@@ -11,6 +11,42 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
+async function checkVerificationWithRetry(
+  supabase: any,
+  normalizedPhone: string,
+  maxRetries = 1
+): Promise<{ success: boolean; error?: string }> {
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (attempt > 0) {
+      console.log(`[MyOrders API] Verification retry attempt ${attempt} for ${normalizedPhone}`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    const { data: verificationData, error: verificationError } = await supabase
+      .from('verification_codes')
+      .select('id, verified, created_at')
+      .eq('phone', normalizedPhone)
+      .eq('verified', true)
+      .gte('created_at', oneDayAgo)
+      .limit(1);
+
+    console.log('[MyOrders API] Verification check:', {
+      phone: normalizedPhone,
+      attempt: attempt + 1,
+      found: verificationData?.length || 0,
+      error: verificationError?.message
+    });
+
+    if (!verificationError && verificationData && verificationData.length > 0) {
+      return { success: true };
+    }
+  }
+
+  return { success: false, error: '전화번호 인증이 필요합니다.' };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const phone = request.nextUrl.searchParams.get('phone');
@@ -32,30 +68,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log('[MyOrders API] Request received for phone:', normalizedPhone);
+
     const supabase = createServerSupabaseClient();
 
-    // 1. 최근 인증 완료 여부 확인 (10분 이내)
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    const { data: verificationData, error: verificationError } = await supabase
-      .from('verification_codes')
-      .select('id')
-      .eq('phone', normalizedPhone)
-      .eq('verified', true)
-      .gte('created_at', tenMinutesAgo)
-      .limit(1);
-
-    if (verificationError || !verificationData || verificationData.length === 0) {
+    // 1. 최근 인증 완료 여부 확인 (24시간 이내, 재시도 포함)
+    const verificationResult = await checkVerificationWithRetry(supabase, normalizedPhone);
+    
+    if (!verificationResult.success) {
+      console.log('[MyOrders API] Verification failed for:', normalizedPhone);
       return NextResponse.json(
-        { success: false, error: '전화번호 인증이 필요합니다.' },
+        { success: false, error: verificationResult.error },
         { status: 401 }
       );
     }
+
+    console.log('[MyOrders API] Verification passed for:', normalizedPhone);
 
     // 2. 고객 조회 (같은 전화번호로 여러 고객 레코드가 있을 수 있음)
     const { data: customers, error: customerError } = await supabase
       .from('customers')
       .select('id')
       .eq('phone', normalizedPhone);
+
+    console.log('[MyOrders API] Customers found:', customers?.length || 0);
 
     if (customerError) {
       console.error('[MyOrders API] Customer query error:', customerError);
@@ -66,6 +102,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!customers || customers.length === 0) {
+      console.log('[MyOrders API] No customers found for:', normalizedPhone);
       return NextResponse.json({
         success: true,
         data: [],
@@ -81,6 +118,8 @@ export async function GET(request: NextRequest) {
       .in('customer_id', customerIds)
       .eq('is_hidden', false)
       .order('created_at', { ascending: false });
+
+    console.log('[MyOrders API] Orders found:', orders?.length || 0);
 
     if (orderError) {
       console.error('[MyOrders API] Orders query error:', orderError);
