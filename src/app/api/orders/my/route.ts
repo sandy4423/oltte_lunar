@@ -128,50 +128,73 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 3. 해당 고객들의 주문 조회
+    // 3. 해당 고객들의 주문 조회 (조인 분리 - .in() + 임베디드 리소스 버그 우회)
     const customerIds = customers.map((c) => c.id);
-    
-    // 테스트 1: 조인 없이 orders만 조회
-    const { data: ordersSimple, error: orderErrorSimple } = await supabase
-      .from('orders')
-      .select('*')
-      .in('customer_id', customerIds)
-      .eq('is_hidden', false);
-    
-    debugInfo.ordersSimpleQuery = {
-      found: ordersSimple?.length || 0,
-      error: orderErrorSimple?.message,
-    };
 
-    // 테스트 2: 조인 포함 쿼리
+    // 3-1. orders 조회 (조인 없이)
     const { data: orders, error: orderError } = await supabase
       .from('orders')
-      .select('*, customer:customers(*), order_items(*)')
+      .select('*')
       .in('customer_id', customerIds)
       .eq('is_hidden', false)
       .order('created_at', { ascending: false });
 
     debugInfo.ordersFound = orders?.length || 0;
-    if (orderError) {
-      debugInfo.ordersQuery = { error: orderError.message };
-    } else {
-      debugInfo.ordersQuery = { success: true };
-    }
-
-    console.log('[MyOrders API] Orders found:', orders?.length || 0);
 
     if (orderError) {
       console.error('[MyOrders API] Orders query error:', orderError);
+      debugInfo.ordersQuery = { error: orderError.message };
       return NextResponse.json(
         { success: false, error: '주문 조회에 실패했습니다.', _debug: debugInfo },
         { status: 500 }
       );
     }
 
+    if (!orders || orders.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        count: 0,
+        _debug: debugInfo,
+      });
+    }
+
+    // 3-2. 고객 정보 조회
+    const { data: customerData } = await supabase
+      .from('customers')
+      .select('*')
+      .in('id', customerIds);
+
+    const customerMap = new Map((customerData || []).map((c) => [c.id, c]));
+
+    // 3-3. order_items 조회
+    const orderIds = orders.map((o) => o.id);
+    const { data: orderItems } = await supabase
+      .from('order_items')
+      .select('*')
+      .in('order_id', orderIds);
+
+    const orderItemsMap = new Map<string, typeof orderItems>();
+    for (const item of orderItems || []) {
+      const existing = orderItemsMap.get(item.order_id) || [];
+      existing.push(item);
+      orderItemsMap.set(item.order_id, existing);
+    }
+
+    // 3-4. 수동 조합
+    const ordersWithRelations = orders.map((order) => ({
+      ...order,
+      customer: customerMap.get(order.customer_id) || null,
+      order_items: orderItemsMap.get(order.id) || [],
+    }));
+
+    debugInfo.ordersQuery = { success: true };
+    console.log('[MyOrders API] Orders found:', ordersWithRelations.length);
+
     return NextResponse.json({
       success: true,
-      data: orders || [],
-      count: orders?.length || 0,
+      data: ordersWithRelations,
+      count: ordersWithRelations.length,
       _debug: debugInfo,
     });
   } catch (error: any) {
