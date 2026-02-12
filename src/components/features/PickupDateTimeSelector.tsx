@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { MapPin } from 'lucide-react';
@@ -28,8 +29,26 @@ export function PickupDateTimeSelector({
   pickupTime,
   setPickupTime,
 }: PickupDateTimeSelectorProps) {
-  const availableTimeSlots = getAvailableTimeSlots(pickupDate);
+  // 1분마다 갱신하여 오늘 날짜의 시간 슬롯을 실시간 필터링
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const availableTimeSlots = useMemo(
+    () => getAvailableTimeSlots(pickupDate),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pickupDate, tick]
+  );
   const earlyCloseTime = PICKUP_EARLY_CLOSE_DATES[pickupDate];
+
+  // 선택된 시간이 더 이상 유효하지 않으면 자동 초기화
+  useEffect(() => {
+    if (pickupTime && !availableTimeSlots.includes(pickupTime)) {
+      setPickupTime('');
+    }
+  }, [availableTimeSlots, pickupTime, setPickupTime]);
 
   // 날짜 변경 핸들러: 조기 마감 날짜로 변경 시 선택된 시간이 범위 밖이면 초기화
   const handleDateChange = (date: string) => {

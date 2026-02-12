@@ -65,6 +65,13 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* 주문내역 확인 링크 */}
+      <div className="text-center py-2">
+        <Link href="/my-orders" className="text-xs text-gray-400 underline hover:text-brand transition-colors">
+          주문내역 확인
+        </Link>
+      </div>
+
       {/* 사장님 손글씨 인사말 */}
       <div className="max-w-2xl mx-auto px-4 mt-6">
         <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-4 sm:p-6 shadow-sm border border-orange-100">

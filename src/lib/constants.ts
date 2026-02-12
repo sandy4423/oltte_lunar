@@ -233,11 +233,11 @@ export const PICKUP_APT_CODE = 'PICKUP';
 
 export const PICKUP_CONFIG = {
   name: '픽업주문',
-  deliveryDate: '2026-02-14', // 픽업 가능 마지막 날짜
-  cutoffAt: '2026-02-13T23:00:00+09:00', // 주문 마감
+  deliveryDate: '2026-02-15', // 픽업 가능 마지막 날짜
+  cutoffAt: '2026-02-14T23:00:00+09:00', // 주문 마감
 };
 
-// 픽업 가능 날짜 (2/6 ~ 2/14)
+// 픽업 가능 날짜 (2/6 ~ 2/15)
 export const PICKUP_AVAILABLE_DATES = [
   '2026-02-06',
   '2026-02-07',
@@ -248,6 +248,7 @@ export const PICKUP_AVAILABLE_DATES = [
   '2026-02-12',
   '2026-02-13',
   '2026-02-14',
+  '2026-02-15',
 ];
 
 // 픽업 가능 시간 (09:00 ~ 21:00, 1시간 단위)
@@ -262,12 +263,27 @@ export const PICKUP_EARLY_CLOSE_DATES: Record<string, string> = {
 };
 
 // 선택된 날짜에 따라 가능한 픽업 시간 슬롯 반환
+// 오늘 날짜인 경우 현재 시각 이후 슬롯만 반환
 export function getAvailableTimeSlots(date: string): string[] {
   const closeTime = PICKUP_EARLY_CLOSE_DATES[date];
-  if (closeTime) {
-    return PICKUP_TIME_SLOTS.filter(time => time <= closeTime);
+  let slots = closeTime
+    ? PICKUP_TIME_SLOTS.filter(time => time <= closeTime)
+    : [...PICKUP_TIME_SLOTS];
+
+  // 오늘이면 현재 시각 이후만 표시
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  if (date === todayStr) {
+    const nowHour = today.getHours();
+    const nowMin = today.getMinutes();
+    slots = slots.filter(time => {
+      const [h] = time.split(':').map(Number);
+      // 현재 시각이 정각이면 해당 시간 포함, 아니면 다음 시간부터
+      return h > nowHour || (h === nowHour && nowMin === 0);
+    });
   }
-  return PICKUP_TIME_SLOTS;
+
+  return slots;
 }
 
 // ============================================

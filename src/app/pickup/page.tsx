@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { AlertCircle } from 'lucide-react';
@@ -187,7 +188,7 @@ export default function PickupPage() {
             <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
             <h1 className="text-xl font-bold mb-2">주문이 마감되었습니다</h1>
             <p className="text-muted-foreground mb-4">
-              픽업 주문은 2월 13일 (금) 23:00에 마감되었습니다.
+              픽업 주문은 2월 14일 (토) 23:00에 마감되었습니다.
             </p>
             <p className="text-sm text-gray-600">
               다음 기회에 이용해주세요.
@@ -215,6 +216,13 @@ export default function PickupPage() {
           <p className="text-orange-100 text-sm">설 만두는 제가 빚을게요</p>
         </div>
       </header>
+
+      {/* 주문내역 확인 링크 */}
+      <div className="text-center py-2">
+        <Link href="/my-orders" className="text-xs text-gray-400 underline hover:text-brand transition-colors">
+          주문내역 확인
+        </Link>
+      </div>
 
       {/* 픽업 주문 정보 */}
       <div className="max-w-lg mx-auto px-4 -mt-4">
@@ -255,7 +263,7 @@ export default function PickupPage() {
                 <div>
                   <p className="text-gray-500">픽업 가능</p>
                   <p className="font-bold text-lg text-brand">
-                    2/6 ~ 2/14
+                    2/6 ~ 2/15
                   </p>
                 </div>
               </div>

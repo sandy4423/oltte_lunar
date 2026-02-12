@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { AlertCircle } from 'lucide-react';
@@ -267,6 +268,13 @@ export default function OrderPage() {
           <p className="text-orange-100 text-sm">설 만두는 제가 빚을게요</p>
         </div>
       </header>
+
+      {/* 주문내역 확인 링크 */}
+      <div className="text-center py-2">
+        <Link href="/my-orders" className="text-xs text-gray-400 underline hover:text-brand transition-colors">
+          주문내역 확인
+        </Link>
+      </div>
 
       {/* 단지 정보 */}
       <div className="max-w-lg mx-auto px-4 -mt-4">
