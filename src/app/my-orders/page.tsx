@@ -59,7 +59,7 @@ export default function MyOrdersPage() {
     }
   }, []);
 
-  const verifyToken = async (token: string) => {
+  const verifyToken = async (token: string, retryCount = 0) => {
     try {
       const response = await fetch(`/api/auth/verify-token?token=${token}`);
       const result = await response.json();
@@ -77,6 +77,13 @@ export default function MyOrdersPage() {
       // URL에서 token 제거 (보안)
       window.history.replaceState({}, '', '/my-orders');
     } catch (error) {
+      console.error('[VerifyToken] Client error:', error);
+      // 1회 자동 재시도
+      if (retryCount < 1) {
+        console.log('[VerifyToken] Retrying...');
+        setTimeout(() => verifyToken(token, retryCount + 1), 1000);
+        return;
+      }
       setTokenError('링크 확인 중 오류가 발생했습니다.');
     }
   };

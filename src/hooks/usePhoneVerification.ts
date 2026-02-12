@@ -122,6 +122,7 @@ export function usePhoneVerification() {
     verificationCode,
     setVerificationCode,
     isPhoneVerified,
+    setIsPhoneVerified,
     isVerifying,
     isSending, // 발송 중 상태 추가
     verificationSent,
