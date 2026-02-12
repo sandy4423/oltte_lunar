@@ -473,3 +473,28 @@ ${deliveryInfo}
 입금 즉시 안내 문자 드릴게요!`;
 }
 
+/**
+ * 픽업시간 변경 SMS 템플릿
+ */
+export function createPickupTimeChangeSMS(params: {
+  customerName: string;
+  oldPickupDate: string;
+  oldPickupTime: string;
+  newPickupDate: string;
+  newPickupTime: string;
+}): string {
+  const { customerName, oldPickupDate, oldPickupTime, newPickupDate, newPickupTime } = params;
+  
+  return `[올때만두] ${customerName}님 픽업 시간이 변경되었습니다.
+
+[변경 전]
+${oldPickupDate} ${oldPickupTime}
+
+[변경 후]
+${newPickupDate} ${newPickupTime}
+
+변경된 시간에 맞춰 방문해주세요!
+
+문의: 032-832-5012`;
+}
+

@@ -293,3 +293,32 @@ ${deliveryInfo}
 
 토스페이먼츠를 통해 환불 처리되었습니다.`;
 }
+
+/**
+ * 픽업시간 변경 Slack 알림 메시지 생성
+ */
+export function createPickupTimeChangeAlert(params: {
+  orderId: string;
+  customerName: string;
+  customerPhone: string;
+  oldPickupDate: string;
+  oldPickupTime: string;
+  newPickupDate: string;
+  newPickupTime: string;
+}): string {
+  const { orderId, customerName, customerPhone, oldPickupDate, oldPickupTime, newPickupDate, newPickupTime } = params;
+  
+  return `🔄 픽업시간 변경
+
+주문번호: ${orderId}
+고객명: ${customerName}
+연락처: ${customerPhone}
+
+[변경 전]
+${oldPickupDate} ${oldPickupTime}
+
+[변경 후]
+${newPickupDate} ${newPickupTime}
+
+고객이 직접 변경했습니다.`;
+}

@@ -11,10 +11,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Footer } from '@/components/Footer';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
-import { ORDER_STATUS_LABEL, getProductBySku, PICKUP_APT_CODE } from '@/lib/constants';
+import { ORDER_STATUS_LABEL, getProductBySku, PICKUP_APT_CODE, getAvailablePickupDates, getAvailableTimeSlots } from '@/lib/constants';
 import { trackPageView } from '@/lib/trackPageView';
+import { PickupDateTimeSelector } from '@/components/features/PickupDateTimeSelector';
 
 // ============================================
 // 주문내역 조회 페이지
@@ -33,6 +35,14 @@ export default function MyOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // 픽업시간 변경 상태
+  const [showChangeDialog, setShowChangeDialog] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [newPickupDate, setNewPickupDate] = useState('');
+  const [newPickupTime, setNewPickupTime] = useState('');
+  const [isChanging, setIsChanging] = useState(false);
+  const [changeError, setChangeError] = useState<string | null>(null);
 
   // 인증 완료 시 주문 조회
   useEffect(() => {
@@ -101,6 +111,80 @@ export default function MyOrdersPage() {
       setFetchError('서버 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 픽업시간 변경 가능 여부 판단
+  const canChangePickupTime = (order: any): boolean => {
+    // 픽업 주문이 아니면 false
+    if (!order.is_pickup) return false;
+    
+    // 상태 확인 (PAID 또는 WAITING_FOR_DEPOSIT만)
+    if (order.status !== 'PAID' && order.status !== 'WAITING_FOR_DEPOSIT') {
+      return false;
+    }
+    
+    // 픽업 3시간 전까지만 변경 가능
+    if (!order.pickup_date || !order.pickup_time) return false;
+    
+    try {
+      const pickupDateTime = new Date(`${order.pickup_date}T${order.pickup_time}:00+09:00`);
+      const now = new Date();
+      const threeHoursInMs = 3 * 60 * 60 * 1000;
+      
+      return (pickupDateTime.getTime() - now.getTime()) > threeHoursInMs;
+    } catch {
+      return false;
+    }
+  };
+
+  // 픽업시간 변경 Dialog 열기
+  const openChangeDialog = (order: any) => {
+    setSelectedOrder(order);
+    setNewPickupDate(order.pickup_date || '');
+    setNewPickupTime(order.pickup_time || '');
+    setChangeError(null);
+    setShowChangeDialog(true);
+  };
+
+  // 픽업시간 변경 처리
+  const handleChangePickupTime = async () => {
+    if (!selectedOrder || !newPickupDate || !newPickupTime) {
+      setChangeError('픽업 날짜와 시간을 모두 선택해주세요.');
+      return;
+    }
+
+    setIsChanging(true);
+    setChangeError(null);
+
+    try {
+      const response = await fetch('/api/orders/pickup-time', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: selectedOrder.id,
+          phone: verification.phone,
+          pickupDate: newPickupDate,
+          pickupTime: newPickupTime,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setChangeError(result.error || '픽업시간 변경에 실패했습니다.');
+        return;
+      }
+
+      // 성공 - Dialog 닫고 주문 목록 새로고침
+      setShowChangeDialog(false);
+      setSelectedOrder(null);
+      await fetchOrders();
+    } catch (error) {
+      console.error('[MyOrders] Change pickup time error:', error);
+      setChangeError('서버 오류가 발생했습니다.');
+    } finally {
+      setIsChanging(false);
     }
   };
 
@@ -323,16 +407,28 @@ export default function MyOrdersPage() {
                       {/* 배송/픽업 정보 */}
                       <div className="text-sm space-y-1">
                         {isPickup ? (
-                          <div className="flex justify-between">
+                          <div className="flex justify-between items-center">
                             <span className="text-gray-500">픽업일시</span>
-                            <span className="font-medium text-purple-600">
-                              {order.pickup_date
-                                ? format(new Date(order.pickup_date), 'M월 d일 (EEE)', {
-                                    locale: ko,
-                                  })
-                                : '-'}
-                              {order.pickup_time ? ` ${order.pickup_time}` : ''}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-purple-600">
+                                {order.pickup_date
+                                  ? format(new Date(order.pickup_date), 'M월 d일 (EEE)', {
+                                      locale: ko,
+                                    })
+                                  : '-'}
+                                {order.pickup_time ? ` ${order.pickup_time}` : ''}
+                              </span>
+                              {canChangePickupTime(order) && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openChangeDialog(order)}
+                                  className="h-6 px-2 text-xs"
+                                >
+                                  변경
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         ) : (
                           <>
@@ -442,6 +538,72 @@ export default function MyOrdersPage() {
       <div className="mt-8">
         <Footer />
       </div>
+
+      {/* 픽업시간 변경 Dialog */}
+      <Dialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>픽업시간 변경</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-4">
+            {selectedOrder && (
+              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                <p className="font-medium mb-1">현재 픽업 시간</p>
+                <p className="text-purple-600">
+                  {selectedOrder.pickup_date
+                    ? format(new Date(selectedOrder.pickup_date), 'M월 d일 (EEE)', {
+                        locale: ko,
+                      })
+                    : '-'}
+                  {selectedOrder.pickup_time ? ` ${selectedOrder.pickup_time}` : ''}
+                </p>
+              </div>
+            )}
+
+            {/* 날짜/시간 선택 */}
+            <PickupDateTimeSelector
+              selectedDate={newPickupDate}
+              onDateChange={setNewPickupDate}
+              selectedTime={newPickupTime}
+              onTimeChange={setNewPickupTime}
+            />
+
+            {/* 안내 메시지 */}
+            <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded">
+              • 픽업 예정 시간 3시간 전까지만 변경 가능합니다<br />
+              • 변경 시 SMS로 안내 문자를 보내드립니다
+            </div>
+
+            {/* 에러 메시지 */}
+            {changeError && (
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                {changeError}
+              </div>
+            )}
+
+            {/* 버튼 */}
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowChangeDialog(false)}
+                disabled={isChanging}
+                className="flex-1"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleChangePickupTime}
+                disabled={isChanging || !newPickupDate || !newPickupTime}
+                className="flex-1"
+              >
+                {isChanging ? '변경 중...' : '변경하기'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
