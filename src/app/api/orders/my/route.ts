@@ -130,6 +130,20 @@ export async function GET(request: NextRequest) {
 
     // 3. 해당 고객들의 주문 조회
     const customerIds = customers.map((c) => c.id);
+    
+    // 테스트 1: 조인 없이 orders만 조회
+    const { data: ordersSimple, error: orderErrorSimple } = await supabase
+      .from('orders')
+      .select('*')
+      .in('customer_id', customerIds)
+      .eq('is_hidden', false);
+    
+    debugInfo.ordersSimpleQuery = {
+      found: ordersSimple?.length || 0,
+      error: orderErrorSimple?.message,
+    };
+
+    // 테스트 2: 조인 포함 쿼리
     const { data: orders, error: orderError } = await supabase
       .from('orders')
       .select('*, customer:customers(*), order_items(*)')
