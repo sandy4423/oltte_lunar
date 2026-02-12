@@ -910,7 +910,7 @@ export default function AdminPage() {
                 className="text-purple-600 border-purple-200 hover:bg-purple-50"
               >
                 <Clock className={`mr-2 h-4 w-4 ${sendLinkLoading ? 'animate-pulse' : ''}`} />
-                픽업시간 회신하기 ({selectedOrders.size})
+                픽업시간 요청하기 ({selectedOrders.size})
               </Button>
               <Button
                 onClick={() => handleStatusChange('OUT_FOR_DELIVERY')}
