@@ -12,12 +12,14 @@ export function useOrderFilters(orders: OrderFull[]) {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterDeliveryDate, setFilterDeliveryDate] = useState<string>('all');
   const [filterDeliveryMethod, setFilterDeliveryMethod] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('delivery_date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [searchQuery, setSearchQuery] = useState('');
   const [showHidden, setShowHidden] = useState<boolean>(false);
 
-  // 필터링된 주문
+  // 필터링 및 정렬된 주문
   const filteredOrders = useMemo(() => {
-    return orders.filter((order) => {
+    const filtered = orders.filter((order) => {
       // 숨긴 주문 토글: showHidden이 false면 숨긴 주문 제외
       if (!showHidden && order.is_hidden) return false;
       // showHidden이 true면 숨긴 주문만 표시
@@ -42,7 +44,34 @@ export function useOrderFilters(orders: OrderFull[]) {
       }
       return true;
     });
-  }, [orders, filterApt, filterStatus, filterDeliveryDate, filterDeliveryMethod, searchQuery, showHidden]);
+
+    // 정렬
+    return filtered.sort((a, b) => {
+      let compareValue = 0;
+
+      switch (sortBy) {
+        case 'created_at':
+          compareValue = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+        case 'delivery_date':
+          // 픽업 주문은 pickup_date 우선, 없으면 delivery_date
+          const dateA = a.is_pickup && a.pickup_date ? a.pickup_date : a.delivery_date;
+          const dateB = b.is_pickup && b.pickup_date ? b.pickup_date : b.delivery_date;
+          compareValue = new Date(dateA).getTime() - new Date(dateB).getTime();
+          break;
+        case 'total_amount':
+          compareValue = a.total_amount - b.total_amount;
+          break;
+        case 'status':
+          compareValue = a.status.localeCompare(b.status);
+          break;
+        default:
+          compareValue = 0;
+      }
+
+      return sortOrder === 'asc' ? compareValue : -compareValue;
+    });
+  }, [orders, filterApt, filterStatus, filterDeliveryDate, filterDeliveryMethod, searchQuery, showHidden, sortBy, sortOrder]);
 
   // 고유 배송일 목록
   const uniqueDeliveryDates = useMemo(() => {
@@ -59,6 +88,10 @@ export function useOrderFilters(orders: OrderFull[]) {
     setFilterDeliveryDate,
     filterDeliveryMethod,
     setFilterDeliveryMethod,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
     searchQuery,
     setSearchQuery,
     showHidden,

@@ -75,6 +75,10 @@ export default function AdminPage() {
     setFilterDeliveryDate,
     filterDeliveryMethod,
     setFilterDeliveryMethod,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
     searchQuery,
     setSearchQuery,
     showHidden,
@@ -904,6 +908,37 @@ export default function AdminPage() {
                   className="pl-10"
                 />
               </div>
+            </div>
+
+            {/* 정렬 옵션 */}
+            <div className="flex items-center gap-2 pb-4 mb-4 border-b">
+              <span className="text-sm text-gray-600 font-medium">정렬:</span>
+              
+              {/* 정렬 기준 */}
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="delivery_date">배송일</SelectItem>
+                  <SelectItem value="created_at">주문일시</SelectItem>
+                  <SelectItem value="total_amount">금액</SelectItem>
+                  <SelectItem value="status">상태</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* 정렬 방향 토글 버튼 */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="px-3"
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+                {sortBy === 'created_at' || sortBy === 'delivery_date' 
+                  ? (sortOrder === 'asc' ? ' 빠른 순' : ' 늦은 순')
+                  : (sortOrder === 'asc' ? ' 낮은 순' : ' 높은 순')}
+              </Button>
             </div>
 
             {/* 액션 버튼 */}
