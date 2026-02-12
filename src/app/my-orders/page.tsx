@@ -665,16 +665,25 @@ export default function MyOrdersPage() {
 
             {/* 날짜/시간 선택 */}
             <PickupDateTimeSelector
-              selectedDate={newPickupDate}
-              onDateChange={setNewPickupDate}
-              selectedTime={newPickupTime}
-              onTimeChange={setNewPickupTime}
+              pickupDate={newPickupDate}
+              setPickupDate={setNewPickupDate}
+              pickupTime={newPickupTime}
+              setPickupTime={setNewPickupTime}
             />
 
             {/* 안내 메시지 */}
             <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded">
-              • 픽업 예정 시간 3시간 전까지만 변경 가능합니다<br />
-              • 변경 시 SMS로 안내 문자를 보내드립니다
+              {selectedOrder && needsPickupTime(selectedOrder) ? (
+                <>
+                  • 원하시는 날짜와 시간을 선택해주세요<br />
+                  • 선택 완료 시 SMS로 확인 문자를 보내드립니다
+                </>
+              ) : (
+                <>
+                  • 픽업 예정 시간 3시간 전까지만 변경 가능합니다<br />
+                  • 변경 시 SMS로 안내 문자를 보내드립니다
+                </>
+              )}
             </div>
 
             {/* 에러 메시지 */}
@@ -700,7 +709,9 @@ export default function MyOrdersPage() {
                 disabled={isChanging || !newPickupDate || !newPickupTime}
                 className="flex-1"
               >
-                {isChanging ? '변경 중...' : '변경하기'}
+                {isChanging 
+                  ? (selectedOrder && needsPickupTime(selectedOrder) ? '선택 중...' : '변경 중...') 
+                  : (selectedOrder && needsPickupTime(selectedOrder) ? '선택 완료' : '변경하기')}
               </Button>
             </div>
           </div>
