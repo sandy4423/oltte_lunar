@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PICKUP_AVAILABLE_DATES, STORE_INFO, PICKUP_DISCOUNT, PICKUP_EARLY_CLOSE_DATES, getAvailableTimeSlots } from '@/lib/constants';
+import { STORE_INFO, PICKUP_DISCOUNT, PICKUP_EARLY_CLOSE_DATES, getAvailableTimeSlots, getAvailablePickupDates } from '@/lib/constants';
 
 interface PickupDateTimeSelectorProps {
   pickupDate: string;
@@ -36,12 +36,26 @@ export function PickupDateTimeSelector({
     return () => clearInterval(timer);
   }, []);
 
+  const availableDates = useMemo(
+    () => getAvailablePickupDates(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tick]
+  );
+
   const availableTimeSlots = useMemo(
     () => getAvailableTimeSlots(pickupDate),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [pickupDate, tick]
   );
   const earlyCloseTime = PICKUP_EARLY_CLOSE_DATES[pickupDate];
+
+  // 선택된 날짜가 더 이상 유효하지 않으면 자동 초기화
+  useEffect(() => {
+    if (pickupDate && !availableDates.includes(pickupDate)) {
+      setPickupDate('');
+      setPickupTime('');
+    }
+  }, [availableDates, pickupDate, setPickupDate, setPickupTime]);
 
   // 선택된 시간이 더 이상 유효하지 않으면 자동 초기화
   useEffect(() => {
@@ -91,7 +105,7 @@ export function PickupDateTimeSelector({
               <SelectValue placeholder="픽업 날짜를 선택해주세요" />
             </SelectTrigger>
             <SelectContent>
-              {PICKUP_AVAILABLE_DATES.map((date) => {
+              {availableDates.map((date) => {
                 const dateObj = new Date(date);
                 const isToday = format(new Date(), 'yyyy-MM-dd') === date;
                 const label = format(dateObj, 'M월 d일 (EEE)', { locale: ko });

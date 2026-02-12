@@ -287,6 +287,22 @@ export function getAvailableTimeSlots(date: string): string[] {
   return slots;
 }
 
+// 현재 시각 기준으로 선택 가능한 픽업 날짜 목록 반환
+// 과거 날짜 제거, 오늘 날짜는 남은 시간 슬롯이 있을 때만 포함
+export function getAvailablePickupDates(): string[] {
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  return PICKUP_AVAILABLE_DATES.filter(date => {
+    if (date < todayStr) return false;           // 과거 날짜 제거
+    if (date === todayStr) {
+      // 오늘이면 남은 시간 슬롯이 있을 때만 포함
+      return getAvailableTimeSlots(date).length > 0;
+    }
+    return true;                                  // 미래 날짜는 항상 포함
+  });
+}
+
 // ============================================
 // 테스트 계정 (카드사 심사 및 개발 테스트용)
 // ============================================
