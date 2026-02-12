@@ -1019,6 +1019,9 @@ export default function AdminPage() {
                         )}
                       </span>
                     </div>
+                    <div className="text-xs text-gray-400 text-right pt-1">
+                      주문: {format(new Date(order.created_at), 'M/d HH:mm')}
+                    </div>
                   </div>
 
                   {/* 상세보기 버튼 */}

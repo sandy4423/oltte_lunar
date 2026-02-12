@@ -45,12 +45,26 @@ export function OrderDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl">
-              주문 상세
-            </DialogTitle>
+            <div className="flex items-center gap-2">
+              <DialogTitle className="text-lg">
+                주문 상세
+              </DialogTitle>
+              <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
+                {statusInfo.label}
+              </span>
+              {isPickup ? (
+                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-purple-500 text-white border border-purple-600">
+                  🏪 픽업
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-blue-500 text-white border border-blue-600">
+                  🚚 배달
+                </span>
+              )}
+            </div>
             <button
               onClick={() => onOpenChange(false)}
               className="rounded-full p-1 hover:bg-gray-100"
@@ -61,55 +75,27 @@ export function OrderDetailDialog({
           </div>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
-          {/* 상태 배지 */}
-          <div className="flex items-center gap-3">
-            <span className={`inline-flex items-center rounded-full border px-4 py-1.5 text-base font-semibold ${statusInfo.color}`}>
-              {statusInfo.label}
-            </span>
-            {isPickup ? (
-              <span className="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold bg-purple-500 text-white border border-purple-600">
-                🏪 픽업
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold bg-blue-500 text-white border border-blue-600">
-                🚚 배달
-              </span>
-            )}
-          </div>
-
-          {/* 고객 정보 */}
-          <div className="bg-gray-50 rounded-lg p-5 space-y-3">
-            <h3 className="font-semibold text-base text-gray-500">고객 정보</h3>
-            <div className="grid grid-cols-2 gap-4 text-base">
+        <div className="space-y-3 mt-2">
+          {/* 고객 정보 + 배송/픽업 정보 */}
+          <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-gray-500">이름</span>
-                <p className="font-medium text-lg">{order.customer.name}</p>
+                <span className="text-gray-500 text-xs">이름</span>
+                <p className="font-medium">{order.customer.name}</p>
               </div>
               <div>
-                <span className="text-gray-500">연락처</span>
-                <p className="font-medium text-lg">
+                <span className="text-gray-500 text-xs">연락처</span>
+                <p className="font-medium">
                   {order.customer.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')}
                 </p>
               </div>
             </div>
-          </div>
-
-          {/* 배송/픽업 정보 */}
-          <div className="bg-gray-50 rounded-lg p-5 space-y-3">
-            <h3 className="font-semibold text-base text-gray-500">
-              {isPickup ? '픽업 정보' : '배송 정보'}
-            </h3>
-            <div className="text-base space-y-2">
+            <div className="border-t pt-2 space-y-1">
               {isPickup ? (
                 <>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">단지</span>
-                    <span className="font-medium text-lg">🏪 픽업주문</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">픽업일시</span>
-                    <span className="font-medium text-purple-600 text-lg">
+                    <span className="text-gray-500 text-xs">픽업일시</span>
+                    <span className="font-medium text-purple-600">
                       {order.pickup_date ? format(new Date(order.pickup_date), 'M/d (EEE)', { locale: ko }) : '-'}
                       {order.pickup_time ? ` ${order.pickup_time}` : ''}
                     </span>
@@ -118,16 +104,16 @@ export function OrderDetailDialog({
               ) : (
                 <>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">단지</span>
-                    <span className="font-medium text-lg">{order.apt_name}</span>
+                    <span className="text-gray-500 text-xs">단지</span>
+                    <span className="font-medium">{order.apt_name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">동/호</span>
-                    <span className="font-medium text-lg">{order.dong}동 {order.ho}호</span>
+                    <span className="text-gray-500 text-xs">동/호</span>
+                    <span className="font-medium">{order.dong}동 {order.ho}호</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-500">배송일</span>
-                    <span className="font-medium text-lg">
+                    <span className="text-gray-500 text-xs">배송일</span>
+                    <span className="font-medium">
                       {format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko })}
                     </span>
                   </div>
@@ -137,31 +123,32 @@ export function OrderDetailDialog({
           </div>
 
           {/* 상품 정보 */}
-          <div className="bg-gray-50 rounded-lg p-5 space-y-3">
-            <h3 className="font-semibold text-base text-gray-500">주문 상품</h3>
-            <div className="space-y-3">
+          <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-sm">
+            <h3 className="font-semibold text-xs text-gray-500">주문 상품</h3>
+            <div className="space-y-1.5">
               {order.order_items.map((item: any) => {
                 const product = getProductBySku(item.sku);
+                const itemAmount = item.line_amount ?? (item.unit_price ?? 0) * item.qty;
                 return (
-                  <div key={item.id} className="flex justify-between items-center text-base">
-                    <span className="text-lg">
+                  <div key={item.id} className="flex justify-between items-center">
+                    <span>
                       {product?.emoji} {product?.name || item.sku} x{item.qty}
                     </span>
-                    <span className="font-medium text-lg">
-                      {(item.price * item.qty).toLocaleString()}원
+                    <span className="font-medium">
+                      {itemAmount.toLocaleString()}원
                     </span>
                   </div>
                 );
               })}
-              <div className="border-t pt-3 flex justify-between items-center">
-                <span className="font-semibold text-lg">합계</span>
-                <span className="font-bold text-2xl">{order.total_amount.toLocaleString()}원</span>
+              <div className="border-t pt-2 flex justify-between items-center">
+                <span className="font-semibold">합계</span>
+                <span className="font-bold text-lg">{order.total_amount.toLocaleString()}원</span>
               </div>
             </div>
           </div>
 
           {/* 주문 일시 */}
-          <div className="text-sm text-gray-400 text-right">
+          <div className="text-xs text-gray-400 text-right">
             주문일시: {format(new Date(order.created_at), 'yyyy-MM-dd HH:mm:ss')}
           </div>
 
@@ -170,9 +157,9 @@ export function OrderDetailDialog({
             <Button
               onClick={handleDelivered}
               disabled={actionLoading}
-              className="w-full h-14 text-lg bg-green-600 hover:bg-green-700"
+              className="w-full h-12 text-base bg-green-600 hover:bg-green-700"
             >
-              <CheckCircle className="mr-2 h-6 w-6" />
+              <CheckCircle className="mr-2 h-5 w-5" />
               {actionLoading ? '처리 중...' : (isPickup ? '고객 전달완료' : '배송완료')}
             </Button>
           )}
