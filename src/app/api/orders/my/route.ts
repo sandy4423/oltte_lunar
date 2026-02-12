@@ -131,11 +131,20 @@ export async function GET(request: NextRequest) {
       order_items: orderItemsMap.get(order.id) || [],
     }));
 
-    return NextResponse.json({
-      success: true,
-      data: ordersWithRelations,
-      count: ordersWithRelations.length,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: ordersWithRelations,
+        count: ordersWithRelations.length,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('[MyOrders API] Unexpected error:', error);
     return NextResponse.json(

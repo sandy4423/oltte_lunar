@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { AlertCircle, ArrowLeft, Phone, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Phone, ShieldCheck, RefreshCw } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,38 @@ export default function MyOrdersPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verification.isPhoneVerified]);
+
+  // 페이지 포커스 감지 - 탭으로 돌아왔을 때 즉시 조회
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && verification.isPhoneVerified) {
+        fetchOrders();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verification.isPhoneVerified]);
+
+  // 스마트 자동 폴링 (페이지 포커스 시에만 + 1분마다)
+  useEffect(() => {
+    if (!verification.isPhoneVerified || orders.length === 0) return;
+    
+    const hasWaitingOrders = orders.some((o: any) => o.status === 'WAITING_FOR_DEPOSIT');
+    
+    if (hasWaitingOrders && document.visibilityState === 'visible') {
+      const interval = setInterval(() => {
+        // 페이지가 보이는 상태일 때만 조회
+        if (document.visibilityState === 'visible') {
+          fetchOrders();
+        }
+      }, 60000); // 1분 = 60,000ms
+      
+      return () => clearInterval(interval);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verification.isPhoneVerified, orders]);
 
   const fetchOrders = async (retryCount = 0) => {
     setLoading(true);
@@ -194,13 +226,33 @@ export default function MyOrdersPage() {
         ) : (
           /* ===== Step 2: 주문 목록 ===== */
           <>
-            {/* 인증 완료 안내 */}
-            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg p-3">
-              <Phone className="h-4 w-4 flex-shrink-0" />
-              <span>
-                {verification.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')} 인증 완료
-              </span>
+            {/* 인증 완료 안내 + 새로고침 버튼 */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg p-3 flex-1">
+                <Phone className="h-4 w-4 flex-shrink-0" />
+                <span>
+                  {verification.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')} 인증 완료
+                </span>
+              </div>
+              <Button
+                onClick={() => fetchOrders()}
+                disabled={loading}
+                variant="outline"
+                size="sm"
+                className="h-[46px] px-3 whitespace-nowrap"
+                title="주문 상태 새로고침"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
+
+            {/* 자동 업데이트 안내 (입금 대기 주문이 있을 때) */}
+            {!loading && orders.some((o: any) => o.status === 'WAITING_FOR_DEPOSIT') && (
+              <div className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-2 flex items-center gap-1.5">
+                <RefreshCw className="h-3 w-3 flex-shrink-0" />
+                <span>입금 대기 중인 주문이 있습니다. 페이지를 보고 있으면 1분마다 자동으로 업데이트됩니다.</span>
+              </div>
+            )}
 
             {/* 로딩 */}
             {loading && (
@@ -341,9 +393,15 @@ export default function MyOrdersPage() {
                       {order.status === 'WAITING_FOR_DEPOSIT' &&
                         order.vbank_num && (
                           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 space-y-1.5">
-                            <p className="text-sm font-semibold text-yellow-800">
-                              입금 계좌 정보
-                            </p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-semibold text-yellow-800">
+                                입금 계좌 정보
+                              </p>
+                              <div className="flex items-center gap-1 text-xs text-yellow-700">
+                                <RefreshCw className="h-3 w-3" />
+                                <span>입금 확인 중</span>
+                              </div>
+                            </div>
                             <div className="text-sm space-y-0.5">
                               <p>
                                 <span className="text-gray-500">은행:</span>{' '}
