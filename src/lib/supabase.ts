@@ -56,5 +56,13 @@ export function createServerSupabaseClient() {
       autoRefreshToken: false,
       persistSession: false,
     },
+    global: {
+      fetch: (url, init = {}) => {
+        return fetch(url, {
+          ...init,
+          cache: 'no-store', // HTTP 캐시 무효화 - 항상 fresh data 가져오기
+        });
+      },
+    },
   });
 }
