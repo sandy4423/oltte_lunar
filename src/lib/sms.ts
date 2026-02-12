@@ -512,12 +512,14 @@ export function createPickupTimeRequestSMS(params: {
   
   return `[올때만두] ${customerName}님 안녕하세요!
 
-주문하신 설만두의 픽업 시간을 선택해주세요.
-
 주문일: ${orderDate}
 수령예정일: ${deliveryDate}
 
-아래 링크를 눌러 픽업 시간을 선택해주세요 :)
+픽업 기간이 2/15(일)까지 연장되었습니다!
+2/15 일요일도 09시~21시까지 픽업 가능하니
+편한 날짜와 시간을 선택해주세요 :)
+
+아래 링크를 눌러 픽업 시간을 선택해주세요
 ${link}
 
 (링크는 30일간 유효합니다)
