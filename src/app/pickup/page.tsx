@@ -9,7 +9,7 @@ import { AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-import { PICKUP_CONFIG, PICKUP_DISCOUNT, DANGOL_DISCOUNT } from '@/lib/constants';
+import { PICKUP_CONFIG, PICKUP_DISCOUNT, PICKUP_MIN_ORDER_AMOUNT, DANGOL_DISCOUNT } from '@/lib/constants';
 import { Footer } from '@/components/Footer';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
 import { useCart } from '@/hooks/useCart';
@@ -60,7 +60,10 @@ export default function PickupPage() {
   const [pickupTime, setPickupTime] = useState('');
 
   // 장바구니 훅
-  const { cart, updateQuantity, totalQty, totalAmount, isMinOrderMet } = useCart();
+  const { cart, updateQuantity, totalQty, totalAmount } = useCart();
+
+  // 픽업 주문: 금액 기반 최소 주문 조건 (1만원 이상)
+  const isMinOrderMet = totalAmount >= PICKUP_MIN_ORDER_AMOUNT;
 
   // 실시간 현재 시각
   const [currentTime, setCurrentTime] = useState('');
@@ -273,6 +276,8 @@ export default function PickupPage() {
           updateQuantity={updateQuantity}
           totalQty={totalQty}
           isMinOrderMet={isMinOrderMet}
+          minOrderMessage={`최소 주문금액: ${PICKUP_MIN_ORDER_AMOUNT.toLocaleString()}원`}
+          minOrderSubMessage=""
         />
 
         {/* 픽업 날짜/시간 선택 */}

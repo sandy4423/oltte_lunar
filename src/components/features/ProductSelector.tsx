@@ -14,6 +14,8 @@ interface ProductSelectorProps {
   updateQuantity: (sku: Product['sku'], delta: number) => void;
   totalQty: number;
   isMinOrderMet: boolean;
+  minOrderMessage?: string;
+  minOrderSubMessage?: string;
 }
 
 export function ProductSelector({
@@ -21,6 +23,8 @@ export function ProductSelector({
   updateQuantity,
   totalQty,
   isMinOrderMet,
+  minOrderMessage = '최소 주문: 만두/떡 3개 이상',
+  minOrderSubMessage = '(육수는 최소 주문 수량에 포함되지 않습니다)',
 }: ProductSelectorProps) {
   const [isInfoExpanded, setIsInfoExpanded] = useState(false);
 
@@ -87,12 +91,14 @@ export function ProductSelector({
             <div className="flex items-center gap-2 text-orange-700 text-sm">
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
               <p className="font-semibold">
-                최소 주문: 만두/떡 3개 이상
+                {minOrderMessage}
               </p>
             </div>
-            <p className="text-xs text-orange-600 mt-1 ml-6">
-              (육수는 최소 주문 수량에 포함되지 않습니다)
-            </p>
+            {minOrderSubMessage && (
+              <p className="text-xs text-orange-600 mt-1 ml-6">
+                {minOrderSubMessage}
+              </p>
+            )}
           </div>
         )}
 
