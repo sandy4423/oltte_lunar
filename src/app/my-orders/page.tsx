@@ -36,7 +36,6 @@ export default function MyOrdersPage() {
 
   // 인증 완료 시 주문 조회
   useEffect(() => {
-    console.log('[MyOrders] useEffect triggered - isPhoneVerified:', verification.isPhoneVerified);
     if (verification.isPhoneVerified) {
       fetchOrders();
     }
@@ -44,11 +43,6 @@ export default function MyOrdersPage() {
   }, [verification.isPhoneVerified]);
 
   const fetchOrders = async (retryCount = 0) => {
-    console.log('[MyOrders] fetchOrders 호출 시작', {
-      phone: verification.phone,
-      attempt: retryCount,
-    });
-
     setLoading(true);
     setFetchError(null);
 
@@ -58,35 +52,20 @@ export default function MyOrdersPage() {
       );
       const result = await response.json();
 
-      console.log('[MyOrders] API 응답', {
-        status: response.status,
-        success: result.success,
-        ordersCount: result.data?.length || 0,
-        error: result.error,
-      });
-
-      // 서버 디버그 정보 출력
-      if (result._debug) {
-        console.log('[MyOrders] 🔍 Server Debug Info:', result._debug);
-      }
-
       // 401 에러이고 첫 시도인 경우 재시도
       if (response.status === 401 && retryCount === 0) {
-        console.log('[MyOrders] 401 error, retrying after 500ms...');
         await new Promise(resolve => setTimeout(resolve, 500));
         return fetchOrders(1);
       }
 
       if (!response.ok || !result.success) {
-        console.error('[MyOrders] 주문 조회 실패', result.error);
         setFetchError(result.error || '주문 조회에 실패했습니다.');
         return;
       }
 
-      console.log('[MyOrders] 주문 목록 설정 완료:', result.data?.length || 0, '건');
       setOrders(result.data || []);
     } catch (error) {
-      console.error('[MyOrders] fetchOrders 예외 발생:', error);
+      console.error('[MyOrders] fetchOrders error:', error);
       setFetchError('서버 오류가 발생했습니다.');
     } finally {
       setLoading(false);

@@ -23,10 +23,7 @@ export function usePhoneVerification() {
   // 인증번호 발송
   const handleSendVerification = async () => {
     // 중복 클릭 방지
-    if (isSending) {
-      console.log('[SMS] 이미 발송 중입니다.');
-      return;
-    }
+    if (isSending) return;
 
     if (!/^01[0-9]{8,9}$/.test(phone.replace(/-/g, ''))) {
       setError('올바른 휴대폰 번호를 입력해주세요.');
@@ -51,11 +48,9 @@ export function usePhoneVerification() {
       }
 
       setVerificationSent(true);
-      console.log('[SMS] 인증번호 발송 성공');
 
       // 테스트 전화번호인 경우 자동 인증 진행
       if (result.isTestPhone) {
-        console.log('[TEST] 테스트 계정 감지 - 자동 인증 시작');
         setVerificationCode('0000');
         
         // 짧은 딜레이 후 자동 인증 (사용자가 무슨 일이 일어나는지 볼 수 있도록)
@@ -100,8 +95,6 @@ export function usePhoneVerification() {
 
       setIsPhoneVerified(true);
       setError(null);
-      console.log('[SMS] 인증 성공');
-      console.log('[SMS] isPhoneVerified 상태 변경: true');
 
       // 기존 고객 정보 조회
       try {
@@ -110,12 +103,10 @@ export function usePhoneVerification() {
           const info = await infoResponse.json();
           if (info.name || info.dong || info.ho) {
             setCustomerInfo(info);
-            console.log('[Customer] 기존 정보 조회:', info);
           }
         }
       } catch (infoErr) {
         // 고객 정보 조회 실패는 무시 (신규 고객일 수 있음)
-        console.log('[Customer] 신규 고객 또는 정보 조회 실패');
       }
     } catch (err) {
       console.error('[SMS] 인증 오류:', err);
