@@ -211,6 +211,7 @@ export const FREE_SHIPPING_ELIGIBLE_SKUS = ['meat', 'kimchi', 'half', 'ricecake_
 // ============================================
 
 export const PICKUP_DISCOUNT = 3000;
+export const PICKUP_DISCOUNT_THRESHOLD = 30000; // 픽업 할인 적용 최소 금액
 export const PICKUP_MIN_ORDER_AMOUNT = 10000; // 픽업 최소 주문 금액
 export const DANGOL_DISCOUNT = 1000;
 

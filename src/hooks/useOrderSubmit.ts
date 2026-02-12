@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { PRODUCTS, getApartmentFullName, PICKUP_DISCOUNT, DANGOL_DISCOUNT, PICKUP_APT_CODE, PICKUP_CONFIG } from '@/lib/constants';
+import { PRODUCTS, getApartmentFullName, PICKUP_DISCOUNT, PICKUP_DISCOUNT_THRESHOLD, DANGOL_DISCOUNT, PICKUP_APT_CODE, PICKUP_CONFIG } from '@/lib/constants';
 import { getStoredSource } from '@/lib/sourceTracking';
 import type { CartItem } from '@/types/order';
 import type { ApartmentConfig } from '@/lib/constants';
@@ -53,8 +53,8 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
       // 유입 경로 가져오기
       const source = getStoredSource();
 
-      // 픽업 주문이거나 픽업 선택 시 할인 적용
-      const pickupDiscount = (isPickup || isPickupOrder) ? PICKUP_DISCOUNT : 0;
+      // 픽업 주문이거나 픽업 선택 시 할인 적용 (3만원 이상)
+      const pickupDiscount = ((isPickup || isPickupOrder) && totalAmount >= PICKUP_DISCOUNT_THRESHOLD) ? PICKUP_DISCOUNT : 0;
       // 단골톡방 할인 적용
       const dangolDiscount = (source === 'dangol') ? DANGOL_DISCOUNT : 0;
       const finalAmount = totalAmount - pickupDiscount - dangolDiscount;

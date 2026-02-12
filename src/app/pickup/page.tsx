@@ -10,7 +10,7 @@ import { AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-import { PICKUP_CONFIG, PICKUP_DISCOUNT, PICKUP_MIN_ORDER_AMOUNT, DANGOL_DISCOUNT } from '@/lib/constants';
+import { PICKUP_CONFIG, PICKUP_DISCOUNT, PICKUP_DISCOUNT_THRESHOLD, PICKUP_MIN_ORDER_AMOUNT, DANGOL_DISCOUNT } from '@/lib/constants';
 import { Footer } from '@/components/Footer';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
 import { useCart } from '@/hooks/useCart';
@@ -236,7 +236,7 @@ export default function PickupPage() {
               {/* 할인 강조 */}
               <div className="bg-orange-100 border-2 border-orange-300 rounded-lg p-3 mb-4">
                 <p className="text-xl font-bold text-orange-700">
-                  픽업 시 {PICKUP_DISCOUNT.toLocaleString()}원 할인!
+                  {(PICKUP_DISCOUNT_THRESHOLD / 10000).toLocaleString()}만원 이상 주문 시 {PICKUP_DISCOUNT.toLocaleString()}원 할인!
                 </p>
               </div>
               
@@ -354,7 +354,7 @@ export default function PickupPage() {
       {/* 하단 고정 결제 버튼 */}
       <OrderSummaryBar
         totalQty={totalQty}
-        totalAmount={totalAmount - PICKUP_DISCOUNT}
+        totalAmount={totalAmount - (totalAmount >= PICKUP_DISCOUNT_THRESHOLD ? PICKUP_DISCOUNT : 0)}
         isFormValid={isFormValid}
         isSubmitting={orderSubmit.isSubmitting}
         onSubmit={handleOrderSubmit}
