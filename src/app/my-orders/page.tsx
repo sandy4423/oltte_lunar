@@ -65,6 +65,11 @@ export default function MyOrdersPage() {
         error: result.error,
       });
 
+      // 서버 디버그 정보 출력
+      if (result._debug) {
+        console.log('[MyOrders] 🔍 Server Debug Info:', result._debug);
+      }
+
       // 401 에러이고 첫 시도인 경우 재시도
       if (response.status === 401 && retryCount === 0) {
         console.log('[MyOrders] 401 error, retrying after 500ms...');
