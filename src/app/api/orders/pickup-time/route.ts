@@ -109,28 +109,31 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // 6. 3시간 전 제약 확인
-    const newPickupDateTime = new Date(`${pickupDate}T${pickupTime}:00+09:00`);
-    const now = new Date();
-    const threeHoursInMs = 3 * 60 * 60 * 1000;
-    const timeDiff = newPickupDateTime.getTime() - now.getTime();
-
-    if (timeDiff <= threeHoursInMs) {
-      const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
-      const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-      
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: `픽업 3시간 전까지만 변경할 수 있습니다. (남은 시간: ${hoursLeft}시간 ${minutesLeft}분)` 
-        },
-        { status: 400 }
-      );
-    }
-
-    // 7. 기존 픽업 정보 저장 (알림용)
+    // 6. 기존 픽업 정보 저장 (알림용)
     const oldPickupDate = order.pickup_date;
     const oldPickupTime = order.pickup_time;
+    const isFirstTimeSelection = !oldPickupDate || !oldPickupTime;
+
+    // 7. 3시간 전 제약 확인 (기존 시간이 있는 경우에만 적용)
+    if (!isFirstTimeSelection) {
+      const newPickupDateTime = new Date(`${pickupDate}T${pickupTime}:00+09:00`);
+      const now = new Date();
+      const threeHoursInMs = 3 * 60 * 60 * 1000;
+      const timeDiff = newPickupDateTime.getTime() - now.getTime();
+
+      if (timeDiff <= threeHoursInMs) {
+        const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
+        const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: `픽업 3시간 전까지만 변경할 수 있습니다. (남은 시간: ${hoursLeft}시간 ${minutesLeft}분)` 
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // 8. 주문 정보 업데이트
     const { error: updateError } = await supabase
@@ -158,19 +161,27 @@ export async function PATCH(request: NextRequest) {
     // 9. SMS 발송 (고객)
     try {
       if (order.customer?.phone && order.customer?.name) {
-        const oldDateFormatted = formatKST(oldPickupDate, 'M월 d일 (EEE)');
         const newDateFormatted = formatKST(pickupDate, 'M월 d일 (EEE)');
         
-        await sendSMS(
-          order.customer.phone,
-          createPickupTimeChangeSMS({
-            customerName: order.customer.name,
-            oldPickupDate: oldDateFormatted,
-            oldPickupTime: oldPickupTime || '-',
-            newPickupDate: newDateFormatted,
-            newPickupTime: pickupTime,
-          })
-        );
+        if (isFirstTimeSelection) {
+          // 최초 시간 선택 - 간단한 확인 SMS
+          await sendSMS(
+            order.customer.phone,
+            `[올때만두] ${order.customer.name}님 픽업 시간이 확정되었습니다!\n\n픽업일시: ${newDateFormatted} ${pickupTime}\n픽업장소: e편한세상송도 후문상가 안쪽. 컴포즈 옆 (랜드마크로 113)\n\n선택하신 시간에 맞춰 방문해주세요!`
+          );
+        } else {
+          const oldDateFormatted = formatKST(oldPickupDate, 'M월 d일 (EEE)');
+          await sendSMS(
+            order.customer.phone,
+            createPickupTimeChangeSMS({
+              customerName: order.customer.name,
+              oldPickupDate: oldDateFormatted,
+              oldPickupTime: oldPickupTime || '-',
+              newPickupDate: newDateFormatted,
+              newPickupTime: pickupTime,
+            })
+          );
+        }
         
         console.log(`[PickupTime API] SMS sent to ${order.customer.phone}`);
       }
@@ -181,20 +192,26 @@ export async function PATCH(request: NextRequest) {
 
     // 10. Slack 알림 (관리자)
     try {
-      const oldDateFormatted = formatKST(oldPickupDate, 'M월 d일 (EEE)');
       const newDateFormatted = formatKST(pickupDate, 'M월 d일 (EEE)');
       
-      await sendSlackMessage(
-        createPickupTimeChangeAlert({
-          orderId,
-          customerName: order.customer?.name || '고객',
-          customerPhone: order.customer?.phone || '미입력',
-          oldPickupDate: oldDateFormatted,
-          oldPickupTime: oldPickupTime || '-',
-          newPickupDate: newDateFormatted,
-          newPickupTime: pickupTime,
-        })
-      );
+      if (isFirstTimeSelection) {
+        await sendSlackMessage(
+          `:white_check_mark: *픽업시간 선택 완료*\n주문번호: ${orderId}\n고객: ${order.customer?.name || '고객'} (${order.customer?.phone || '미입력'})\n선택: ${newDateFormatted} ${pickupTime}`
+        );
+      } else {
+        const oldDateFormatted = formatKST(oldPickupDate, 'M월 d일 (EEE)');
+        await sendSlackMessage(
+          createPickupTimeChangeAlert({
+            orderId,
+            customerName: order.customer?.name || '고객',
+            customerPhone: order.customer?.phone || '미입력',
+            oldPickupDate: oldDateFormatted,
+            oldPickupTime: oldPickupTime || '-',
+            newPickupDate: newDateFormatted,
+            newPickupTime: pickupTime,
+          })
+        );
+      }
       
       console.log(`[PickupTime API] Slack notification sent`);
     } catch (slackError) {
@@ -203,7 +220,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, message: '픽업시간이 변경되었습니다.' },
+      { success: true, message: isFirstTimeSelection ? '픽업시간이 선택되었습니다.' : '픽업시간이 변경되었습니다.' },
       {
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',

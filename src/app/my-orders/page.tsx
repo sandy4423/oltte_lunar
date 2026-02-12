@@ -96,6 +96,17 @@ export default function MyOrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verification.isPhoneVerified]);
 
+  // 토큰 인증 후 주문 로드 완료 시 -> 픽업시간 미선택 주문 자동 다이얼로그
+  useEffect(() => {
+    if (tokenVerified && orders.length > 0 && !showChangeDialog) {
+      const orderNeedingTime = orders.find((o: any) => needsPickupTime(o));
+      if (orderNeedingTime) {
+        openChangeDialog(orderNeedingTime);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenVerified, orders]);
+
   // 페이지 포커스 감지 - 탭으로 돌아왔을 때 즉시 조회
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -158,7 +169,7 @@ export default function MyOrdersPage() {
     }
   };
 
-  // 픽업시간 변경 가능 여부 판단
+  // 픽업시간 선택/변경 가능 여부 판단
   const canChangePickupTime = (order: any): boolean => {
     // 픽업 주문이 아니면 false
     if (!order.is_pickup) return false;
@@ -168,9 +179,10 @@ export default function MyOrdersPage() {
       return false;
     }
     
-    // 픽업 3시간 전까지만 변경 가능
-    if (!order.pickup_date || !order.pickup_time) return false;
+    // 픽업 시간이 아직 선택되지 않은 경우 -> 선택 가능
+    if (!order.pickup_date || !order.pickup_time) return true;
     
+    // 픽업 3시간 전까지만 변경 가능
     try {
       const pickupDateTime = new Date(`${order.pickup_date}T${order.pickup_time}:00+09:00`);
       const now = new Date();
@@ -180,6 +192,12 @@ export default function MyOrdersPage() {
     } catch {
       return false;
     }
+  };
+
+  // 픽업시간 미선택 주문이 있는지 확인
+  const needsPickupTime = (order: any): boolean => {
+    return order.is_pickup && (!order.pickup_date || !order.pickup_time) && 
+      (order.status === 'PAID' || order.status === 'WAITING_FOR_DEPOSIT');
   };
 
   // 픽업시간 변경 Dialog 열기
@@ -469,23 +487,35 @@ export default function MyOrdersPage() {
                           <div className="flex justify-between items-center">
                             <span className="text-gray-500">픽업일시</span>
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-purple-600">
-                                {order.pickup_date
-                                  ? format(new Date(order.pickup_date), 'M월 d일 (EEE)', {
-                                      locale: ko,
-                                    })
-                                  : '-'}
-                                {order.pickup_time ? ` ${order.pickup_time}` : ''}
-                              </span>
-                              {canChangePickupTime(order) && (
+                              {needsPickupTime(order) ? (
                                 <Button
                                   size="sm"
-                                  variant="outline"
                                   onClick={() => openChangeDialog(order)}
-                                  className="h-6 px-2 text-xs"
+                                  className="h-7 px-3 text-xs bg-purple-600 hover:bg-purple-700 text-white"
                                 >
-                                  변경
+                                  픽업 시간 선택하기
                                 </Button>
+                              ) : (
+                                <>
+                                  <span className="font-medium text-purple-600">
+                                    {order.pickup_date
+                                      ? format(new Date(order.pickup_date), 'M월 d일 (EEE)', {
+                                          locale: ko,
+                                        })
+                                      : '-'}
+                                    {order.pickup_time ? ` ${order.pickup_time}` : ''}
+                                  </span>
+                                  {canChangePickupTime(order) && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => openChangeDialog(order)}
+                                      className="h-6 px-2 text-xs"
+                                    >
+                                      변경
+                                    </Button>
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>
@@ -615,20 +645,20 @@ export default function MyOrdersPage() {
       <Dialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>픽업시간 변경</DialogTitle>
+            <DialogTitle>
+              {selectedOrder && needsPickupTime(selectedOrder) ? '픽업 시간 선택' : '픽업시간 변경'}
+            </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 pt-4">
-            {selectedOrder && (
+            {selectedOrder && selectedOrder.pickup_date && selectedOrder.pickup_time && (
               <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
                 <p className="font-medium mb-1">현재 픽업 시간</p>
                 <p className="text-purple-600">
-                  {selectedOrder.pickup_date
-                    ? format(new Date(selectedOrder.pickup_date), 'M월 d일 (EEE)', {
-                        locale: ko,
-                      })
-                    : '-'}
-                  {selectedOrder.pickup_time ? ` ${selectedOrder.pickup_time}` : ''}
+                  {format(new Date(selectedOrder.pickup_date), 'M월 d일 (EEE)', {
+                    locale: ko,
+                  })}
+                  {` ${selectedOrder.pickup_time}`}
                 </p>
               </div>
             )}
