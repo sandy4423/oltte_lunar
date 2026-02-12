@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { 
   RefreshCw, Truck, CheckCircle, Printer, Download,
   Filter, Search, BarChart3, Lock, TrendingUp, ChevronDown, ChevronUp, Plus,
-  EyeOff, Eye, Bell, Package
+  EyeOff, Eye, Bell, Package, Clock
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -290,6 +290,53 @@ export default function AdminPage() {
 
   // 입금 독려 메시지 발송
   const [remindLoading, setRemindLoading] = useState(false);
+
+  // 픽업시간 회신 링크 발송
+  const [sendLinkLoading, setSendLinkLoading] = useState(false);
+
+  const handleSendPickupTimeLink = async () => {
+    if (selectedOrders.size !== 1) return;
+    
+    const orderId = Array.from(selectedOrders)[0];
+    const order = orders.find(o => o.id === orderId);
+    
+    if (!order || !order.is_pickup) {
+      alert('픽업 주문만 선택할 수 있습니다.');
+      return;
+    }
+    
+    if (order.pickup_date && order.pickup_time) {
+      alert('이미 픽업시간이 선택된 주문입니다.');
+      return;
+    }
+    
+    if (!confirm(`${order.customer.name}님에게 픽업시간 선택 링크를 전송하시겠습니까?`)) {
+      return;
+    }
+    
+    setSendLinkLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/send-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || '링크 전송에 실패했습니다.');
+      }
+      
+      alert('SMS 전송 완료');
+      clearSelection();
+    } catch (error: any) {
+      alert(error.message || '오류가 발생했습니다.');
+    } finally {
+      setSendLinkLoading(false);
+    }
+  };
 
   const handleRemindDeposit = async () => {
     if (selectedOrders.size === 0) return;
@@ -855,6 +902,15 @@ export default function AdminPage() {
               >
                 <Bell className={`mr-2 h-4 w-4 ${remindLoading ? 'animate-pulse' : ''}`} />
                 입금 안내 ({selectedOrders.size})
+              </Button>
+              <Button
+                onClick={handleSendPickupTimeLink}
+                disabled={selectedOrders.size !== 1 || sendLinkLoading}
+                variant="outline"
+                className="text-purple-600 border-purple-200 hover:bg-purple-50"
+              >
+                <Clock className={`mr-2 h-4 w-4 ${sendLinkLoading ? 'animate-pulse' : ''}`} />
+                픽업시간 회신하기 ({selectedOrders.size})
               </Button>
               <Button
                 onClick={() => handleStatusChange('OUT_FOR_DELIVERY')}

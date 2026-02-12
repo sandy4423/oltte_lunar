@@ -112,6 +112,16 @@ export interface RefundTokenRow {
   created_at: string;              // timestamptz, DEFAULT now()
 }
 
+/** one_time_auth_tokens 테이블 Row */
+export interface OneTimeAuthTokenRow {
+  id: string;                      // uuid, PK
+  customer_id: string;             // uuid, FK → customers(id), NOT NULL
+  token: string;                   // text, NOT NULL, UNIQUE
+  expires_at: string;              // timestamptz, NOT NULL
+  used: boolean;                   // boolean, DEFAULT false
+  created_at: string;              // timestamptz, DEFAULT now()
+}
+
 // ============================================
 // Table Insert Types (INSERT 시 사용)
 // ============================================
@@ -191,6 +201,16 @@ export interface RefundTokenInsert {
   account_holder?: string | null;  // optional
   used?: boolean;                  // optional, default: false
   expires_at: string;              // required
+  created_at?: string;             // optional, default: now()
+}
+
+/** one_time_auth_tokens INSERT 타입 */
+export interface OneTimeAuthTokenInsert {
+  id?: string;                     // auto-generated
+  customer_id: string;             // required
+  token: string;                   // required
+  expires_at: string;              // required
+  used?: boolean;                  // optional, default: false
   created_at?: string;             // optional, default: now()
 }
 

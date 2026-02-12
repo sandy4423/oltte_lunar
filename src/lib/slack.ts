@@ -322,3 +322,30 @@ ${newPickupDate} ${newPickupTime}
 
 고객이 직접 변경했습니다.`;
 }
+
+/**
+ * 픽업시간 회신 링크 발송 Slack 알림 메시지 생성
+ */
+export function createPickupTimeLinkSentAlert(params: {
+  orderId: string;
+  customerName: string;
+  customerPhone: string;
+  orderDate: string;
+  deliveryDate: string;
+  link: string;
+}): string {
+  const { orderId, customerName, customerPhone, orderDate, deliveryDate, link } = params;
+  
+  return `🔗 픽업시간 선택 링크 전송
+
+주문번호: ${orderId}
+고객명: ${customerName}
+연락처: ${customerPhone}
+주문일: ${orderDate}
+수령예정일: ${deliveryDate}
+
+전송된 링크:
+${link}
+
+고객이 링크를 통해 픽업시간을 선택할 수 있습니다.`;
+}

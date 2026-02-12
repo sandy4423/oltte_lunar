@@ -11,6 +11,7 @@
 
 import crypto from 'crypto';
 import { formatAccountNumber } from './utils';
+import { CUSTOMER_SUPPORT_PHONE } from './constants';
 
 const API_KEY = process.env.SOLAPI_API_KEY || '';
 const API_SECRET = process.env.SOLAPI_API_SECRET || '';
@@ -468,7 +469,7 @@ ${deliveryInfo}
 
 [문의하기]
 네이버 톡톡 또는 전화 상담
-📞 010-2592-4423 (평일 10-18시)
+📞 ${CUSTOMER_SUPPORT_PHONE} (평일 10-18시)
 
 입금 즉시 안내 문자 드릴게요!`;
 }
@@ -495,6 +496,32 @@ ${newPickupDate} ${newPickupTime}
 
 변경된 시간에 맞춰 방문해주세요!
 
-문의: 032-832-5012`;
+문의: ${CUSTOMER_SUPPORT_PHONE}`;
+}
+
+/**
+ * 픽업시간 회신 요청 SMS 템플릿
+ */
+export function createPickupTimeRequestSMS(params: {
+  customerName: string;
+  orderDate: string;
+  deliveryDate: string;
+  link: string;
+}): string {
+  const { customerName, orderDate, deliveryDate, link } = params;
+  
+  return `[올때만두] ${customerName}님 안녕하세요!
+
+주문하신 설만두의 픽업 시간을 선택해주세요.
+
+주문일: ${orderDate}
+수령예정일: ${deliveryDate}
+
+아래 링크를 눌러 픽업 시간을 선택해주세요 :)
+${link}
+
+(링크는 30일간 유효합니다)
+
+문의: ${CUSTOMER_SUPPORT_PHONE}`;
 }
 

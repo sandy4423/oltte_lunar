@@ -17,6 +17,7 @@ import { usePhoneVerification } from '@/hooks/usePhoneVerification';
 import { ORDER_STATUS_LABEL, getProductBySku, PICKUP_APT_CODE, getAvailablePickupDates, getAvailableTimeSlots } from '@/lib/constants';
 import { trackPageView } from '@/lib/trackPageView';
 import { PickupDateTimeSelector } from '@/components/features/PickupDateTimeSelector';
+import { CashReceiptForm } from '@/components/features/CashReceiptForm';
 
 // ============================================
 // 주문내역 조회 페이지
@@ -43,6 +44,42 @@ export default function MyOrdersPage() {
   const [newPickupTime, setNewPickupTime] = useState('');
   const [isChanging, setIsChanging] = useState(false);
   const [changeError, setChangeError] = useState<string | null>(null);
+
+  // 토큰 인증 상태
+  const [tokenVerified, setTokenVerified] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
+
+  // URL에서 token 파라미터 추출 및 검증
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    
+    if (token) {
+      verifyToken(token);
+    }
+  }, []);
+
+  const verifyToken = async (token: string) => {
+    try {
+      const response = await fetch(`/api/auth/verify-token?token=${token}`);
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        setTokenError(result.error || '유효하지 않은 링크입니다.');
+        return;
+      }
+      
+      // 전화번호로 자동 인증
+      verification.setPhone(result.phone);
+      verification.setIsPhoneVerified(true);
+      setTokenVerified(true);
+      
+      // URL에서 token 제거 (보안)
+      window.history.replaceState({}, '', '/my-orders');
+    } catch (error) {
+      setTokenError('링크 확인 중 오류가 발생했습니다.');
+    }
+  };
 
   // 인증 완료 시 주문 조회
   useEffect(() => {
@@ -218,6 +255,21 @@ export default function MyOrdersPage() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 space-y-4">
+        {/* 토큰 검증 결과 메시지 */}
+        {tokenVerified && (
+          <div className="p-4 bg-green-50 text-green-700 rounded-lg border border-green-200">
+            <p className="font-medium">✓ 링크를 통해 자동으로 인증되었습니다.</p>
+            <p className="text-sm mt-1">주문내역을 확인하고 픽업시간을 선택해주세요.</p>
+          </div>
+        )}
+
+        {tokenError && (
+          <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+            <p className="font-medium">✗ {tokenError}</p>
+            <p className="text-sm mt-1">아래에서 직접 전화번호를 인증해주세요.</p>
+          </div>
+        )}
+
         {!verification.isPhoneVerified ? (
           /* ===== Step 1: 전화번호 인증 ===== */
           <Card>
@@ -526,6 +578,19 @@ export default function MyOrdersPage() {
                             </div>
                           </div>
                         )}
+
+                      {/* 현금영수증 (모든 주문에 표시) */}
+                      <div className="border-t pt-3 mt-3">
+                        <CashReceiptForm
+                          orderId={order.id}
+                          totalAmount={order.total_amount}
+                          status={order.status}
+                          initialType={order.cash_receipt_type as '소득공제' | '지출증빙' | null}
+                          initialNumber={order.cash_receipt_number}
+                          issued={order.cash_receipt_issued}
+                          receiptUrl={order.cash_receipt_url}
+                        />
+                      </div>
                     </CardContent>
                   </Card>
                 );
