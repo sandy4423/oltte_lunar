@@ -507,14 +507,21 @@ export function createPickupTimeRequestSMS(params: {
   orderDate: string;
   deliveryDate: string;
   link: string;
+  orderItems?: OrderItemForSMS[];
+  totalAmount?: number;
 }): string {
-  const { customerName, orderDate, deliveryDate, link } = params;
+  const { customerName, orderDate, deliveryDate, link, orderItems, totalAmount } = params;
+  
+  // 주문 내역 섹션
+  const orderSection = orderItems && orderItems.length > 0
+    ? `\n[주문 내역]\n${formatOrderItemsForSMS(orderItems)}${totalAmount ? `\n합계: ${totalAmount.toLocaleString()}원` : ''}\n`
+    : '';
   
   return `[올때만두] ${customerName}님 안녕하세요!
 
 주문일: ${orderDate}
 수령예정일: ${deliveryDate}
-
+${orderSection}
 픽업 기간이 2/15(일)까지 연장되었습니다!
 2/15 일요일도 09시~21시까지 픽업 가능하니
 편한 날짜와 시간을 선택해주세요 :)

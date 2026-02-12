@@ -300,6 +300,14 @@ export default function AdminPage() {
   // 픽업시간 회신 링크 발송
   const [sendLinkLoading, setSendLinkLoading] = useState(false);
 
+  // 선택된 주문 중 픽업시간 요청 가능한 주문 확인
+  const canSendPickupLink = useMemo(() => {
+    if (selectedOrders.size !== 1) return false;
+    const orderId = Array.from(selectedOrders)[0];
+    const order = orders.find((o: any) => o.id === orderId);
+    return order?.is_pickup && (!order.pickup_date || !order.pickup_time);
+  }, [selectedOrders, orders]);
+
   const handleSendPickupTimeLink = async () => {
     if (selectedOrders.size !== 1) return;
     
@@ -954,7 +962,7 @@ export default function AdminPage() {
               </Button>
               <Button
                 onClick={handleSendPickupTimeLink}
-                disabled={selectedOrders.size !== 1 || sendLinkLoading}
+                disabled={!canSendPickupLink || sendLinkLoading}
                 variant="outline"
                 className="text-purple-600 border-purple-200 hover:bg-purple-50"
               >

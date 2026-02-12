@@ -32,8 +32,10 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (isPickup: boolean = false) => {
-    const { apartment, phone, name, dong, ho, personalInfoConsent, marketingOptIn, cart, totalQty, totalAmount, pickupDate, pickupTime } = params;
+  const handleSubmit = async (isPickup: boolean = false, overridePickupDate?: string, overridePickupTime?: string) => {
+    const { apartment, phone, name, dong, ho, personalInfoConsent, marketingOptIn, cart, totalQty, totalAmount } = params;
+    const pickupDate = overridePickupDate || params.pickupDate;
+    const pickupTime = overridePickupTime || params.pickupTime;
     
     // 픽업 주문인 경우: apartment가 없어도 진행 가능
     // 일반 주문인 경우: apartment 필수

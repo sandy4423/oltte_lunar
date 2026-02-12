@@ -230,8 +230,8 @@ export default function OrderPage() {
   };
 
   // 배달/픽업 선택 후 실제 주문 진행
-  const handleDeliveryMethodSelect = async (isPickup: boolean) => {
-    await orderSubmit.handleSubmit(isPickup);
+  const handleDeliveryMethodSelect = async (isPickup: boolean, pickupDate?: string, pickupTime?: string) => {
+    await orderSubmit.handleSubmit(isPickup, pickupDate, pickupTime);
   };
 
   // 단지 없음

@@ -11,7 +11,9 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendSMS, createPickupTimeRequestSMS } from '@/lib/sms';
+import type { OrderItemForSMS } from '@/lib/sms';
 import { sendSlackMessage, createPickupTimeLinkSentAlert } from '@/lib/slack';
+import { getProductBySku } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerSupabaseClient();
 
-    // 주문 조회 (고객 정보 포함)
+    // 주문 조회 (고객 정보 + 주문 상품 포함)
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
@@ -39,6 +41,10 @@ export async function POST(request: NextRequest) {
           id,
           phone,
           name
+        ),
+        order_items (
+          sku,
+          qty
         )
       `)
       .eq('id', orderId)
@@ -107,6 +113,19 @@ export async function POST(request: NextRequest) {
     const orderDate = format(new Date(order.created_at), 'M월 d일 (EEE)', { locale: ko });
     const deliveryDate = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
 
+    // 주문 상품 정보 변환
+    const orderItems: OrderItemForSMS[] = (order.order_items || [])
+      .map((item: { sku: string; qty: number }) => {
+        const product = getProductBySku(item.sku);
+        return product ? {
+          sku: item.sku,
+          qty: item.qty,
+          productName: product.name,
+          emoji: product.emoji,
+        } : null;
+      })
+      .filter(Boolean) as OrderItemForSMS[];
+
     // SMS 발송
     try {
       await sendSMS(
@@ -116,6 +135,8 @@ export async function POST(request: NextRequest) {
           orderDate,
           deliveryDate,
           link,
+          orderItems,
+          totalAmount: order.total_amount,
         })
       );
       
