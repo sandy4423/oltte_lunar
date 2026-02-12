@@ -300,50 +300,55 @@ export default function AdminPage() {
   // 픽업시간 회신 링크 발송
   const [sendLinkLoading, setSendLinkLoading] = useState(false);
 
-  // 선택된 주문 중 픽업시간 요청 가능한 주문 확인
-  const canSendPickupLink = useMemo(() => {
-    if (selectedOrders.size !== 1) return false;
-    const orderId = Array.from(selectedOrders)[0];
-    const order = orders.find((o: any) => o.id === orderId);
-    return order?.is_pickup && (!order.pickup_date || !order.pickup_time);
+  // 선택된 주문 중 픽업시간 요청 가능한 주문 목록
+  const pickupLinkTargets = useMemo(() => {
+    if (selectedOrders.size === 0) return [];
+    return Array.from(selectedOrders)
+      .map(id => orders.find((o: any) => o.id === id))
+      .filter((o: any) => o?.is_pickup && (!o.pickup_date || !o.pickup_time));
   }, [selectedOrders, orders]);
 
+  const canSendPickupLink = pickupLinkTargets.length > 0;
+
   const handleSendPickupTimeLink = async () => {
-    if (selectedOrders.size !== 1) return;
-    
-    const orderId = Array.from(selectedOrders)[0];
-    const order = orders.find(o => o.id === orderId);
-    
-    if (!order || !order.is_pickup) {
-      alert('픽업 주문만 선택할 수 있습니다.');
-      return;
-    }
-    
-    if (order.pickup_date && order.pickup_time) {
-      alert('이미 픽업시간이 선택된 주문입니다.');
-      return;
-    }
-    
-    if (!confirm(`${order.customer.name}님에게 픽업시간 선택 링크를 전송하시겠습니까?`)) {
+    if (pickupLinkTargets.length === 0) return;
+
+    const names = pickupLinkTargets.map((o: any) => o.customer.name).join(', ');
+    if (!confirm(`${names}님에게 픽업시간 선택 링크를 전송하시겠습니까? (${pickupLinkTargets.length}건)`)) {
       return;
     }
     
     setSendLinkLoading(true);
     
     try {
-      const response = await fetch('/api/auth/send-link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId }),
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || '링크 전송에 실패했습니다.');
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const order of pickupLinkTargets) {
+        try {
+          const response = await fetch('/api/auth/send-link', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: (order as any).id }),
+          });
+          
+          const result = await response.json();
+          
+          if (response.ok && result.success) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch {
+          failCount++;
+        }
       }
       
-      alert('SMS 전송 완료');
+      if (failCount === 0) {
+        alert(`SMS 전송 완료 (${successCount}건)`);
+      } else {
+        alert(`전송 완료: ${successCount}건 성공, ${failCount}건 실패`);
+      }
       clearSelection();
     } catch (error: any) {
       alert(error.message || '오류가 발생했습니다.');
