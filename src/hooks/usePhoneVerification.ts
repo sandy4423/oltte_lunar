@@ -101,6 +101,7 @@ export function usePhoneVerification() {
       setIsPhoneVerified(true);
       setError(null);
       console.log('[SMS] 인증 성공');
+      console.log('[SMS] isPhoneVerified 상태 변경: true');
 
       // 기존 고객 정보 조회
       try {
