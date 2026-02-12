@@ -11,6 +11,7 @@ export function useOrderFilters(orders: OrderFull[]) {
   const [filterApt, setFilterApt] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterDeliveryDate, setFilterDeliveryDate] = useState<string>('all');
+  const [filterDeliveryMethod, setFilterDeliveryMethod] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showHidden, setShowHidden] = useState<boolean>(false);
 
@@ -26,6 +27,11 @@ export function useOrderFilters(orders: OrderFull[]) {
       if (filterStatus !== 'all' && order.status !== filterStatus) return false;
       if (filterApt !== 'all' && order.apt_code !== filterApt) return false;
       if (filterDeliveryDate !== 'all' && order.delivery_date !== filterDeliveryDate) return false;
+      
+      // 배달방법 필터
+      if (filterDeliveryMethod === 'delivery' && order.is_pickup) return false;
+      if (filterDeliveryMethod === 'pickup' && !order.is_pickup) return false;
+      
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchName = order.customer.name.toLowerCase().includes(query);
@@ -36,7 +42,7 @@ export function useOrderFilters(orders: OrderFull[]) {
       }
       return true;
     });
-  }, [orders, filterApt, filterStatus, filterDeliveryDate, searchQuery, showHidden]);
+  }, [orders, filterApt, filterStatus, filterDeliveryDate, filterDeliveryMethod, searchQuery, showHidden]);
 
   // 고유 배송일 목록
   const uniqueDeliveryDates = useMemo(() => {
@@ -51,6 +57,8 @@ export function useOrderFilters(orders: OrderFull[]) {
     setFilterStatus,
     filterDeliveryDate,
     setFilterDeliveryDate,
+    filterDeliveryMethod,
+    setFilterDeliveryMethod,
     searchQuery,
     setSearchQuery,
     showHidden,

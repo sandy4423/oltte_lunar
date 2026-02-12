@@ -73,6 +73,8 @@ export default function AdminPage() {
     setFilterStatus,
     filterDeliveryDate,
     setFilterDeliveryDate,
+    filterDeliveryMethod,
+    setFilterDeliveryMethod,
     searchQuery,
     setSearchQuery,
     showHidden,
@@ -833,7 +835,7 @@ export default function AdminPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
               {/* 단지 필터 */}
               <Select value={filterApt} onValueChange={setFilterApt}>
                 <SelectTrigger>
@@ -847,6 +849,18 @@ export default function AdminPage() {
                       {getApartmentFullName(apt)}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+
+              {/* 배달방법 필터 */}
+              <Select value={filterDeliveryMethod} onValueChange={setFilterDeliveryMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="배달방법" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  <SelectItem value="delivery">🚚 배달</SelectItem>
+                  <SelectItem value="pickup">🏪 픽업</SelectItem>
                 </SelectContent>
               </Select>
 
