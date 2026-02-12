@@ -29,10 +29,10 @@ export function PickupDateTimeSelector({
   pickupTime,
   setPickupTime,
 }: PickupDateTimeSelectorProps) {
-  // 1분마다 갱신하여 오늘 날짜의 시간 슬롯을 실시간 필터링
+  // 1시간마다 갱신하여 날짜/시간 슬롯 필터링 업데이트
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 60_000);
+    const timer = setInterval(() => setTick((t) => t + 1), 3_600_000);
     return () => clearInterval(timer);
   }, []);
 
