@@ -923,6 +923,36 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* 빠른 필터 버튼 */}
+            <div className="flex gap-2 pb-4 mb-4 border-b">
+              <Button
+                onClick={() => {
+                  const today = format(new Date(), 'yyyy-MM-dd');
+                  setFilterDeliveryDate(today);
+                }}
+                variant="outline"
+                size="sm"
+                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+              >
+                <Truck className="mr-2 h-4 w-4" />
+                오늘 배송
+              </Button>
+              <Button
+                onClick={() => {
+                  setFilterApt('all');
+                  setFilterStatus('all');
+                  setFilterDeliveryDate('all');
+                  setFilterDeliveryMethod('all');
+                  setSearchQuery('');
+                }}
+                variant="outline"
+                size="sm"
+                className="text-gray-600"
+              >
+                필터 초기화
+              </Button>
+            </div>
+
             {/* 정렬 옵션 */}
             <div className="flex items-center gap-2 pb-4 mb-4 border-b">
               <span className="text-sm text-gray-600 font-medium">정렬:</span>
