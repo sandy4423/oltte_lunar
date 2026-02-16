@@ -998,7 +998,7 @@ export default function AdminPage() {
                   if (selectedOrders.size === 1) {
                     const orderId = Array.from(selectedOrders)[0];
                     const order = orders.find(o => o.id === orderId);
-                    if (order && ['PAID', 'OUT_FOR_DELIVERY', 'LATE_DEPOSIT'].includes(order.status)) {
+                    if (order && ['PAID', 'OUT_FOR_DELIVERY', 'LATE_DEPOSIT', 'DELIVERED'].includes(order.status)) {
                       setSelectedOrderForCancel(order);
                       setCancelDialogOpen(true);
                     } else {
