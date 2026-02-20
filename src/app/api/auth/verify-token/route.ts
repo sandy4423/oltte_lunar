@@ -76,6 +76,21 @@ export async function GET(request: NextRequest) {
     //   .update({ used: true })
     //   .eq('id', tokenData.id);
 
+    // verification_codes 테이블에 인증 완료 레코드 생성
+    // 이렇게 해야 /api/orders/my에서 24시간 이내 인증 체크를 통과할 수 있음
+    const { error: verificationError } = await supabase
+      .from('verification_codes')
+      .insert({
+        phone: tokenData.customer.phone,
+        code: '0000', // 토큰 인증이므로 더미 코드
+        verified: true,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24시간 후 만료
+      });
+
+    if (verificationError) {
+      console.error('[VerifyToken] Failed to create verification record:', verificationError);
+    }
+
     console.log(`[VerifyToken] Token verified for customer ${tokenData.customer.phone}`);
 
     return NextResponse.json(
