@@ -239,23 +239,9 @@ export const PICKUP_APT_CODE = 'PICKUP';
 
 export const PICKUP_CONFIG = {
   name: '픽업주문',
-  deliveryDate: '2026-02-15', // 픽업 가능 마지막 날짜
-  cutoffAt: '2026-02-14T23:00:00+09:00', // 주문 마감
+  deliveryDate: '2099-12-31', // 상시 운영
+  cutoffAt: '2099-12-31T23:00:00+09:00', // 마감 없음 (상시)
 };
-
-// 픽업 가능 날짜 (2/6 ~ 2/15)
-export const PICKUP_AVAILABLE_DATES = [
-  '2026-02-06',
-  '2026-02-07',
-  '2026-02-08',
-  '2026-02-09',
-  '2026-02-10',
-  '2026-02-11',
-  '2026-02-12',
-  '2026-02-13',
-  '2026-02-14',
-  '2026-02-15',
-];
 
 // 픽업 가능 시간 (09:00 ~ 21:00, 1시간 단위)
 export const PICKUP_TIME_SLOTS = [
@@ -263,10 +249,8 @@ export const PICKUP_TIME_SLOTS = [
   '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00',
 ];
 
-// 조기 마감 날짜별 마지막 픽업 가능 시간
-export const PICKUP_EARLY_CLOSE_DATES: Record<string, string> = {
-  '2026-02-14': '13:00', // 토요일 오후 1시 마감
-};
+// 조기 마감 날짜별 마지막 픽업 가능 시간 (필요 시 추가)
+export const PICKUP_EARLY_CLOSE_DATES: Record<string, string> = {};
 
 // 선택된 날짜에 따라 가능한 픽업 시간 슬롯 반환
 // 오늘 날짜인 경우 현재 시각 이후 슬롯만 반환
@@ -284,7 +268,6 @@ export function getAvailableTimeSlots(date: string): string[] {
     const nowMin = today.getMinutes();
     slots = slots.filter(time => {
       const [h] = time.split(':').map(Number);
-      // 현재 시각이 정각이면 해당 시간 포함, 아니면 다음 시간부터
       return h > nowHour || (h === nowHour && nowMin === 0);
     });
   }
@@ -292,20 +275,27 @@ export function getAvailableTimeSlots(date: string): string[] {
   return slots;
 }
 
-// 현재 시각 기준으로 선택 가능한 픽업 날짜 목록 반환
-// 과거 날짜 제거, 오늘 날짜는 남은 시간 슬롯이 있을 때만 포함
+// 오늘부터 30일간 픽업 가능 날짜 동적 생성
+// 오늘은 남은 시간 슬롯이 있을 때만 포함
 export function getAvailablePickupDates(): string[] {
   const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const dates: string[] = [];
 
-  return PICKUP_AVAILABLE_DATES.filter(date => {
-    if (date < todayStr) return false;           // 과거 날짜 제거
-    if (date === todayStr) {
-      // 오늘이면 남은 시간 슬롯이 있을 때만 포함
-      return getAvailableTimeSlots(date).length > 0;
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (i === 0) {
+      // 오늘은 남은 슬롯이 있을 때만 포함
+      if (getAvailableTimeSlots(dateStr).length > 0) {
+        dates.push(dateStr);
+      }
+    } else {
+      dates.push(dateStr);
     }
-    return true;                                  // 미래 날짜는 항상 포함
-  });
+  }
+
+  return dates;
 }
 
 // ============================================

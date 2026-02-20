@@ -1,16 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import { AlertCircle } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-import { PICKUP_CONFIG, PICKUP_DISCOUNT, PICKUP_DISCOUNT_THRESHOLD, PICKUP_MIN_ORDER_AMOUNT, DANGOL_DISCOUNT } from '@/lib/constants';
+import { PICKUP_DISCOUNT, PICKUP_DISCOUNT_THRESHOLD, PICKUP_MIN_ORDER_AMOUNT, DANGOL_DISCOUNT } from '@/lib/constants';
 import { Footer } from '@/components/Footer';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
 import { useCart } from '@/hooks/useCart';
@@ -70,60 +67,6 @@ export default function PickupPage() {
   // 픽업 주문: 금액 기반 최소 주문 조건 (1만원 이상)
   const isMinOrderMet = totalAmount >= PICKUP_MIN_ORDER_AMOUNT;
 
-  // 실시간 현재 시각
-  const [currentTime, setCurrentTime] = useState('');
-  const [timeRemaining, setTimeRemaining] = useState('');
-
-  // 현재 시각 업데이트 (1초마다)
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(format(now, 'M월 d일 HH:mm:ss', { locale: ko }));
-    };
-    
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    
-    return () => clearInterval(timer);
-  }, []);
-
-  // 마감까지 남은 시간 계산
-  useEffect(() => {
-    const updateRemaining = () => {
-      const now = new Date();
-      const cutoff = new Date(PICKUP_CONFIG.cutoffAt);
-      const diff = cutoff.getTime() - now.getTime();
-      
-      if (diff <= 0) {
-        setTimeRemaining('마감됨');
-        return;
-      }
-      
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      
-      if (days > 0) {
-        setTimeRemaining(`${days}일 ${hours}시간`);
-      } else if (hours > 0) {
-        setTimeRemaining(`${hours}시간 ${minutes}분`);
-      } else {
-        setTimeRemaining(`${minutes}분`);
-      }
-    };
-    
-    updateRemaining();
-    const timer = setInterval(updateRemaining, 1000);
-    
-    return () => clearInterval(timer);
-  }, []);
-
-  // 마감 여부
-  const isExpired = useMemo(() => {
-    const now = new Date();
-    const cutoff = new Date(PICKUP_CONFIG.cutoffAt);
-    return now >= cutoff;
-  }, [currentTime]);
 
   // 고객 정보 자동 채우기
   useEffect(() => {
@@ -186,25 +129,6 @@ export default function PickupPage() {
     await orderSubmit.handleSubmit(true);
   };
 
-  // 마감됨
-  if (isExpired) {
-    return (
-      <main className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
-            <h1 className="text-xl font-bold mb-2">주문이 마감되었습니다</h1>
-            <p className="text-muted-foreground mb-4">
-              픽업 주문은 2월 14일 (토) 23:00에 마감되었습니다.
-            </p>
-            <p className="text-sm text-gray-600">
-              다음 기회에 이용해주세요.
-            </p>
-          </CardContent>
-        </Card>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 pb-32">
@@ -247,30 +171,18 @@ export default function PickupPage() {
                 </p>
               </div>
               
-              {/* 현재 시각 및 남은 시간 */}
-              <div className="mb-4 space-y-1">
-                <p className="text-sm text-gray-500">
-                  현재 시각: <span className="font-semibold text-gray-700">{currentTime}</span>
-                </p>
-                {timeRemaining !== '마감됨' && (
-                  <p className="text-sm text-orange-600 font-medium">
-                    ⏰ 마감까지 {timeRemaining}
-                  </p>
-                )}
-              </div>
-              
               <div className="flex justify-center gap-6 text-sm">
                 <div>
-                  <p className="text-gray-500 mb-1">주문마감</p>
-                  <p className="font-bold text-lg text-brand-dark">
-                    {format(new Date(PICKUP_CONFIG.cutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
+                  <p className="text-gray-500 mb-1">픽업 가능</p>
+                  <p className="font-bold text-lg text-brand">
+                    오늘부터 30일 이내
                   </p>
                 </div>
                 <div className="border-l border-gray-200" />
                 <div>
-                  <p className="text-gray-500">픽업 가능</p>
-                  <p className="font-bold text-lg text-brand">
-                    2/6 ~ 2/15
+                  <p className="text-gray-500">운영 시간</p>
+                  <p className="font-bold text-lg text-brand-dark">
+                    09:00 ~ 21:00
                   </p>
                 </div>
               </div>
