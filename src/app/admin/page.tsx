@@ -53,7 +53,7 @@ export default function AdminPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Image src="/images/logo.png" alt="올때만두" width={150} height={40} />
+              <Image src="/images/logo-admin.png" alt="올때만두" width={150} height={40} />
               <span className="text-xl font-bold">관리자</span>
             </div>
             <p className="text-gray-500">

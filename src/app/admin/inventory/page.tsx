@@ -199,7 +199,7 @@ export default function InventoryPage() {
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <Image src="/images/logo.png" alt="올때만두" width={90} height={24} />
+            <Image src="/images/logo-admin.png" alt="올때만두" width={90} height={24} />
             <span className="text-base font-bold text-gray-800 whitespace-nowrap">재고 관리</span>
             {adminUser && (
               <span className="text-xs text-orange-600 font-medium whitespace-nowrap">({adminUser.name})</span>
