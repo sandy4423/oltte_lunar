@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Plus, Minus, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { getAdminPassword } from '@/lib/adminAuth';
 import {
   Dialog,
   DialogContent,
@@ -188,7 +189,7 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': typeof window !== 'undefined' ? sessionStorage.getItem('admin_password') || '' : '',
+          'x-admin-password': getAdminPassword(),
         },
         body: JSON.stringify({
           customerName: customerName.trim(),

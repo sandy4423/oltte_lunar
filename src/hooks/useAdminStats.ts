@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { getAdminPassword } from '@/lib/adminAuth';
 
 // ============================================
 // 타입 정의
@@ -68,10 +69,6 @@ export function useAdminStats() {
     setLoading(true);
     setError(null);
     try {
-      const adminPassword = typeof window !== 'undefined'
-        ? sessionStorage.getItem('admin_password') || ''
-        : '';
-
       const params = new URLSearchParams();
       if (dateRange.startDate) params.set('startDate', dateRange.startDate);
       if (dateRange.endDate) params.set('endDate', dateRange.endDate);
@@ -81,7 +78,7 @@ export function useAdminStats() {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          'x-admin-password': adminPassword,
+          'x-admin-password': getAdminPassword(),
         },
       });
 
@@ -108,10 +105,7 @@ export function useAdminStats() {
 
   // 날짜 범위 변경 시 자동 조회 (인증된 경우에만)
   useEffect(() => {
-    const adminPassword = typeof window !== 'undefined'
-      ? sessionStorage.getItem('admin_password')
-      : null;
-    if (adminPassword) {
+    if (getAdminPassword()) {
       fetchStats();
     }
   }, [fetchStats]);
@@ -123,15 +117,11 @@ export function useAdminStats() {
     quantity: number
   ): Promise<boolean> => {
     try {
-      const adminPassword = typeof window !== 'undefined'
-        ? sessionStorage.getItem('admin_password') || ''
-        : '';
-
       const response = await fetch('/api/admin/stats/shipment', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': adminPassword,
+          'x-admin-password': getAdminPassword(),
         },
         body: JSON.stringify({ sku, date, quantity }),
       });

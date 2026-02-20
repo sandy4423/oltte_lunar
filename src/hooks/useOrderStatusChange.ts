@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import { ORDER_STATUS_LABEL } from '@/lib/constants';
+import { getAdminPassword } from '@/lib/adminAuth';
 import type { OrderStatus } from '@/types/database';
 
 interface UseOrderStatusChangeParams {
@@ -25,13 +26,11 @@ export function useOrderStatusChange(params: UseOrderStatusChangeParams) {
     try {
       const orderIds = Array.from(selectedOrders);
 
-      // 서버 API 호출
-      const adminPassword = typeof window !== 'undefined' ? sessionStorage.getItem('admin_password') || '' : '';
       const response = await fetch('/api/admin/orders/status', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': adminPassword,
+          'x-admin-password': getAdminPassword(),
         },
         body: JSON.stringify({
           orderIds,

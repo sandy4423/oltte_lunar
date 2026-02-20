@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { normalizePhone } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,8 +40,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 전화번호 정규화
-    const normalizedPhone = phone.replace(/[^0-9]/g, '');
+    const normalizedPhone = normalizePhone(phone);
 
     if (!/^01[0-9]{8,9}$/.test(normalizedPhone)) {
       return NextResponse.json(

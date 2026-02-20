@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { getAdminPassword } from '@/lib/adminAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -89,7 +90,7 @@ export function CancelRequestDialog({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': typeof window !== 'undefined' ? sessionStorage.getItem('admin_password') || '' : '',
+          'x-admin-password': getAdminPassword(),
         },
         body: JSON.stringify({
           orderId: order.id,

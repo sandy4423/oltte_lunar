@@ -14,6 +14,7 @@ export type OrderStatus =
   | 'CREATED'             // 주문 생성 (가상계좌 발급 전)
   | 'WAITING_FOR_DEPOSIT' // 가상계좌 발급 완료, 입금 대기
   | 'PAID'                // 결제 완료 (입금 확인)
+  | 'CANCELLED'           // 고객 요청 취소
   | 'AUTO_CANCELED'       // 마감 미입금 자동 취소
   | 'OUT_FOR_DELIVERY'    // 배송중
   | 'DELIVERED'           // 배송완료
@@ -63,8 +64,11 @@ export interface OrderRow {
   vbank_expires_at: string | null; // timestamptz, NULLABLE
   toss_payment_key: string | null; // text, NULLABLE
   toss_secret: string | null;      // text, NULLABLE
-  portone_payment_id: string | null; // text, NULLABLE (deprecated)
+  /** @deprecated PortOne에서 Toss V1으로 이전 완료. 향후 제거 대상 */
+  portone_payment_id: string | null; // text, NULLABLE
   paid_at: string | null;          // timestamptz, NULLABLE
+  cancel_reason: string | null;    // text, NULLABLE - 취소 사유
+  cancelled_at: string | null;     // timestamptz, NULLABLE - 취소 처리 일시
   is_pickup: boolean;              // boolean, DEFAULT false
   pickup_discount: number;         // int, DEFAULT 0
   pickup_date: string | null;      // date, NULLABLE - 픽업 날짜
@@ -155,8 +159,11 @@ export interface OrderInsert {
   vbank_expires_at?: string | null; // optional
   toss_payment_key?: string | null; // optional
   toss_secret?: string | null;     // optional
-  portone_payment_id?: string | null; // optional (deprecated)
+  /** @deprecated PortOne에서 Toss V1으로 이전 완료. 향후 제거 대상 */
+  portone_payment_id?: string | null; // optional
   paid_at?: string | null;         // optional
+  cancel_reason?: string | null;   // optional - 취소 사유
+  cancelled_at?: string | null;    // optional - 취소 처리 일시
   is_pickup?: boolean;             // optional, default: false
   pickup_discount?: number;        // optional, default: 0
   pickup_date?: string | null;     // optional - 픽업 날짜
@@ -247,8 +254,11 @@ export interface OrderUpdate {
   vbank_expires_at?: string | null;
   toss_payment_key?: string | null;
   toss_secret?: string | null;
+  /** @deprecated PortOne에서 Toss V1으로 이전 완료. 향후 제거 대상 */
   portone_payment_id?: string | null;
   paid_at?: string | null;
+  cancel_reason?: string | null;
+  cancelled_at?: string | null;
   is_pickup?: boolean;
   pickup_discount?: number;
   pickup_date?: string | null;

@@ -8,6 +8,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * 전화번호 정규화 (하이픈, 공백 등 제거하여 숫자만 남김)
+ * @example normalizePhone('010-1234-5678') → '01012345678'
+ */
+export function normalizePhone(phone: string): string {
+  return phone.replace(/[^0-9]/g, '');
+}
+
+/**
  * 가상계좌 번호 포맷팅 (은행별 하이픈 형식)
  * @param accountNumber 계좌번호
  * @returns 포맷팅된 계좌번호 (예: 110-12-345678)

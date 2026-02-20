@@ -10,7 +10,7 @@
  */
 
 import crypto from 'crypto';
-import { formatAccountNumber } from './utils';
+import { formatAccountNumber, normalizePhone } from './utils';
 import { CUSTOMER_SUPPORT_PHONE } from './constants';
 
 const API_KEY = process.env.SOLAPI_API_KEY || '';
@@ -55,8 +55,7 @@ function createAuthHeader(apiKey: string, apiSecret: string): string {
  */
 export async function sendSMS(to: string, text: string): Promise<SMSResult> {
   try {
-    // 전화번호 정규화 (하이픈 및 공백 제거, 숫자만 남김)
-    const normalizedPhone = to.replace(/[^0-9]/g, '');
+    const normalizedPhone = normalizePhone(to);
     
     // 전화번호 형식 검증
     if (!/^01[0-9]{8,9}$/.test(normalizedPhone)) {
@@ -132,7 +131,7 @@ export async function sendSMS(to: string, text: string): Promise<SMSResult> {
 }
 
 /**
- * 대량 SMS 발송 함수
+ * 대량 SMS 발송 함수 (현재 미사용 - 향후 일괄 발송 기능에 활용 예정)
  */
 export async function sendBulkSMS(
   recipients: string[],

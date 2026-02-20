@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { cancelPayment } from '@/lib/tosspayments';
+import { normalizePhone } from '@/lib/utils';
 import { sendSMS, createCancellationSMS } from '@/lib/sms';
 import { sendSlackAlert, createCancellationNotification } from '@/lib/slack';
 import { SKIP_PHONE_VERIFICATION } from '@/lib/constants';
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const normalizedPhone = phone.replace(/[^0-9]/g, '');
+    const normalizedPhone = normalizePhone(phone);
     const supabase = createServerSupabaseClient();
 
     if (!SKIP_PHONE_VERIFICATION) {

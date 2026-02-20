@@ -33,6 +33,7 @@ import { useOrderFilters } from '@/hooks/useOrderFilters';
 import { useOrderSelection } from '@/hooks/useOrderSelection';
 import { useOrderStatusChange } from '@/hooks/useOrderStatusChange';
 import { useAdminStats } from '@/hooks/useAdminStats';
+import { getAdminPassword } from '@/lib/adminAuth';
 import { CancelRequestDialog } from '@/components/features/admin/CancelRequestDialog';
 import { ManualOrderDialog } from '@/components/features/admin/ManualOrderDialog';
 import { OrderDetailDialog } from '@/components/features/admin/OrderDetailDialog';
@@ -41,10 +42,7 @@ import { ProductStats } from '@/components/features/admin/stats/ProductStats';
 import { SalesStats } from '@/components/features/admin/stats/SalesStats';
 import { DeliveryCalendar } from '@/components/features/admin/stats/DeliveryCalendar';
 
-// ============================================
-// 비밀번호 인증 상수
-// ============================================
-const ADMIN_PASSWORD = '4423';
+const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '4423';
 
 // ============================================
 // Page Component
@@ -134,7 +132,7 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': sessionStorage.getItem('admin_password') || '',
+          'x-admin-password': getAdminPassword(),
         },
         body: JSON.stringify({
           orderIds: [orderId],
@@ -241,7 +239,7 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': sessionStorage.getItem('admin_password') || '',
+          'x-admin-password': getAdminPassword(),
         },
         body: JSON.stringify({
           orderIds,
@@ -273,7 +271,7 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': sessionStorage.getItem('admin_password') || '',
+          'x-admin-password': getAdminPassword(),
         },
         body: JSON.stringify({
           orderIds: [orderId],
@@ -388,7 +386,7 @@ export default function AdminPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': sessionStorage.getItem('admin_password') || '',
+          'x-admin-password': getAdminPassword(),
         },
         body: JSON.stringify({
           orderIds: waitingOrders.map((o) => o.id),

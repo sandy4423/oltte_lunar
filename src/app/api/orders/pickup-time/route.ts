@@ -11,7 +11,7 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendSMS, createPickupTimeChangeSMS } from '@/lib/sms';
 import { sendSlackMessage, createPickupTimeChangeAlert } from '@/lib/slack';
 import { getAvailableTimeSlots, getAvailablePickupDates } from '@/lib/constants';
-import { formatKST } from '@/lib/utils';
+import { formatKST, normalizePhone } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,8 +28,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // 전화번호 정규화
-    const normalizedPhone = phone.replace(/[^0-9]/g, '');
+    const normalizedPhone = normalizePhone(phone);
     if (!/^01[0-9]{8,9}$/.test(normalizedPhone)) {
       return NextResponse.json(
         { success: false, error: '올바른 전화번호 형식이 아닙니다.' },

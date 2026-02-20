@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { normalizePhone } from '@/lib/utils';
 
 // Node.js 런타임 사용
 export const runtime = 'nodejs';
@@ -14,8 +15,7 @@ export async function POST(request: NextRequest) {
     const supabase = createServerSupabaseClient();
     const { phone, code } = await request.json();
 
-    // 전화번호 정규화
-    const normalizedPhone = phone.replace(/[^0-9]/g, '');
+    const normalizedPhone = normalizePhone(phone);
 
     // 전화번호 형식 검증
     if (!/^01[0-9]{8,9}$/.test(normalizedPhone)) {

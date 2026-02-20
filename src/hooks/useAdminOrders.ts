@@ -6,6 +6,7 @@
 
 import { useState } from 'react';
 import type { OrderFull } from '@/types/database';
+import { getAdminPassword } from '@/lib/adminAuth';
 
 export function useAdminOrders() {
   const [orders, setOrders] = useState<OrderFull[]>([]);
@@ -15,13 +16,12 @@ export function useAdminOrders() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const adminPassword = typeof window !== 'undefined' ? sessionStorage.getItem('admin_password') || '' : '';
       const response = await fetch('/api/admin/orders', {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          'x-admin-password': adminPassword,
+          'x-admin-password': getAdminPassword(),
         },
       });
       const data = await response.json();
