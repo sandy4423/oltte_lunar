@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { CheckCircle2, Circle, ChevronRight } from 'lucide-react';
-import { format } from 'date-fns';
+import { useState, useRef, useCallback } from 'react';
+import { CheckCircle2, ArrowRight } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { InventoryItemRow } from '@/types/database';
 
@@ -11,25 +11,35 @@ interface TodayChecklistProps {
   onSave: (id: string, mainQty: number | null, detailQty: number | null) => Promise<boolean>;
 }
 
-interface ChecklistRowProps {
+interface RowProps {
   item: InventoryItemRow;
-  index: number;
-  isCurrent: boolean;
   isDone: boolean;
-  onActivate: () => void;
+  isFocused: boolean;
+  mainInputRef: (el: HTMLInputElement | null) => void;
   onSave: (mainQty: number | null, detailQty: number | null) => Promise<boolean>;
-  onNext: () => void;
+  onFocused: () => void;
+  onEnter: () => void;
 }
 
+/**
+ * 고정 높이 행 컴포넌트 — 상태에 따라 색상만 변경, 레이아웃 이동 없음
+ *
+ * 설계 근거:
+ * - Shneiderman(1983) Direct Manipulation: 입력창을 항상 표시하여 즉시 조작 가능
+ * - Google CLS: 높이 변화 없이 색상만 바꿔 Layout Shift Score 0 유지
+ * - Norman(2013) Affordance: 무엇을 할 수 있는지 즉시 보임
+ */
 function ChecklistRow({
   item,
-  index,
-  isCurrent,
   isDone,
-  onActivate,
+  isFocused,
+  mainInputRef,
   onSave,
-  onNext,
-}: ChecklistRowProps) {
+  onFocused,
+  onEnter,
+}: RowProps) {
+  const detailRef = useRef<HTMLInputElement>(null);
+
   const [mainInput, setMainInput] = useState(
     item.main_qty !== null && item.main_qty !== undefined ? String(item.main_qty) : ''
   );
@@ -37,16 +47,18 @@ function ChecklistRow({
     item.detail_qty !== null && item.detail_qty !== undefined ? String(item.detail_qty) : ''
   );
   const [saving, setSaving] = useState(false);
-  const mainRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (isCurrent && mainRef.current) {
-      mainRef.current.focus();
-      mainRef.current.select();
-    }
-  }, [isCurrent]);
+  const lastCheckLabel = item.last_checked_at
+    ? formatDistanceToNow(new Date(item.last_checked_at), { addSuffix: true, locale: ko })
+    : '미점검';
 
-  const handleSubmit = useCallback(async () => {
+  const lastQtyLabel =
+    item.main_qty !== null
+      ? `${item.main_qty}${item.unit}${item.detail_qty !== null && item.detail_unit ? ` · ${item.detail_qty}${item.detail_unit}` : ''}`
+      : '';
+
+  const handleSave = useCallback(async () => {
+    if (saving) return;
     setSaving(true);
     const main = mainInput.trim() === '' ? null : parseFloat(mainInput);
     const detail = detailInput.trim() === '' ? null : parseFloat(detailInput);
@@ -55,115 +67,123 @@ function ChecklistRow({
       detail !== null && !isNaN(detail) ? detail : null
     );
     setSaving(false);
-    if (ok) onNext();
-  }, [mainInput, detailInput, onSave, onNext]);
+    if (ok) onEnter();
+  }, [saving, mainInput, detailInput, onSave, onEnter]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, isLast: boolean) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (!isLast && item.detail_unit) {
-        // 상세단위 있으면 다음 input으로
-        const inputs = (e.currentTarget.closest('div')?.querySelectorAll('input') ?? []);
-        const currentIdx = Array.from(inputs).indexOf(e.currentTarget);
-        const nextInput = inputs[currentIdx + 1] as HTMLInputElement | undefined;
-        if (nextInput) {
-          nextInput.focus();
-          nextInput.select();
-          return;
-        }
-      }
-      handleSubmit();
+  const handleMainKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (item.detail_unit && detailRef.current) {
+      detailRef.current.focus();
+      detailRef.current.select();
+    } else {
+      handleSave();
     }
   };
 
-  if (isDone) {
-    return (
-      <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-100 opacity-60">
-        <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
-        <span className="text-sm text-gray-500 flex-1 line-through">{item.name}</span>
-        <span className="text-xs text-gray-400">{item.unit}</span>
-        {item.main_qty !== null && (
-          <span className="text-sm text-gray-400 font-medium w-14 text-right">
-            {item.main_qty}
-          </span>
-        )}
-      </div>
-    );
-  }
+  const handleDetailKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    }
+  };
 
-  if (isCurrent) {
-    return (
-      <div className="flex items-start gap-3 px-4 py-4 bg-orange-50 border-b border-orange-200 border-l-4 border-l-orange-500">
-        <ChevronRight className="h-5 w-5 text-orange-500 shrink-0 mt-0.5" />
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-sm font-semibold text-gray-800">{item.name}</span>
-            {item.notes && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                {item.notes}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <input
-                ref={mainRef}
-                type="number"
-                inputMode="decimal"
-                placeholder="수량"
-                value={mainInput}
-                onChange={(e) => setMainInput(e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, !item.detail_unit)}
-                disabled={saving}
-                className="w-24 text-center text-base border-2 border-orange-400 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50"
-              />
-              <span className="text-sm text-gray-600">{item.unit}</span>
-            </div>
-            {item.detail_unit && (
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="상세"
-                  value={detailInput}
-                  onChange={(e) => setDetailInput(e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, true)}
-                  disabled={saving}
-                  className="w-24 text-center text-base border-2 border-orange-300 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 disabled:opacity-50"
-                />
-                <span className="text-sm text-gray-600">{item.detail_unit}</span>
-              </div>
-            )}
-            <button
-              onClick={handleSubmit}
-              disabled={saving}
-              className="ml-1 px-4 py-1.5 text-sm font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg disabled:opacity-50 transition-colors"
-            >
-              {saving ? '저장중…' : '완료'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // 상태별 색상 토큰 — 높이/구조 변화 없음
+  const rowBg = isDone ? 'bg-gray-50' : isFocused ? 'bg-orange-50' : 'bg-white';
+  const dotColor = isDone ? 'bg-green-400' : isFocused ? 'bg-orange-400' : 'bg-gray-300';
+  const nameColor = isDone ? 'text-gray-400' : 'text-gray-800';
+  const inputCls = [
+    'w-20 text-center text-sm rounded-lg px-2 py-1.5 border',
+    'focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400',
+    'transition-colors disabled:opacity-40',
+    isDone ? 'border-gray-200 bg-white text-gray-500' : 'border-gray-300 bg-white text-gray-800',
+  ].join(' ');
 
   return (
-    <button
-      onClick={onActivate}
-      className="w-full flex items-center gap-3 px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left"
-    >
-      <Circle className="h-5 w-5 text-gray-300 shrink-0" />
-      <span className="text-sm text-gray-700 flex-1">
-        {index + 1}. {item.name}
-      </span>
-      <span className="text-xs text-gray-400">{item.unit}</span>
-    </button>
+    <div className={`${rowBg} border-b border-gray-100 px-4 py-3 transition-colors`}>
+      {/* 줄 1: 상태 점 · 이름 · 마지막 점검 컨텍스트 */}
+      <div className="flex items-center gap-2 mb-2 min-h-[20px]">
+        <span className={`w-2 h-2 rounded-full shrink-0 transition-colors ${dotColor}`} />
+        <span className={`text-sm flex-1 font-medium ${nameColor}`}>
+          {item.name}
+          {item.notes && (
+            <span className="ml-1.5 text-xs font-normal text-gray-400">({item.notes})</span>
+          )}
+        </span>
+        <span className="text-xs text-gray-400 shrink-0 text-right">
+          {lastCheckLabel}
+          {lastQtyLabel && (
+            <span className="ml-1 text-gray-500 font-medium">· {lastQtyLabel}</span>
+          )}
+        </span>
+      </div>
+
+      {/* 줄 2: 입력창 — 항상 노출, 높이 고정 */}
+      <div className="flex items-center gap-2 ml-4 min-h-[32px]">
+        <input
+          ref={mainInputRef}
+          type="number"
+          inputMode="decimal"
+          placeholder="—"
+          value={mainInput}
+          onChange={(e) => setMainInput(e.target.value)}
+          onFocus={onFocused}
+          onKeyDown={handleMainKeyDown}
+          disabled={saving}
+          className={inputCls}
+        />
+        <span className="text-xs text-gray-500 shrink-0">{item.unit}</span>
+
+        {item.detail_unit && (
+          <>
+            <input
+              ref={detailRef}
+              type="number"
+              inputMode="decimal"
+              placeholder="—"
+              value={detailInput}
+              onChange={(e) => setDetailInput(e.target.value)}
+              onFocus={onFocused}
+              onKeyDown={handleDetailKeyDown}
+              disabled={saving}
+              className={inputCls}
+            />
+            <span className="text-xs text-gray-500 shrink-0">{item.detail_unit}</span>
+          </>
+        )}
+
+        <div className="flex-1" />
+
+        {/* 저장 버튼 — 고정 크기 */}
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          title={isDone ? '완료됨 (재저장 가능)' : 'Enter 또는 탭하여 저장'}
+          className={[
+            'shrink-0 w-7 h-7 rounded-full flex items-center justify-center',
+            'transition-colors',
+            isDone
+              ? 'bg-green-100 text-green-500 hover:bg-green-200'
+              : saving
+                ? 'bg-orange-200 text-orange-400 cursor-wait'
+                : 'bg-orange-100 text-orange-500 hover:bg-orange-500 hover:text-white',
+          ].join(' ')}
+        >
+          {isDone ? (
+            <CheckCircle2 className="h-4 w-4" />
+          ) : (
+            <ArrowRight className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+    </div>
   );
 }
 
 export function TodayChecklist({ items, onSave }: TodayChecklistProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set());
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const today = new Date();
   const todayLabel = format(today, 'M월 d일 (EEE)', { locale: ko });
@@ -171,20 +191,26 @@ export function TodayChecklist({ items, onSave }: TodayChecklistProps) {
   const handleSave = useCallback(
     async (item: InventoryItemRow, mainQty: number | null, detailQty: number | null) => {
       const ok = await onSave(item.id, mainQty, detailQty);
-      if (ok) {
-        setDoneIds((prev) => new Set([...prev, item.id]));
-      }
+      if (ok) setDoneIds((prev) => new Set([...prev, item.id]));
       return ok;
     },
     [onSave]
   );
 
-  const goNext = useCallback(() => {
-    setCurrentIndex((prev) => {
-      const next = prev + 1;
-      return next < items.length ? next : prev;
-    });
-  }, [items.length]);
+  // Enter 후 다음 미완료 항목의 입력창으로 포커스 이동 — 레이아웃 이동 없음
+  const focusNext = useCallback(
+    (currentIndex: number) => {
+      for (let i = currentIndex + 1; i < inputRefs.current.length; i++) {
+        const ref = inputRefs.current[i];
+        if (ref) {
+          ref.focus();
+          ref.select();
+          return;
+        }
+      }
+    },
+    []
+  );
 
   const allDone = doneIds.size === items.length;
 
@@ -200,19 +226,16 @@ export function TodayChecklist({ items, onSave }: TodayChecklistProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       {/* 헤더 */}
-      <div className="px-4 py-3 bg-white border-b border-gray-100">
+      <div className="px-4 py-3 border-b border-gray-100">
         <div className="flex items-center justify-between mb-2">
-          <div>
-            <h2 className="text-base font-bold text-gray-800">
-              오늘 점검 목록
-              <span className="ml-2 text-sm font-normal text-gray-500">{todayLabel}</span>
-            </h2>
-          </div>
+          <h2 className="text-base font-bold text-gray-800">
+            오늘 점검 목록
+            <span className="ml-2 text-sm font-normal text-gray-500">{todayLabel}</span>
+          </h2>
           <span className="text-sm font-semibold text-orange-600">
             {doneIds.size} / {items.length}
           </span>
         </div>
-        {/* 진행률 바 */}
         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-orange-500 rounded-full transition-all duration-300"
@@ -221,28 +244,24 @@ export function TodayChecklist({ items, onSave }: TodayChecklistProps) {
         </div>
       </div>
 
-      {/* 완료 메시지 */}
       {allDone && (
-        <div className="px-4 py-4 bg-green-50 border-b border-green-100 flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-green-500" />
-          <span className="text-sm font-medium text-green-700">
-            오늘 점검 완료! 수고하셨습니다.
-          </span>
+        <div className="px-4 py-3 bg-green-50 border-b border-green-100 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <span className="text-sm font-medium text-green-700">오늘 점검 완료! 수고하셨습니다.</span>
         </div>
       )}
 
-      {/* 체크리스트 목록 */}
       <div>
         {items.map((item, idx) => (
           <ChecklistRow
             key={item.id}
             item={item}
-            index={idx}
-            isCurrent={!allDone && idx === currentIndex}
             isDone={doneIds.has(item.id)}
-            onActivate={() => setCurrentIndex(idx)}
+            isFocused={focusedId === item.id && !doneIds.has(item.id)}
+            mainInputRef={(el) => { inputRefs.current[idx] = el; }}
+            onFocused={() => setFocusedId(item.id)}
             onSave={(main, detail) => handleSave(item, main, detail)}
-            onNext={goNext}
+            onEnter={() => focusNext(idx)}
           />
         ))}
       </div>
