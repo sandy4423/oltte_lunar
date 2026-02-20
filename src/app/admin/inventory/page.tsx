@@ -178,34 +178,33 @@ export default function InventoryPage() {
     <main className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-2xl mx-auto">
         {/* 헤더 */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
+        <div className="mb-5 space-y-2">
+          <div className="flex items-center justify-between">
             <button
               onClick={() => router.push('/admin')}
-              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
               관리자
             </button>
-            <span className="text-gray-300">/</span>
-            <div className="flex items-center gap-2">
-              <Image src="/images/logo.png" alt="올때만두" width={90} height={24} />
-              <span className="text-base font-bold text-gray-800">재고 관리</span>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchInventory}
+              disabled={loading}
+              className="text-xs shrink-0"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? 'animate-spin' : ''}`} />
+              새로고침
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Image src="/images/logo.png" alt="올때만두" width={90} height={24} />
+            <span className="text-base font-bold text-gray-800 whitespace-nowrap">재고 관리</span>
             {adminUser && (
-              <span className="text-xs text-orange-600 font-medium ml-1">({adminUser.name})</span>
+              <span className="text-xs text-orange-600 font-medium whitespace-nowrap">({adminUser.name})</span>
             )}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={fetchInventory}
-            disabled={loading}
-            className="text-xs"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 mr-1 ${loading ? 'animate-spin' : ''}`} />
-            새로고침
-          </Button>
         </div>
 
         {loading ? (
