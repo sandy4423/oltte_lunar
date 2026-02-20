@@ -3,6 +3,7 @@
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { RefreshCw, Plus, EyeOff, Eye } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import { ManualOrderDialog } from '@/components/features/admin/ManualOrderDialog
 import { OrderDetailDialog } from '@/components/features/admin/OrderDetailDialog';
 
 export default function AdminPage() {
+  const router = useRouter();
   const admin = useAdminPage();
 
   if (!admin.isAuthenticated) {
@@ -84,6 +86,13 @@ export default function AdminPage() {
           <TabsList className="mb-4">
             <TabsTrigger value="orders" className="px-6">주문관리</TabsTrigger>
             <TabsTrigger value="stats" className="px-6">통계분석</TabsTrigger>
+            <TabsTrigger
+              value="inventory"
+              className="px-6"
+              onClick={() => router.push('/admin/inventory')}
+            >
+              재고관리
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders">

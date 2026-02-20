@@ -338,6 +338,11 @@ export interface Database {
         Insert: ProductShipmentQuantityInsert;
         Update: ProductShipmentQuantityUpdate;
       };
+      inventory_items: {
+        Row: InventoryItemRow;
+        Insert: Omit<InventoryItemRow, 'id' | 'created_at' | 'updated_at'>;
+        Update: InventoryItemUpdate;
+      };
     };
     Views: {
       [_ in never]: never;
@@ -383,6 +388,38 @@ export interface ProductShipmentQuantityUpdate {
   shipment_date?: string;
   quantity?: number;
   created_at?: string;
+  updated_at?: string;
+}
+
+// ============================================
+// inventory_items 테이블 (재고 관리)
+// ============================================
+
+/** inventory_items 테이블 Row */
+export interface InventoryItemRow {
+  id: string;                        // uuid, PK
+  category: string;                  // 전골 | 쫄면 | 기타 | 포장
+  name: string;                      // 항목명
+  unit: string;                      // 대단위 (박스, 봉지 등)
+  detail_unit: string | null;        // 상세단위 (있을 경우만)
+  notes: string | null;              // 메모
+  check_interval_days: number;       // 점검빈도(일): 1/2/3/4/5/10/20
+  cycle_group: number;               // 순환 그룹 (0 ~ check_interval_days-1)
+  sort_order: number;                // 정렬 순서
+  min_qty: number | null;            // 최소재고 기준 (PAR Level용)
+  main_qty: number | null;           // 현재고 (대단위)
+  detail_qty: number | null;         // 현재고 (상세단위)
+  last_checked_at: string | null;    // 마지막 점검 시각
+  created_at: string;
+  updated_at: string;
+}
+
+/** inventory_items UPDATE 타입 */
+export interface InventoryItemUpdate {
+  main_qty?: number | null;
+  detail_qty?: number | null;
+  min_qty?: number | null;
+  last_checked_at?: string | null;
   updated_at?: string;
 }
 
