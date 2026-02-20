@@ -150,7 +150,7 @@ function EditableRow({ item, onSave, onItemClick }: EditableRowProps) {
         </span>
       </div>
 
-      {/* 줄 2: 입력창 */}
+      {/* 줄 2: 수량 입력 */}
       <div className="flex items-center gap-2 ml-4 min-h-[32px]">
         <input
           type="number"
@@ -181,16 +181,18 @@ function EditableRow({ item, onSave, onItemClick }: EditableRowProps) {
           </>
         )}
 
-        <input
-          ref={memoRef}
-          type="text"
-          placeholder="메모"
-          value={memoInput}
-          onChange={(e) => setMemoInput(e.target.value)}
-          onKeyDown={handleMemoKey}
-          disabled={saving}
-          className="flex-1 min-w-0 text-sm rounded-lg px-2 py-1.5 border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-colors placeholder:text-gray-300"
-        />
+        {!item.detail_unit && (
+          <input
+            ref={memoRef}
+            type="text"
+            placeholder="메모"
+            value={memoInput}
+            onChange={(e) => setMemoInput(e.target.value)}
+            onKeyDown={handleMemoKey}
+            disabled={saving}
+            className="flex-1 min-w-0 text-sm rounded-lg px-2 py-1.5 border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-colors placeholder:text-gray-300"
+          />
+        )}
 
         <button
           onClick={handleSave}
@@ -207,6 +209,22 @@ function EditableRow({ item, onSave, onItemClick }: EditableRowProps) {
           {saved ? <CheckCircle2 className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
         </button>
       </div>
+
+      {/* 줄 3: 메모 입력 (detail_unit 있는 항목만 별도 줄) */}
+      {item.detail_unit && (
+        <div className="flex items-center gap-2 ml-4 mt-1 min-h-[32px]">
+          <input
+            ref={memoRef}
+            type="text"
+            placeholder="메모"
+            value={memoInput}
+            onChange={(e) => setMemoInput(e.target.value)}
+            onKeyDown={handleMemoKey}
+            disabled={saving}
+            className="flex-1 min-w-0 text-sm rounded-lg px-2 py-1.5 border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-colors placeholder:text-gray-300"
+          />
+        </div>
+      )}
     </div>
   );
 }

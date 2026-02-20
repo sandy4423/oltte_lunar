@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, RefreshCw, ChevronDown, ChevronUp, Table2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TodayChecklist } from '@/components/features/admin/inventory/TodayChecklist';
 import { InventoryTable } from '@/components/features/admin/inventory/InventoryTable';
+import { InventoryGridView } from '@/components/features/admin/inventory/InventoryGridView';
 import { ItemLogDrawer } from '@/components/features/admin/inventory/ItemLogDrawer';
 import { AdminLoginForm } from '@/components/features/admin/AdminLoginForm';
 import type { InventoryItemRow } from '@/types/database';
@@ -30,6 +31,7 @@ export default function InventoryPage() {
   const [todayItems, setTodayItems] = useState<InventoryItemRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFullTable, setShowFullTable] = useState(false);
+  const [showGridView, setShowGridView] = useState(false);
 
   const [logItem, setLogItem] = useState<InventoryItemRow | null>(null);
   const [logOpen, setLogOpen] = useState(false);
@@ -211,8 +213,23 @@ export default function InventoryPage() {
           <div className="flex justify-center py-20">
             <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
           </div>
+        ) : showGridView ? (
+          <InventoryGridView
+            items={allItems}
+            onClose={() => setShowGridView(false)}
+            onItemClick={(item) => { setLogItem(item); setLogOpen(true); }}
+          />
         ) : (
           <div className="space-y-4">
+            {/* 표로 보기 버튼 */}
+            <button
+              onClick={() => setShowGridView(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition-colors"
+            >
+              <Table2 className="h-4 w-4" />
+              표로 보기
+            </button>
+
             <TodayChecklist
               items={todayItems}
               onSave={(id, main, detail, memo) => handleSave(id, main, detail, memo)}

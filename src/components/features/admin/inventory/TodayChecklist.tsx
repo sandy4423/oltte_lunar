@@ -140,7 +140,7 @@ function ChecklistRow({
         </span>
       </div>
 
-      {/* 줄 2: 입력창 — 항상 노출, 높이 고정 */}
+      {/* 줄 2: 수량 입력 */}
       <div className="flex items-center gap-2 ml-4 min-h-[32px]">
         <input
           ref={mainInputRef}
@@ -174,19 +174,21 @@ function ChecklistRow({
           </>
         )}
 
-        <input
-          ref={memoRef}
-          type="text"
-          placeholder="메모"
-          value={memoInput}
-          onChange={(e) => setMemoInput(e.target.value)}
-          onFocus={onFocused}
-          onKeyDown={handleMemoKeyDown}
-          disabled={saving}
-          className="flex-1 min-w-0 text-sm rounded-lg px-2 py-1.5 border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-colors placeholder:text-gray-300 disabled:opacity-40"
-        />
+        {!item.detail_unit && (
+          <input
+            ref={memoRef}
+            type="text"
+            placeholder="메모"
+            value={memoInput}
+            onChange={(e) => setMemoInput(e.target.value)}
+            onFocus={onFocused}
+            onKeyDown={handleMemoKeyDown}
+            disabled={saving}
+            className="flex-1 min-w-0 text-sm rounded-lg px-2 py-1.5 border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-colors placeholder:text-gray-300 disabled:opacity-40"
+          />
+        )}
 
-        {/* 저장 버튼 — 고정 크기 */}
+        {/* 저장 버튼 */}
         <button
           onClick={handleSave}
           disabled={saving}
@@ -208,6 +210,23 @@ function ChecklistRow({
           )}
         </button>
       </div>
+
+      {/* 줄 3: 메모 입력 (detail_unit 있는 항목만 별도 줄) */}
+      {item.detail_unit && (
+        <div className="flex items-center gap-2 ml-4 mt-1 min-h-[32px]">
+          <input
+            ref={memoRef}
+            type="text"
+            placeholder="메모"
+            value={memoInput}
+            onChange={(e) => setMemoInput(e.target.value)}
+            onFocus={onFocused}
+            onKeyDown={handleMemoKeyDown}
+            disabled={saving}
+            className="flex-1 min-w-0 text-sm rounded-lg px-2 py-1.5 border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-colors placeholder:text-gray-300 disabled:opacity-40"
+          />
+        </div>
+      )}
     </div>
   );
 }
