@@ -51,17 +51,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = createServerSupabaseClient();
 
-    // 1. 최근 인증 완료 여부 확인 (24시간 이내)
-    const isVerified = await checkVerification(supabase, normalizedPhone);
-
-    if (!isVerified) {
-      return NextResponse.json(
-        { success: false, error: '전화번호 인증이 필요합니다.' },
-        { status: 401 }
-      );
-    }
-
-    // 2. 고객 조회 (같은 전화번호로 여러 고객 레코드가 있을 수 있음)
+    // 1. 고객 조회 먼저 (같은 전화번호로 여러 고객 레코드가 있을 수 있음)
     const { data: customers, error: customerError } = await supabase
       .from('customers')
       .select('id')
@@ -75,8 +65,31 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // 1-1. 고객 레코드가 없으면 먼저 반환
     if (!customers || customers.length === 0) {
       return NextResponse.json({ success: true, data: [], count: 0 });
+    }
+
+    // 2. 인증 확인 (24시간 이내 인증 또는 실제 주문 존재)
+    const isRecentlyVerified = await checkVerification(supabase, normalizedPhone);
+    
+    // 최근 인증이 없는 경우, 실제 주문이 있는지 확인
+    if (!isRecentlyVerified) {
+      const customerIds = customers.map((c) => c.id);
+      const { data: existingOrders } = await supabase
+        .from('orders')
+        .select('id')
+        .in('customer_id', customerIds)
+        .limit(1);
+
+      // 인증도 없고 주문도 없으면 거부
+      if (!existingOrders || existingOrders.length === 0) {
+        return NextResponse.json(
+          { success: false, error: '전화번호 인증이 필요합니다.' },
+          { status: 401 }
+        );
+      }
+      // 주문이 있으면 전화번호 소유자로 간주하고 통과
     }
 
     // 3. 주문 조회 (조인 분리 - Supabase .in() + 임베디드 리소스 버그 우회)
