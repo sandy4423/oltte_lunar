@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAdminOrders } from '@/hooks/useAdminOrders';
 import { useOrderFilters } from '@/hooks/useOrderFilters';
 import { useOrderSelection } from '@/hooks/useOrderSelection';
@@ -8,35 +8,68 @@ import { useOrderStatusChange } from '@/hooks/useOrderStatusChange';
 import { useAdminStats } from '@/hooks/useAdminStats';
 import { getAdminPassword } from '@/lib/adminAuth';
 
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '4423';
+interface AdminUser {
+  id: string;
+  name: string;
+  role: 'staff' | 'admin';
+}
 
 export function useAdminPage() {
   // ============================================
-  // 인증
+  // 인증 (멀티계정)
   // ============================================
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [nameInput, setNameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
-  const [passwordError, setPasswordError] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
 
   useEffect(() => {
-    const authStatus = sessionStorage.getItem('admin_auth');
-    if (authStatus === 'true') {
-      setIsAuthenticated(true);
+    try {
+      const stored = sessionStorage.getItem('adminUser');
+      if (stored) {
+        const user = JSON.parse(stored) as AdminUser;
+        setAdminUser(user);
+        setIsAuthenticated(true);
+      }
+    } catch {
+      // 
     }
   }, []);
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (passwordInput === ADMIN_PASSWORD) {
+    setLoginLoading(true);
+    setLoginError(null);
+
+    try {
+      const res = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nameInput, password: passwordInput }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setLoginError(data.error || '로그인 실패');
+        setPasswordInput('');
+        return;
+      }
+
+      const user = data.user as AdminUser;
+      setAdminUser(user);
       setIsAuthenticated(true);
+      sessionStorage.setItem('adminUser', JSON.stringify(user));
+      // 하위호환: 기존 session keys 유지
       sessionStorage.setItem('admin_auth', 'true');
       sessionStorage.setItem('admin_password', passwordInput);
-      setPasswordError(false);
-    } else {
-      setPasswordError(true);
-      setPasswordInput('');
+    } catch {
+      setLoginError('서버 연결에 실패했습니다.');
+    } finally {
+      setLoginLoading(false);
     }
-  };
+  }, [nameInput, passwordInput]);
 
   // ============================================
   // 주문 데이터
@@ -355,9 +388,12 @@ export function useAdminPage() {
   };
 
   return {
-    // 인증
-    isAuthenticated, passwordInput, passwordError,
-    setPasswordInput, handlePasswordSubmit,
+    // 인증 (멀티계정)
+    isAuthenticated, adminUser,
+    nameInput, setNameInput,
+    passwordInput, setPasswordInput,
+    loginError, loginLoading,
+    handlePasswordSubmit,
 
     // 주문 데이터
     orders, loading, fetchOrders, lastFetchTime,

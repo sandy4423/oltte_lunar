@@ -1,12 +1,16 @@
 'use client';
 
+import { useState, useRef, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { AlertTriangle, Clock } from 'lucide-react';
+import { AlertTriangle, Clock, ArrowRight, CheckCircle2, MessageSquare } from 'lucide-react';
 import type { InventoryItemRow } from '@/types/database';
 
 interface InventoryTableProps {
   items: InventoryItemRow[];
+  staffName: string;
+  onSave: (id: string, mainQty: number | null, detailQty: number | null, memo: string | null) => Promise<boolean>;
+  onItemClick: (item: InventoryItemRow) => void;
 }
 
 const CATEGORY_ORDER = ['전골', '쫄면', '기타', '포장'];
@@ -28,56 +32,186 @@ function getCheckStatus(item: InventoryItemRow): 'ok' | 'warn' | 'overdue' | 'ne
   return 'overdue';
 }
 
-function StatusDot({ status }: { status: ReturnType<typeof getCheckStatus> }) {
-  const styles = {
+interface EditableRowProps {
+  item: InventoryItemRow;
+  onSave: (mainQty: number | null, detailQty: number | null, memo: string | null) => Promise<boolean>;
+  onItemClick: () => void;
+}
+
+function EditableRow({ item, onSave, onItemClick }: EditableRowProps) {
+  const [mainInput, setMainInput] = useState(
+    item.main_qty !== null ? String(item.main_qty) : ''
+  );
+  const [detailInput, setDetailInput] = useState(
+    item.detail_qty !== null ? String(item.detail_qty) : ''
+  );
+  const [memoInput, setMemoInput] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const detailRef = useRef<HTMLInputElement>(null);
+  const memoRef = useRef<HTMLInputElement>(null);
+
+  const status = getCheckStatus(item);
+  const lastCheckLabel = item.last_checked_at
+    ? formatDistanceToNow(new Date(item.last_checked_at), { addSuffix: true, locale: ko })
+    : '미점검';
+
+  const handleSave = useCallback(async () => {
+    if (saving) return;
+    setSaving(true);
+    const main = mainInput.trim() === '' ? null : parseFloat(mainInput);
+    const detail = detailInput.trim() === '' ? null : parseFloat(detailInput);
+    const memo = memoInput.trim() || null;
+    const ok = await onSave(
+      main !== null && !isNaN(main) ? main : null,
+      detail !== null && !isNaN(detail) ? detail : null,
+      memo
+    );
+    setSaving(false);
+    if (ok) {
+      setSaved(true);
+      setMemoInput('');
+      setTimeout(() => setSaved(false), 2000);
+    }
+  }, [saving, mainInput, detailInput, memoInput, onSave]);
+
+  const handleMainKey = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (item.detail_unit && detailRef.current) {
+      detailRef.current.focus();
+    } else if (memoRef.current) {
+      memoRef.current.focus();
+    } else {
+      handleSave();
+    }
+  };
+
+  const handleDetailKey = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (memoRef.current) memoRef.current.focus();
+    else handleSave();
+  };
+
+  const handleMemoKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    }
+  };
+
+  const rowBg = saved
+    ? 'bg-green-50'
+    : status === 'overdue' || status === 'never'
+      ? 'bg-red-50/40'
+      : 'bg-white';
+
+  const dotColor = {
     ok: 'bg-green-400',
     warn: 'bg-yellow-400',
     overdue: 'bg-red-500',
     never: 'bg-gray-300',
-  };
+  }[status];
+
+  const inputCls = [
+    'w-20 text-center text-sm rounded-lg px-2 py-1.5 border',
+    'focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400',
+    'transition-colors',
+    'border-gray-300 bg-white text-gray-800',
+  ].join(' ');
+
   return (
-    <span
-      className={`inline-block w-2 h-2 rounded-full shrink-0 ${styles[status]}`}
-      title={
-        status === 'ok'
-          ? '최근 점검 완료'
-          : status === 'warn'
-            ? '점검 기한 임박'
-            : status === 'overdue'
-              ? '점검 기한 초과'
-              : '미점검'
-      }
-    />
+    <div className={`${rowBg} border-b border-gray-100 px-4 py-2.5 transition-colors`}>
+      {/* 줄 1: 이름 · 직전메모 · 마지막점검 */}
+      <div className="flex items-center gap-2 mb-1.5 min-h-[20px]">
+        <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`} />
+        <button
+          onClick={onItemClick}
+          className="text-sm font-medium text-gray-800 hover:text-orange-600 hover:underline text-left"
+        >
+          {item.name}
+        </button>
+        {item.notes && (
+          <span className="text-xs text-gray-400">({item.notes})</span>
+        )}
+        {item.last_memo && (
+          <span className="text-xs text-orange-600 flex items-center gap-0.5 ml-auto mr-2 max-w-[200px] truncate" title={item.last_memo}>
+            <MessageSquare className="h-3 w-3 shrink-0" />
+            {item.last_memo}
+          </span>
+        )}
+        <span className={`text-xs shrink-0 ml-auto ${
+          status === 'overdue' ? 'text-red-600 font-medium' : status === 'warn' ? 'text-yellow-600' : 'text-gray-400'
+        }`}>
+          {status === 'overdue' && <AlertTriangle className="h-3 w-3 inline mr-0.5" />}
+          {status === 'warn' && <Clock className="h-3 w-3 inline mr-0.5" />}
+          {lastCheckLabel}
+        </span>
+      </div>
+
+      {/* 줄 2: 입력창 */}
+      <div className="flex items-center gap-2 ml-4 min-h-[32px]">
+        <input
+          type="number"
+          inputMode="decimal"
+          placeholder="—"
+          value={mainInput}
+          onChange={(e) => setMainInput(e.target.value)}
+          onKeyDown={handleMainKey}
+          disabled={saving}
+          className={inputCls}
+        />
+        <span className="text-xs text-gray-500 shrink-0">{item.unit}</span>
+
+        {item.detail_unit && (
+          <>
+            <input
+              ref={detailRef}
+              type="number"
+              inputMode="decimal"
+              placeholder="—"
+              value={detailInput}
+              onChange={(e) => setDetailInput(e.target.value)}
+              onKeyDown={handleDetailKey}
+              disabled={saving}
+              className={inputCls}
+            />
+            <span className="text-xs text-gray-500 shrink-0">{item.detail_unit}</span>
+          </>
+        )}
+
+        <input
+          ref={memoRef}
+          type="text"
+          placeholder="메모"
+          value={memoInput}
+          onChange={(e) => setMemoInput(e.target.value)}
+          onKeyDown={handleMemoKey}
+          disabled={saving}
+          className="flex-1 min-w-0 text-sm rounded-lg px-2 py-1.5 border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-colors placeholder:text-gray-300"
+        />
+
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className={[
+            'shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-colors',
+            saved
+              ? 'bg-green-100 text-green-500'
+              : saving
+                ? 'bg-orange-200 text-orange-400 cursor-wait'
+                : 'bg-orange-100 text-orange-500 hover:bg-orange-500 hover:text-white',
+          ].join(' ')}
+        >
+          {saved ? <CheckCircle2 className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+        </button>
+      </div>
+    </div>
   );
 }
 
-function LastCheckedLabel({ item }: { item: InventoryItemRow }) {
-  if (!item.last_checked_at) {
-    return <span className="text-gray-400 text-xs">미점검</span>;
-  }
-  const relative = formatDistanceToNow(new Date(item.last_checked_at), {
-    addSuffix: true,
-    locale: ko,
-  });
-  const status = getCheckStatus(item);
-  return (
-    <span
-      className={`text-xs flex items-center gap-1 ${
-        status === 'overdue'
-          ? 'text-red-600 font-medium'
-          : status === 'warn'
-            ? 'text-yellow-600'
-            : 'text-gray-500'
-      }`}
-    >
-      {status === 'overdue' && <AlertTriangle className="h-3 w-3 shrink-0" />}
-      {status === 'warn' && <Clock className="h-3 w-3 shrink-0" />}
-      {relative}
-    </span>
-  );
-}
-
-export function InventoryTable({ items }: InventoryTableProps) {
+export function InventoryTable({ items, staffName, onSave, onItemClick }: InventoryTableProps) {
   const grouped = CATEGORY_ORDER.reduce<Record<string, InventoryItemRow[]>>((acc, cat) => {
     acc[cat] = items.filter((i) => i.category === cat);
     return acc;
@@ -105,69 +239,23 @@ export function InventoryTable({ items }: InventoryTableProps) {
 
         return (
           <div key={category}>
-            {/* 카테고리 헤더 */}
             <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
               <span
                 className={`text-xs font-semibold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[category] ?? 'bg-gray-100 text-gray-700'}`}
               >
                 {category}
               </span>
-              <span className="text-xs text-gray-400">{catItems.length}개 항목</span>
+              <span className="text-xs text-gray-400">{catItems.length}개</span>
             </div>
 
-            {/* 항목 목록 */}
-            <div className="divide-y divide-gray-50">
-              {catItems.map((item) => {
-                const status = getCheckStatus(item);
-                return (
-                  <div
-                    key={item.id}
-                    className={`flex items-center gap-3 px-4 py-2.5 ${
-                      status === 'overdue' || status === 'never' ? 'bg-red-50/40' : ''
-                    }`}
-                  >
-                    <StatusDot status={status} />
-
-                    {/* 이름 + 메모 */}
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm text-gray-800">{item.name}</span>
-                      {item.notes && (
-                        <span className="ml-1.5 text-xs text-gray-400">({item.notes})</span>
-                      )}
-                    </div>
-
-                    {/* 현재고 */}
-                    <div className="flex items-center gap-1 text-sm text-gray-700 shrink-0">
-                      {item.main_qty !== null ? (
-                        <span className="font-medium">
-                          {item.main_qty}
-                          <span className="text-xs font-normal text-gray-500 ml-0.5">
-                            {item.unit}
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="text-gray-300 text-xs">—</span>
-                      )}
-                      {item.detail_unit && item.detail_qty !== null && (
-                        <span className="text-gray-500 text-xs ml-1">
-                          {item.detail_qty} {item.detail_unit}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* 마지막 점검 */}
-                    <div className="w-24 text-right shrink-0">
-                      <LastCheckedLabel item={item} />
-                    </div>
-
-                    {/* 점검빈도 */}
-                    <div className="w-12 text-right shrink-0">
-                      <span className="text-xs text-gray-400">{item.check_interval_days}일</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            {catItems.map((item) => (
+              <EditableRow
+                key={item.id}
+                item={item}
+                onSave={(main, detail, memo) => onSave(item.id, main, detail, memo)}
+                onItemClick={() => onItemClick(item)}
+              />
+            ))}
           </div>
         );
       })}

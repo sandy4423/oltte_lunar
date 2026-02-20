@@ -47,10 +47,10 @@ export async function GET() {
   );
 }
 
-/** PATCH /api/admin/inventory — 단일 항목 수량 업데이트 + last_checked_at 갱신 */
+/** PATCH /api/admin/inventory — 수량+메모 업데이트 + 로그 기록 */
 export async function PATCH(req: NextRequest) {
   const body = await req.json();
-  const { id, main_qty, detail_qty } = body;
+  const { id, main_qty, detail_qty, memo, staff_name } = body;
 
   if (!id) {
     return NextResponse.json({ error: 'id is required' }, { status: 400 });
@@ -59,11 +59,13 @@ export async function PATCH(req: NextRequest) {
   const supabase = createServerSupabaseClient();
   const now = new Date().toISOString();
 
+  // 1) inventory_items 업데이트
   const { data, error } = await supabase
     .from('inventory_items')
     .update({
       main_qty: main_qty ?? null,
       detail_qty: detail_qty ?? null,
+      last_memo: memo ?? null,
       last_checked_at: now,
       updated_at: now,
     })
@@ -73,6 +75,20 @@ export async function PATCH(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // 2) inventory_logs에 이력 INSERT
+  if (data && staff_name) {
+    await supabase.from('inventory_logs').insert({
+      item_id: id,
+      item_name: data.name,
+      staff_name,
+      main_qty: main_qty ?? null,
+      detail_qty: detail_qty ?? null,
+      unit: data.unit,
+      detail_unit: data.detail_unit,
+      memo: memo ?? null,
+    });
   }
 
   return NextResponse.json({ item: data });

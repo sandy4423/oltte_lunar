@@ -14,6 +14,7 @@ import { AdminLoginForm } from '@/components/features/admin/AdminLoginForm';
 import { LabelPrintView } from '@/components/features/admin/LabelPrintView';
 import { AdminOrdersTab } from '@/components/features/admin/AdminOrdersTab';
 import { AdminStatsTab } from '@/components/features/admin/AdminStatsTab';
+import { AccountManagement } from '@/components/features/admin/AccountManagement';
 import { CancelRequestDialog } from '@/components/features/admin/CancelRequestDialog';
 import { ManualOrderDialog } from '@/components/features/admin/ManualOrderDialog';
 import { OrderDetailDialog } from '@/components/features/admin/OrderDetailDialog';
@@ -25,8 +26,11 @@ export default function AdminPage() {
   if (!admin.isAuthenticated) {
     return (
       <AdminLoginForm
+        nameInput={admin.nameInput}
         passwordInput={admin.passwordInput}
-        passwordError={admin.passwordError}
+        loginError={admin.loginError}
+        loading={admin.loginLoading}
+        onNameChange={admin.setNameInput}
         onPasswordChange={admin.setPasswordInput}
         onSubmit={admin.handlePasswordSubmit}
       />
@@ -52,7 +56,14 @@ export default function AdminPage() {
               <Image src="/images/logo.png" alt="올때만두" width={150} height={40} />
               <span className="text-xl font-bold">관리자</span>
             </div>
-            <p className="text-gray-500">주문 관리 및 배송 처리</p>
+            <p className="text-gray-500">
+              주문 관리 및 배송 처리
+              {admin.adminUser && (
+                <span className="ml-2 text-xs text-orange-600 font-medium">
+                  ({admin.adminUser.name})
+                </span>
+              )}
+            </p>
             {admin.lastFetchTime && (
               <p className="text-xs text-gray-400 mt-1">
                 마지막 업데이트: {format(new Date(admin.lastFetchTime), 'M월 d일 HH:mm:ss', { locale: ko })}
@@ -93,6 +104,9 @@ export default function AdminPage() {
             >
               재고관리
             </TabsTrigger>
+            {admin.adminUser?.role === 'admin' && (
+              <TabsTrigger value="accounts" className="px-6">계정관리</TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="orders">
@@ -154,6 +168,12 @@ export default function AdminPage() {
               updateShipmentQuantity={admin.updateShipmentQuantity}
             />
           </TabsContent>
+
+          {admin.adminUser?.role === 'admin' && (
+            <TabsContent value="accounts">
+              <AccountManagement />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 

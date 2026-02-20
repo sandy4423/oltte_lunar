@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { CheckCircle2, ArrowRight } from 'lucide-react';
+import { CheckCircle2, ArrowRight, MessageSquare } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import type { InventoryItemRow } from '@/types/database';
 
 interface TodayChecklistProps {
   items: InventoryItemRow[];
-  onSave: (id: string, mainQty: number | null, detailQty: number | null) => Promise<boolean>;
+  onSave: (id: string, mainQty: number | null, detailQty: number | null, memo: string | null) => Promise<boolean>;
 }
 
 interface RowProps {
@@ -16,7 +16,7 @@ interface RowProps {
   isDone: boolean;
   isFocused: boolean;
   mainInputRef: (el: HTMLInputElement | null) => void;
-  onSave: (mainQty: number | null, detailQty: number | null) => Promise<boolean>;
+  onSave: (mainQty: number | null, detailQty: number | null, memo: string | null) => Promise<boolean>;
   onFocused: () => void;
   onEnter: () => void;
 }
@@ -39,6 +39,7 @@ function ChecklistRow({
   onEnter,
 }: RowProps) {
   const detailRef = useRef<HTMLInputElement>(null);
+  const memoRef = useRef<HTMLInputElement>(null);
 
   const [mainInput, setMainInput] = useState(
     item.main_qty !== null && item.main_qty !== undefined ? String(item.main_qty) : ''
@@ -46,6 +47,7 @@ function ChecklistRow({
   const [detailInput, setDetailInput] = useState(
     item.detail_qty !== null && item.detail_qty !== undefined ? String(item.detail_qty) : ''
   );
+  const [memoInput, setMemoInput] = useState('');
   const [saving, setSaving] = useState(false);
 
   const lastCheckLabel = item.last_checked_at
@@ -62,13 +64,18 @@ function ChecklistRow({
     setSaving(true);
     const main = mainInput.trim() === '' ? null : parseFloat(mainInput);
     const detail = detailInput.trim() === '' ? null : parseFloat(detailInput);
+    const memo = memoInput.trim() || null;
     const ok = await onSave(
       main !== null && !isNaN(main) ? main : null,
-      detail !== null && !isNaN(detail) ? detail : null
+      detail !== null && !isNaN(detail) ? detail : null,
+      memo
     );
     setSaving(false);
-    if (ok) onEnter();
-  }, [saving, mainInput, detailInput, onSave, onEnter]);
+    if (ok) {
+      setMemoInput('');
+      onEnter();
+    }
+  }, [saving, mainInput, detailInput, memoInput, onSave, onEnter]);
 
   const handleMainKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter') return;
@@ -76,12 +83,21 @@ function ChecklistRow({
     if (item.detail_unit && detailRef.current) {
       detailRef.current.focus();
       detailRef.current.select();
+    } else if (memoRef.current) {
+      memoRef.current.focus();
     } else {
       handleSave();
     }
   };
 
   const handleDetailKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (memoRef.current) memoRef.current.focus();
+    else handleSave();
+  };
+
+  const handleMemoKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleSave();
@@ -110,6 +126,12 @@ function ChecklistRow({
             <span className="ml-1.5 text-xs font-normal text-gray-400">({item.notes})</span>
           )}
         </span>
+        {item.last_memo && (
+          <span className="text-xs text-orange-600 flex items-center gap-0.5 max-w-[120px] truncate" title={item.last_memo}>
+            <MessageSquare className="h-3 w-3 shrink-0" />
+            {item.last_memo}
+          </span>
+        )}
         <span className="text-xs text-gray-400 shrink-0 text-right">
           {lastCheckLabel}
           {lastQtyLabel && (
@@ -152,7 +174,17 @@ function ChecklistRow({
           </>
         )}
 
-        <div className="flex-1" />
+        <input
+          ref={memoRef}
+          type="text"
+          placeholder="메모"
+          value={memoInput}
+          onChange={(e) => setMemoInput(e.target.value)}
+          onFocus={onFocused}
+          onKeyDown={handleMemoKeyDown}
+          disabled={saving}
+          className="flex-1 min-w-0 text-sm rounded-lg px-2 py-1.5 border border-gray-300 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 transition-colors placeholder:text-gray-300 disabled:opacity-40"
+        />
 
         {/* 저장 버튼 — 고정 크기 */}
         <button
@@ -189,8 +221,8 @@ export function TodayChecklist({ items, onSave }: TodayChecklistProps) {
   const todayLabel = format(today, 'M월 d일 (EEE)', { locale: ko });
 
   const handleSave = useCallback(
-    async (item: InventoryItemRow, mainQty: number | null, detailQty: number | null) => {
-      const ok = await onSave(item.id, mainQty, detailQty);
+    async (item: InventoryItemRow, mainQty: number | null, detailQty: number | null, memo: string | null) => {
+      const ok = await onSave(item.id, mainQty, detailQty, memo);
       if (ok) setDoneIds((prev) => new Set([...prev, item.id]));
       return ok;
     },
@@ -260,7 +292,7 @@ export function TodayChecklist({ items, onSave }: TodayChecklistProps) {
             isFocused={focusedId === item.id && !doneIds.has(item.id)}
             mainInputRef={(el) => { inputRefs.current[idx] = el; }}
             onFocused={() => setFocusedId(item.id)}
-            onSave={(main, detail) => handleSave(item, main, detail)}
+            onSave={(main, detail, memo) => handleSave(item, main, detail, memo)}
             onEnter={() => focusNext(idx)}
           />
         ))}

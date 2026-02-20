@@ -343,6 +343,16 @@ export interface Database {
         Insert: Omit<InventoryItemRow, 'id' | 'created_at' | 'updated_at'>;
         Update: InventoryItemUpdate;
       };
+      staff_accounts: {
+        Row: StaffAccountRow;
+        Insert: StaffAccountInsert;
+        Update: StaffAccountUpdate;
+      };
+      inventory_logs: {
+        Row: InventoryLogRow;
+        Insert: Omit<InventoryLogRow, 'id' | 'created_at'>;
+        Update: never;
+      };
     };
     Views: {
       [_ in never]: never;
@@ -410,6 +420,7 @@ export interface InventoryItemRow {
   main_qty: number | null;           // 현재고 (대단위)
   detail_qty: number | null;         // 현재고 (상세단위)
   last_checked_at: string | null;    // 마지막 점검 시각
+  last_memo: string | null;          // 직전 점검 메모
   created_at: string;
   updated_at: string;
 }
@@ -420,7 +431,52 @@ export interface InventoryItemUpdate {
   detail_qty?: number | null;
   min_qty?: number | null;
   last_checked_at?: string | null;
+  last_memo?: string | null;
   updated_at?: string;
+}
+
+// ============================================
+// staff_accounts 테이블 (직원 계정)
+// ============================================
+
+export interface StaffAccountRow {
+  id: string;
+  name: string;
+  password: string;
+  role: 'staff' | 'admin';
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface StaffAccountInsert {
+  name: string;
+  password: string;
+  role?: 'staff' | 'admin';
+  is_active?: boolean;
+}
+
+export interface StaffAccountUpdate {
+  name?: string;
+  password?: string;
+  role?: 'staff' | 'admin';
+  is_active?: boolean;
+}
+
+// ============================================
+// inventory_logs 테이블 (재고 입력 이력)
+// ============================================
+
+export interface InventoryLogRow {
+  id: string;
+  item_id: string;
+  item_name: string;
+  staff_name: string;
+  main_qty: number | null;
+  detail_qty: number | null;
+  unit: string;
+  detail_unit: string | null;
+  memo: string | null;
+  created_at: string;
 }
 
 // ============================================

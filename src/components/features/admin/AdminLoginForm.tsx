@@ -6,13 +6,24 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface AdminLoginFormProps {
+  nameInput: string;
   passwordInput: string;
-  passwordError: boolean;
+  loginError: string | null;
+  loading?: boolean;
+  onNameChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
-export function AdminLoginForm({ passwordInput, passwordError, onPasswordChange, onSubmit }: AdminLoginFormProps) {
+export function AdminLoginForm({
+  nameInput,
+  passwordInput,
+  loginError,
+  loading,
+  onNameChange,
+  onPasswordChange,
+  onSubmit,
+}: AdminLoginFormProps) {
   return (
     <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -26,19 +37,30 @@ export function AdminLoginForm({ passwordInput, passwordError, onPasswordChange,
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <Input
+                type="text"
+                placeholder="이름"
+                value={nameInput}
+                onChange={(e) => onNameChange(e.target.value)}
+                className={loginError ? 'border-red-500' : ''}
+                autoFocus
+                autoComplete="username"
+              />
+            </div>
+            <div>
+              <Input
                 type="password"
-                placeholder="비밀번호를 입력하세요"
+                placeholder="비밀번호"
                 value={passwordInput}
                 onChange={(e) => onPasswordChange(e.target.value)}
-                className={passwordError ? 'border-red-500' : ''}
-                autoFocus
+                className={loginError ? 'border-red-500' : ''}
+                autoComplete="current-password"
               />
-              {passwordError && (
-                <p className="text-red-500 text-sm mt-2">비밀번호가 올바르지 않습니다.</p>
+              {loginError && (
+                <p className="text-red-500 text-sm mt-2">{loginError}</p>
               )}
             </div>
-            <Button type="submit" className="w-full">
-              로그인
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? '로그인 중…' : '로그인'}
             </Button>
           </form>
         </CardContent>
