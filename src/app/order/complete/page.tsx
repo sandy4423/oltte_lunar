@@ -60,27 +60,58 @@ export default function OrderCompletePage() {
   }
 
   const hasVirtualAccount = Boolean(order.vbank_num && order.vbank_bank);
+  const isCardPayment = order.payment_method === 'card' || order.status === 'PAID';
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 pb-8">
       {/* 헤더 */}
-      <header className="bg-brand text-white p-6 text-center">
+      <header className={`${isCardPayment ? 'bg-green-600' : 'bg-brand'} text-white p-6 text-center`}>
         <CheckCircle className="mx-auto h-16 w-16 mb-4" />
-        <h1 className="text-2xl font-bold mb-2">주문이 접수되었습니다!</h1>
-        <p className="text-orange-100">
-          입금 확인 후 확정 문자를 보내드립니다
+        <h1 className="text-2xl font-bold mb-2">
+          {isCardPayment ? '결제가 완료되었습니다!' : '주문이 접수되었습니다!'}
+        </h1>
+        <p className={isCardPayment ? 'text-green-100' : 'text-orange-100'}>
+          {isCardPayment 
+            ? '카드 결제가 정상적으로 완료되었습니다'
+            : '입금 확인 후 확정 문자를 보내드립니다'}
         </p>
       </header>
 
       <div className="max-w-lg mx-auto px-4 mt-6 space-y-6">
-        {/* 가상계좌 정보 (강조) */}
-        <VirtualAccountCard
-          hasVirtualAccount={hasVirtualAccount}
-          vbankBank={order.vbank_bank || null}
-          vbankNum={order.vbank_num || null}
-          vbankHolder={order.vbank_holder || null}
-          totalAmount={order.total_amount}
-        />
+        {isCardPayment ? (
+          <Card className="bg-green-50 border-green-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-8 w-8 text-green-600 flex-shrink-0" />
+                <div>
+                  <p className="text-base font-bold text-green-800">카드 결제 완료</p>
+                  <p className="text-sm text-green-700 mt-1">
+                    주문 확인 문자가 발송되었습니다.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <VirtualAccountCard
+              hasVirtualAccount={hasVirtualAccount}
+              vbankBank={order.vbank_bank || null}
+              vbankNum={order.vbank_num || null}
+              vbankHolder={order.vbank_holder || null}
+              totalAmount={order.total_amount}
+            />
+
+            {order.status === 'WAITING_FOR_DEPOSIT' && (
+              <CardPaymentButton
+                orderId={order.id}
+                amount={order.total_amount}
+                orderName={`올때만두 - ${order.apt_name}`}
+                customerName={order.customer.name}
+              />
+            )}
+          </>
+        )}
 
         {/* 현금영수증 */}
         <CashReceiptForm
@@ -93,34 +124,25 @@ export default function OrderCompletePage() {
           receiptUrl={order.cash_receipt_url}
         />
 
-        {/* 카드 결제 버튼 - 가상계좌 대신 카드로 결제 */}
-        {/* 임시 숨김: PG 승인 대기 중 */}
-        {/* {order.status === 'WAITING_FOR_DEPOSIT' && (
-          <CardPaymentButton
-            orderId={order.id}
-            amount={order.total_amount}
-            orderName={`올때만두 - ${order.apt_name}`}
-            customerName={order.customer.name}
-          />
-        )} */}
-
-        {/* 입금 마감 시간 (강조) */}
-        <Card className="bg-orange-50 border-orange-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <Clock className="h-8 w-8 text-orange-500 flex-shrink-0" />
-              <div>
-                <p className="text-sm text-orange-600 font-medium">입금 마감</p>
-                <p className="text-xl font-bold text-orange-700">
-                  {format(new Date(order.cutoff_at), 'M월 d일 (EEE) HH:mm', { locale: ko })}
-                </p>
+        {/* 입금 마감 시간 (가상계좌 결제 시에만 표시) */}
+        {!isCardPayment && (
+          <Card className="bg-orange-50 border-orange-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <Clock className="h-8 w-8 text-orange-500 flex-shrink-0" />
+                <div>
+                  <p className="text-sm text-orange-600 font-medium">입금 마감</p>
+                  <p className="text-xl font-bold text-orange-700">
+                    {format(new Date(order.cutoff_at), 'M월 d일 (EEE) HH:mm', { locale: ko })}
+                  </p>
+                </div>
               </div>
-            </div>
-            <p className="mt-3 text-sm text-orange-600">
-              ⚠️ 마감 시간까지 입금하지 않으시면 자동 취소됩니다.
-            </p>
-          </CardContent>
-        </Card>
+              <p className="mt-3 text-sm text-orange-600">
+                ⚠️ 마감 시간까지 입금하지 않으시면 자동 취소됩니다.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* 주문 상세 */}
         <Card>
@@ -199,7 +221,11 @@ export default function OrderCompletePage() {
 
         {/* 안내 */}
         <div className="text-center text-sm text-gray-500 space-y-1">
-          <p>입금 확인 시 자동으로 확정 문자가 발송됩니다.</p>
+          {isCardPayment ? (
+            <p>배송일에 맞춰 신선하게 준비해 드리겠습니다.</p>
+          ) : (
+            <p>입금 확인 시 자동으로 확정 문자가 발송됩니다.</p>
+          )}
           <p className="text-xs text-gray-400">문의: {STORE_INFO.phone}</p>
         </div>
       </div>

@@ -65,6 +65,13 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* 비회원 주문 안내 */}
+      <div className="max-w-2xl mx-auto px-4 py-2 bg-blue-50 border-b border-blue-100">
+        <p className="text-xs text-blue-700 text-center">
+          ✓ 회원가입 없이 간편하게 주문하세요 (비회원 주문)
+        </p>
+      </div>
+
       {/* 주문내역 확인 링크 */}
       <div className="text-center py-2">
         <Link href="/my-orders" className="text-xs text-gray-400 underline hover:text-brand transition-colors">

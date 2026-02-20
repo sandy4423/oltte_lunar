@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Footer } from '@/components/Footer';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
-import { ORDER_STATUS_LABEL, getProductBySku, getAvailablePickupDates, getAvailableTimeSlots } from '@/lib/constants';
+import { ORDER_STATUS_LABEL, getProductBySku, getAvailablePickupDates, getAvailableTimeSlots, SKIP_PHONE_VERIFICATION } from '@/lib/constants';
 import { trackPageView } from '@/lib/trackPageView';
 import { PickupDateTimeSelector } from '@/components/features/PickupDateTimeSelector';
 import { CashReceiptForm } from '@/components/features/CashReceiptForm';
@@ -44,6 +44,13 @@ export default function MyOrdersPage() {
   const [newPickupTime, setNewPickupTime] = useState('');
   const [isChanging, setIsChanging] = useState(false);
   const [changeError, setChangeError] = useState<string | null>(null);
+
+  // 주문 취소 상태
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelTargetOrder, setCancelTargetOrder] = useState<any | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   // 토큰 인증 상태
   const [tokenVerified, setTokenVerified] = useState(false);
@@ -166,6 +173,69 @@ export default function MyOrdersPage() {
       setFetchError('서버 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 주문 취소 가능 여부 판단
+  const canCancelOrder = (order: any): boolean => {
+    if (order.status === 'CANCELLED' || order.status === 'AUTO_CANCELED' || 
+        order.status === 'DELIVERED' || order.status === 'REFUNDED' ||
+        order.status === 'REFUND_PROCESSING' || order.status === 'CANCEL_REQUESTED') return false;
+    if (order.status === 'WAITING_FOR_DEPOSIT' || order.status === 'CREATED') return true;
+    if (order.status === 'PAID') {
+      try {
+        const cutoffTime = new Date(order.cutoff_at);
+        const now = new Date();
+        return now < cutoffTime;
+      } catch { return false; }
+    }
+    return false;
+  };
+
+  // 취소 Dialog 열기
+  const openCancelDialog = (order: any) => {
+    setCancelTargetOrder(order);
+    setCancelReason('');
+    setCancelError(null);
+    setShowCancelDialog(true);
+  };
+
+  // 주문 취소 처리
+  const handleCancelOrder = async () => {
+    if (!cancelTargetOrder || !cancelReason.trim()) {
+      setCancelError('취소 사유를 입력해주세요.');
+      return;
+    }
+
+    setIsCancelling(true);
+    setCancelError(null);
+
+    try {
+      const response = await fetch('/api/orders/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: cancelTargetOrder.id,
+          phone: verification.phone,
+          cancelReason: cancelReason.trim(),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        setCancelError(result.error || '주문 취소에 실패했습니다.');
+        return;
+      }
+
+      setShowCancelDialog(false);
+      setCancelTargetOrder(null);
+      await fetchOrders();
+    } catch (error) {
+      console.error('[MyOrders] Cancel order error:', error);
+      setCancelError('서버 오류가 발생했습니다.');
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -303,76 +373,103 @@ export default function MyOrdersPage() {
                 <ShieldCheck className="h-10 w-10 text-brand mx-auto mb-2" />
                 <h2 className="text-lg font-bold">주문내역 조회</h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  주문 시 사용한 전화번호를 인증해주세요
+                  주문 시 사용한 전화번호를 {SKIP_PHONE_VERIFICATION ? '입력' : '인증'}해주세요
                 </p>
               </div>
 
-              {/* 전화번호 입력 */}
-              <div>
-                <Label htmlFor="phone" className="text-sm font-semibold">
-                  전화번호
-                </Label>
-                <div className="flex gap-2 mt-1">
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="01012345678"
-                    value={verification.phone}
-                    onChange={(e) => verification.setPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                    disabled={verification.verificationSent}
-                    className="h-11 flex-1"
-                    maxLength={11}
-                  />
-                  <Button
-                    onClick={verification.handleSendVerification}
-                    disabled={verification.isSending || verification.isPhoneVerified}
-                    className="h-11 px-4 whitespace-nowrap"
-                  >
-                    {verification.isSending
-                      ? '발송 중...'
-                      : verification.verificationSent
-                      ? '재발송'
-                      : '인증번호 발송'}
-                  </Button>
-                </div>
-              </div>
-
-              {/* 인증번호 입력 */}
-              {verification.verificationSent && (
+              {SKIP_PHONE_VERIFICATION ? (
                 <div>
-                  <Label htmlFor="code" className="text-sm font-semibold">
-                    인증번호
+                  <Label htmlFor="phone" className="text-sm font-semibold">
+                    전화번호
                   </Label>
                   <div className="flex gap-2 mt-1">
                     <Input
-                      id="code"
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="4자리 입력"
-                      value={verification.verificationCode}
-                      onChange={(e) =>
-                        verification.setVerificationCode(
-                          e.target.value.replace(/[^0-9]/g, '').slice(0, 4)
-                        )
-                      }
+                      id="phone"
+                      type="tel"
+                      placeholder="01012345678"
+                      value={verification.phone}
+                      onChange={(e) => verification.setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                      disabled={verification.isPhoneVerified}
                       className="h-11 flex-1"
-                      maxLength={4}
+                      maxLength={11}
                     />
                     <Button
-                      onClick={() => verification.handleVerifyCode()}
-                      disabled={
-                        verification.isVerifying ||
-                        verification.verificationCode.length !== 4
-                      }
+                      onClick={verification.handleSkipVerification}
+                      disabled={verification.isPhoneVerified || verification.phone.length < 10}
                       className="h-11 px-4 whitespace-nowrap"
                     >
-                      {verification.isVerifying ? '확인 중...' : '인증 확인'}
+                      {verification.isPhoneVerified ? '확인됨' : '조회하기'}
                     </Button>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    SMS로 발송된 4자리 인증번호를 입력해주세요
-                  </p>
                 </div>
+              ) : (
+                <>
+                  <div>
+                    <Label htmlFor="phone" className="text-sm font-semibold">
+                      전화번호
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="01012345678"
+                        value={verification.phone}
+                        onChange={(e) => verification.setPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                        disabled={verification.verificationSent}
+                        className="h-11 flex-1"
+                        maxLength={11}
+                      />
+                      <Button
+                        onClick={verification.handleSendVerification}
+                        disabled={verification.isSending || verification.isPhoneVerified}
+                        className="h-11 px-4 whitespace-nowrap"
+                      >
+                        {verification.isSending
+                          ? '발송 중...'
+                          : verification.verificationSent
+                          ? '재발송'
+                          : '인증번호 발송'}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {verification.verificationSent && (
+                    <div>
+                      <Label htmlFor="code" className="text-sm font-semibold">
+                        인증번호
+                      </Label>
+                      <div className="flex gap-2 mt-1">
+                        <Input
+                          id="code"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="4자리 입력"
+                          value={verification.verificationCode}
+                          onChange={(e) =>
+                            verification.setVerificationCode(
+                              e.target.value.replace(/[^0-9]/g, '').slice(0, 4)
+                            )
+                          }
+                          className="h-11 flex-1"
+                          maxLength={4}
+                        />
+                        <Button
+                          onClick={() => verification.handleVerifyCode()}
+                          disabled={
+                            verification.isVerifying ||
+                            verification.verificationCode.length !== 4
+                          }
+                          className="h-11 px-4 whitespace-nowrap"
+                        >
+                          {verification.isVerifying ? '확인 중...' : '인증 확인'}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        SMS로 발송된 4자리 인증번호를 입력해주세요
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* 에러 메시지 */}
@@ -628,6 +725,27 @@ export default function MyOrdersPage() {
                           receiptUrl={order.cash_receipt_url}
                         />
                       </div>
+
+                      {/* 주문 취소 버튼 */}
+                      {canCancelOrder(order) && (
+                        <div className="border-t pt-3 mt-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                            onClick={() => openCancelDialog(order)}
+                          >
+                            주문 취소하기
+                          </Button>
+                          <p className="text-xs text-gray-500 mt-1 text-center">
+                            {order.status === 'WAITING_FOR_DEPOSIT' || order.status === 'CREATED'
+                              ? '입금 전이므로 언제든 취소 가능합니다'
+                              : order.cutoff_at
+                              ? `입금 마감(${format(new Date(order.cutoff_at), 'M/d HH:mm')}) 전까지 취소 가능합니다`
+                              : '취소 가능한 주문입니다'}
+                          </p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -640,6 +758,70 @@ export default function MyOrdersPage() {
       <div className="mt-8">
         <Footer />
       </div>
+
+      {/* 주문 취소 확인 Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">주문 취소</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-2">
+            {cancelTargetOrder && (
+              <div className="text-sm bg-gray-50 p-3 rounded-lg space-y-1">
+                <p><span className="text-gray-500">주문번호:</span> ORDER_{cancelTargetOrder.id}</p>
+                <p><span className="text-gray-500">주문금액:</span> {cancelTargetOrder.total_amount?.toLocaleString()}원</p>
+                <p><span className="text-gray-500">주문상태:</span> {ORDER_STATUS_LABEL[cancelTargetOrder.status]?.label || cancelTargetOrder.status}</p>
+              </div>
+            )}
+
+            {cancelTargetOrder?.status === 'PAID' && (
+              <div className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 p-3 rounded">
+                결제 완료된 주문입니다. 취소 시 결제 금액이 환불됩니다.
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="cancelReason" className="text-sm font-semibold">
+                취소 사유 <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="cancelReason"
+                type="text"
+                placeholder="취소 사유를 입력해주세요"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
+            {cancelError && (
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                {cancelError}
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelDialog(false)}
+                disabled={isCancelling}
+                className="flex-1"
+              >
+                돌아가기
+              </Button>
+              <Button
+                onClick={handleCancelOrder}
+                disabled={isCancelling || !cancelReason.trim()}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isCancelling ? '취소 처리 중...' : '주문 취소 확인'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 픽업시간 변경 Dialog */}
       <Dialog open={showChangeDialog} onOpenChange={setShowChangeDialog}>

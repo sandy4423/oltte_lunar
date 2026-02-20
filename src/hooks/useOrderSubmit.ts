@@ -163,36 +163,8 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
         throw new Error('주문 상품 저장 실패');
       }
 
-      // 4. 토스페이먼츠 가상계좌 발급 (서버 API 호출)
-      const vbankResponse = await fetch('/api/payments/virtual-account', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderId: order.id,
-          amount: finalAmount,
-          customerName: name,
-          customerPhone: normalizedPhone,
-          bank: '88', // 신한은행 (기본값)
-        }),
-      });
-
-      if (!vbankResponse.ok) {
-        const errorData = await vbankResponse.json();
-        throw new Error(errorData.error || '가상계좌 발급 실패');
-      }
-
-      const vbankData = await vbankResponse.json();
-      
-      if (!vbankData.success) {
-        throw new Error(vbankData.error || '가상계좌 발급 실패');
-      }
-
-      console.log('[Order] Virtual account issued:', vbankData);
-
-      // 5. 완료 페이지로 이동
-      router.push(`/order/complete?orderId=${order.id}`);
+      // 4. 결제 수단 선택 페이지로 이동
+      router.push(`/order/payment-method?orderId=${order.id}`);
     } catch (err) {
       console.error('Order error:', err);
       const errorMessage = err instanceof Error ? err.message : '주문 처리 중 오류가 발생했습니다.';

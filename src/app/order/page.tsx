@@ -72,8 +72,12 @@ export default function OrderPage() {
   const [ho, setHo] = useState('');
   const [allConsent, setAllConsent] = useState(false);
   const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
+  const [termsConsent, setTermsConsent] = useState(false);
+  const [eftTermsConsent, setEftTermsConsent] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [showPersonalInfoDialog, setShowPersonalInfoDialog] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const [showEftTermsDialog, setShowEftTermsDialog] = useState(false);
   const [showMarketingDialog, setShowMarketingDialog] = useState(false);
   const [highlightConsent, setHighlightConsent] = useState(false);
   const [showDeliveryMethodDialog, setShowDeliveryMethodDialog] = useState(false);
@@ -211,11 +215,13 @@ export default function OrderPage() {
 
   // 주문 제출 핸들러 (동의 검증 포함)
   const handleOrderSubmit = async () => {
-    // 개인정보 동의 필수 체크
-    if (!personalInfoConsent) {
+    if (!termsConsent || !eftTermsConsent || !personalInfoConsent) {
       setHighlightConsent(true);
-      setError('개인정보 수집 및 이용에 동의해주세요.');
-      // 3초 후 강조 해제 (기존 타이머 정리)
+      const missing = [];
+      if (!termsConsent) missing.push('이용약관');
+      if (!eftTermsConsent) missing.push('전자금융거래 이용약관');
+      if (!personalInfoConsent) missing.push('개인정보 수집 및 이용');
+      setError(`${missing.join(', ')} 동의가 필요합니다.`);
       if (consentTimerRef.current) clearTimeout(consentTimerRef.current);
       consentTimerRef.current = setTimeout(() => {
         setHighlightConsent(false);
@@ -225,7 +231,6 @@ export default function OrderPage() {
       return;
     }
     
-    // 배달/픽업 선택 다이얼로그 표시
     setShowDeliveryMethodDialog(true);
   };
 
@@ -268,6 +273,13 @@ export default function OrderPage() {
           <p className="text-orange-100 text-sm">설 만두는 제가 빚을게요</p>
         </div>
       </header>
+
+      {/* 비회원 주문 안내 */}
+      <div className="max-w-lg mx-auto px-4 py-2 bg-blue-50 border-b border-blue-100">
+        <p className="text-xs text-blue-700 text-center">
+          ✓ 회원가입 없이 휴대폰 번호만으로 주문하실 수 있습니다 (비회원 주문)
+        </p>
+      </div>
 
       {/* 주문내역 확인 링크 */}
       <div className="text-center py-2">
@@ -393,13 +405,20 @@ export default function OrderPage() {
           error={verification.error}
           handleSendVerification={verification.handleSendVerification}
           handleVerifyCode={verification.handleVerifyCode}
+          handleSkipVerification={verification.handleSkipVerification}
           allConsent={allConsent}
           setAllConsent={setAllConsent}
           personalInfoConsent={personalInfoConsent}
           setPersonalInfoConsent={setPersonalInfoConsent}
+          termsConsent={termsConsent}
+          setTermsConsent={setTermsConsent}
+          eftTermsConsent={eftTermsConsent}
+          setEftTermsConsent={setEftTermsConsent}
           marketingOptIn={marketingOptIn}
           setMarketingOptIn={setMarketingOptIn}
           onShowPersonalInfoDialog={() => setShowPersonalInfoDialog(true)}
+          onShowTermsDialog={() => setShowTermsDialog(true)}
+          onShowEftTermsDialog={() => setShowEftTermsDialog(true)}
           onShowMarketingDialog={() => setShowMarketingDialog(true)}
           highlightConsent={highlightConsent}
         />
@@ -447,6 +466,60 @@ export default function OrderPage() {
             </div>
             <p className="text-xs text-gray-500">
               위 개인정보 수집에 동의하지 않을 권리가 있으며, 동의를 거부할 경우 서비스 이용이 제한됩니다.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 이용약관 Dialog */}
+      <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
+        <DialogContent onClose={() => setShowTermsDialog(false)}>
+          <DialogHeader>
+            <DialogTitle>이용약관</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm max-h-[60vh] overflow-y-auto">
+            <p className="text-gray-600">본 약관은 올때만두(이하 &quot;쇼핑몰&quot;)가 제공하는 인터넷 쇼핑몰 서비스의 이용 조건 및 절차를 규정합니다.</p>
+            <div>
+              <h4 className="font-semibold mb-1">제1조 (목적)</h4>
+              <p className="text-gray-600">본 약관은 이용자가 쇼핑몰이 제공하는 서비스를 이용함에 있어 쇼핑몰과 이용자의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">제2조 (정의)</h4>
+              <p className="text-gray-600">&quot;비회원&quot;이란 회원가입 없이 휴대폰 인증을 통해 쇼핑몰이 제공하는 서비스를 이용하는 자를 말합니다. 본 쇼핑몰은 회원가입 없이 비회원으로 주문하실 수 있습니다.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">제3조 (서비스의 제공)</h4>
+              <p className="text-gray-600">쇼핑몰은 상품의 판매, 배송, 픽업 서비스를 제공하며, 결제는 가상계좌 및 신용카드를 통해 이루어집니다.</p>
+            </div>
+            <p className="text-xs text-gray-400">
+              전체 이용약관은 <a href="/terms" target="_blank" className="text-blue-600 underline">여기</a>에서 확인하실 수 있습니다.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 전자금융거래 이용약관 Dialog */}
+      <Dialog open={showEftTermsDialog} onOpenChange={setShowEftTermsDialog}>
+        <DialogContent onClose={() => setShowEftTermsDialog(false)}>
+          <DialogHeader>
+            <DialogTitle>전자금융거래 이용약관</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm max-h-[60vh] overflow-y-auto">
+            <p className="text-gray-600">본 약관은 올때만두(이하 &quot;회사&quot;)가 토스페이먼츠를 통해 제공하는 전자금융거래 서비스의 이용 조건을 규정합니다.</p>
+            <div>
+              <h4 className="font-semibold mb-1">제1조 (목적)</h4>
+              <p className="text-gray-600">본 약관은 전자금융거래법에 따라 회사가 제공하는 전자금융거래 서비스를 이용자가 이용함에 있어 필요한 사항을 정합니다.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">제2조 (전자지급수단)</h4>
+              <p className="text-gray-600">회사가 제공하는 전자지급수단은 신용카드, 가상계좌입니다.</p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-1">제3조 (거래지시의 철회)</h4>
+              <p className="text-gray-600">이용자는 전자금융거래법에서 정하는 바에 따라 거래지시의 철회를 요청할 수 있습니다.</p>
+            </div>
+            <p className="text-xs text-gray-400">
+              전체 전자금융거래 이용약관은 <a href="/eft-terms" target="_blank" className="text-blue-600 underline">여기</a>에서 확인하실 수 있습니다.
             </p>
           </div>
         </DialogContent>

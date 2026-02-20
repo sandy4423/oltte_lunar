@@ -534,3 +534,23 @@ ${link}
 문의: ${CUSTOMER_SUPPORT_PHONE}`;
 }
 
+export function createCancellationSMS(params: {
+  customerName: string;
+  orderId: string;
+  cancelReason: string;
+  wasPaid: boolean;
+}): string {
+  const { customerName, orderId, cancelReason, wasPaid } = params;
+  
+  const refundNote = wasPaid 
+    ? '\n결제하신 금액은 영업일 기준 3~5일 내에 환불됩니다.'
+    : '';
+  
+  return `[올때만두] ${customerName}님, 주문이 취소되었습니다.
+
+주문번호: ${orderId}
+취소사유: ${cancelReason}${refundNote}
+
+궁금하신 사항은 ${CUSTOMER_SUPPORT_PHONE}으로 문의해주세요.`;
+}
+

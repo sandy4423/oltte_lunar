@@ -349,3 +349,29 @@ ${link}
 
 고객이 링크를 통해 픽업시간을 선택할 수 있습니다.`;
 }
+
+export function createCancellationNotification(params: {
+  orderId: string;
+  customerName: string;
+  customerPhone: string;
+  amount: number;
+  cancelReason: string;
+  wasPaid: boolean;
+}): string {
+  const { orderId, customerName, customerPhone, amount, cancelReason, wasPaid } = params;
+  
+  const refundNote = wasPaid 
+    ? '⚠️ 결제 완료 후 취소 - 환불 처리 필요'
+    : '입금 전 취소 - 환불 처리 불필요';
+  
+  return `❌ 주문 취소
+
+주문번호: ${orderId}
+고객명: ${customerName}
+연락처: ${customerPhone}
+주문금액: ${amount.toLocaleString()}원
+
+취소 사유: ${cancelReason}
+
+${refundNote}`;
+}

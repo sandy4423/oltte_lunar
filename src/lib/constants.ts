@@ -182,6 +182,7 @@ export const ORDER_STATUS_LABEL: Record<string, { label: string; color: string }
   CREATED: { label: '주문생성', color: 'bg-gray-500 text-white' },
   WAITING_FOR_DEPOSIT: { label: '입금대기', color: 'bg-yellow-500 text-white' },
   PAID: { label: '결제완료', color: 'bg-green-600 text-white' },
+  CANCELLED: { label: '취소됨', color: 'bg-red-600 text-white' },
   AUTO_CANCELED: { label: '자동취소', color: 'bg-red-600 text-white' },
   OUT_FOR_DELIVERY: { label: '배송중', color: 'bg-blue-600 text-white' },
   DELIVERED: { label: '배송완료', color: 'bg-purple-600 text-white' },
@@ -223,8 +224,12 @@ export const STORE_INFO = {
   email: 'info@olttefood.com',
   businessHours: '평일 09:00-18:00',
   businessNumber: '286-34-01627',
+  onlineBusinessNumber: '2026-인천연수구-0365',
   ceo: '성하경',
 };
+
+// 카드사 심사용 - 심사 통과 후 false로 변경
+export const SKIP_PHONE_VERIFICATION = true;
 
 // ============================================
 // 픽업 주문 설정

@@ -121,10 +121,40 @@ export default function RefundPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-gray-900 mb-3">6. 고객센터 안내</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-3">6. 취소/환불 신청 방법</h2>
+            <div className="space-y-4">
+              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <h3 className="font-bold text-purple-800 mb-2">🖥 온라인 취소 (권장)</h3>
+                <ol className="list-decimal list-inside space-y-1 text-purple-700">
+                  <li><a href="/my-orders" className="underline font-semibold">주문내역 조회</a> 페이지에서 직접 취소</li>
+                  <li>주문 시 사용한 전화번호로 인증</li>
+                  <li>취소하려는 주문의 &quot;주문 취소하기&quot; 버튼 클릭</li>
+                  <li>취소 사유 입력 후 확인</li>
+                </ol>
+              </div>
+              <div className="p-4 bg-gray-100 rounded-lg">
+                <h3 className="font-bold text-gray-800 mb-2">📞 고객센터 취소</h3>
+                <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                  <li>전화: {STORE_INFO.phone} ({STORE_INFO.businessHours})</li>
+                  <li>이메일: {STORE_INFO.email}</li>
+                </ol>
+                <p className="text-xs text-gray-500 mt-2">신청 시 주문번호, 주문자명, 전화번호, 취소 사유를 알려주세요.</p>
+              </div>
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 className="font-bold text-blue-800 mb-2">💳 환불 계좌 안내</h3>
+                <ul className="list-disc list-inside space-y-1 text-blue-700">
+                  <li><strong>가상계좌 결제:</strong> 환불받으실 계좌 정보 제공 필요</li>
+                  <li><strong>신용카드 결제:</strong> 결제 취소 후 자동 환불 (3~7일 소요)</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-bold text-gray-900 mb-3">7. 고객센터 안내</h2>
             <div className="p-4 bg-gray-100 rounded-lg text-sm">
-              <p className="font-bold mb-2">📞 환불 관련 문의</p>
-              <p className="text-xs text-gray-500">전화: {STORE_INFO.phone}</p>
+              <p className="font-bold mb-2">📞 주문 및 환불 문의</p>
+              <p>전화: {STORE_INFO.phone}</p>
               <p>이메일: {STORE_INFO.email}</p>
               <p>운영시간: {STORE_INFO.businessHours}</p>
             </div>

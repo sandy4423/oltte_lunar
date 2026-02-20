@@ -27,6 +27,9 @@ try {
     }
   });
 
+  // 발신번호를 등록된 번호로 설정
+  process.env.SOLAPI_SENDER_NUMBER = '01025924423';
+
   console.log('환경변수 로드 완료\n');
 } catch (error) {
   console.error('.env.local 파일을 읽을 수 없습니다:', error);
@@ -34,10 +37,9 @@ try {
 }
 
 import { createClient } from '@supabase/supabase-js';
-import { sendSMS } from '../src/lib/sms';
 
 const TEST_MODE = process.argv.includes('--test');
-const ADMIN_PHONE = '01025924423';
+const TEST_PHONE = '01035804423';
 
 const MESSAGE = `[올때만두] 안내드립니다. 이번 설 예약 판매 떡국떡 관련 건조 상태 이슈 확인 중입니다.
 
@@ -181,9 +183,12 @@ async function main() {
   // 메시지 길이 확인
   console.log(`메시지 길이: ${MESSAGE.length}자 (${MESSAGE.length > 90 ? 'LMS' : 'SMS'})\n`);
 
+  // 환경변수 로드 후 동적 import (모듈 초기화 시 env 참조하므로)
+  const { sendSMS } = await import('../src/lib/sms');
+
   if (TEST_MODE) {
-    console.log(`테스트 발송: ${ADMIN_PHONE} (관리자)\n`);
-    const result = await sendSMS(ADMIN_PHONE, MESSAGE);
+    console.log(`테스트 발송: ${TEST_PHONE}\n`);
+    const result = await sendSMS(TEST_PHONE, MESSAGE);
     if (result.success) {
       console.log(`발송 성공 (ID: ${result.messageId})`);
     } else {
@@ -193,7 +198,14 @@ async function main() {
     return;
   }
 
-  // 실제 발송
+  // 실제 발송 (01035804423도 포함)
+  const EXTRA_PHONE = '01035804423';
+  const extraIncluded = recipients.some(r => r.phone === EXTRA_PHONE);
+  if (!extraIncluded) {
+    recipients.push({ name: '추가발송', phone: EXTRA_PHONE, deliveryDate: '', isPickup: false });
+    console.log(`추가 수신자 포함: ${EXTRA_PHONE}\n`);
+  }
+
   let successCount = 0;
   let failCount = 0;
 

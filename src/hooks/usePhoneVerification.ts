@@ -2,16 +2,18 @@
  * 전화번호 인증 훅
  * 
  * 전화번호 입력, 인증번호 발송/확인 로직을 관리합니다.
+ * SKIP_PHONE_VERIFICATION이 true이면 인증 없이 전화번호 입력만으로 통과합니다.
  */
 
 import { useState } from 'react';
+import { SKIP_PHONE_VERIFICATION } from '@/lib/constants';
 
 export function usePhoneVerification() {
   const [phone, setPhone] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isSending, setIsSending] = useState(false); // 발송 중 상태 추가
+  const [isSending, setIsSending] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [customerInfo, setCustomerInfo] = useState<{
@@ -20,9 +22,32 @@ export function usePhoneVerification() {
     ho: string;
   } | null>(null);
 
+  // 인증 스킵 모드: 전화번호 유효성만 검사하고 바로 통과
+  const handleSkipVerification = async () => {
+    const cleanPhone = phone.replace(/-/g, '');
+    if (!/^01[0-9]{8,9}$/.test(cleanPhone)) {
+      setError('올바른 휴대폰 번호를 입력해주세요.');
+      return;
+    }
+
+    setIsPhoneVerified(true);
+    setError(null);
+
+    try {
+      const infoResponse = await fetch(`/api/customer/info?phone=${encodeURIComponent(cleanPhone)}`);
+      if (infoResponse.ok) {
+        const info = await infoResponse.json();
+        if (info.name || info.dong || info.ho) {
+          setCustomerInfo(info);
+        }
+      }
+    } catch {
+      // 고객 정보 조회 실패는 무시
+    }
+  };
+
   // 인증번호 발송
   const handleSendVerification = async () => {
-    // 중복 클릭 방지
     if (isSending) return;
 
     if (!/^01[0-9]{8,9}$/.test(phone.replace(/-/g, ''))) {
@@ -31,7 +56,7 @@ export function usePhoneVerification() {
     }
     
     setError(null);
-    setIsSending(true); // 발송 시작
+    setIsSending(true);
     
     try {
       const response = await fetch('/api/verification/send', {
@@ -49,11 +74,8 @@ export function usePhoneVerification() {
 
       setVerificationSent(true);
 
-      // 테스트 전화번호인 경우 자동 인증 진행
       if (result.isTestPhone) {
         setVerificationCode('0000');
-        
-        // 짧은 딜레이 후 자동 인증 (사용자가 무슨 일이 일어나는지 볼 수 있도록)
         setTimeout(async () => {
           await handleVerifyCode('0000');
         }, 500);
@@ -62,11 +84,11 @@ export function usePhoneVerification() {
       console.error('[SMS] 발송 오류:', err);
       setError('인증번호 발송 중 오류가 발생했습니다.');
     } finally {
-      setIsSending(false); // 발송 완료
+      setIsSending(false);
     }
   };
 
-  // 인증번호 확인 (자동 인증용 파라미터 추가)
+  // 인증번호 확인
   const handleVerifyCode = async (autoCode?: string) => {
     const codeToVerify = autoCode || verificationCode;
     
@@ -96,7 +118,6 @@ export function usePhoneVerification() {
       setIsPhoneVerified(true);
       setError(null);
 
-      // 기존 고객 정보 조회
       try {
         const infoResponse = await fetch(`/api/customer/info?phone=${encodeURIComponent(phone)}`);
         if (infoResponse.ok) {
@@ -105,8 +126,8 @@ export function usePhoneVerification() {
             setCustomerInfo(info);
           }
         }
-      } catch (infoErr) {
-        // 고객 정보 조회 실패는 무시 (신규 고객일 수 있음)
+      } catch {
+        // 고객 정보 조회 실패는 무시
       }
     } catch (err) {
       console.error('[SMS] 인증 오류:', err);
@@ -124,12 +145,14 @@ export function usePhoneVerification() {
     isPhoneVerified,
     setIsPhoneVerified,
     isVerifying,
-    isSending, // 발송 중 상태 추가
+    isSending,
     verificationSent,
     error,
     setError,
     customerInfo,
     handleSendVerification,
     handleVerifyCode,
+    skipVerification: SKIP_PHONE_VERIFICATION,
+    handleSkipVerification,
   };
 }

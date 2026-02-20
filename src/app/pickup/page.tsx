@@ -51,8 +51,12 @@ export default function PickupPage() {
   const [name, setName] = useState('');
   const [allConsent, setAllConsent] = useState(false);
   const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
+  const [termsConsent, setTermsConsent] = useState(false);
+  const [eftTermsConsent, setEftTermsConsent] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [showPersonalInfoDialog, setShowPersonalInfoDialog] = useState(false);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const [showEftTermsDialog, setShowEftTermsDialog] = useState(false);
   const [showMarketingDialog, setShowMarketingDialog] = useState(false);
   const [highlightConsent, setHighlightConsent] = useState(false);
 
@@ -158,10 +162,13 @@ export default function PickupPage() {
 
   // 주문 제출 핸들러
   const handleOrderSubmit = async () => {
-    // 개인정보 동의 필수 체크
-    if (!personalInfoConsent) {
+    if (!termsConsent || !eftTermsConsent || !personalInfoConsent) {
       setHighlightConsent(true);
-      setError('개인정보 수집 및 이용에 동의해주세요.');
+      const missing = [];
+      if (!termsConsent) missing.push('이용약관');
+      if (!eftTermsConsent) missing.push('전자금융거래 이용약관');
+      if (!personalInfoConsent) missing.push('개인정보 수집 및 이용');
+      setError(`${missing.join(', ')} 동의가 필요합니다.`);
       setTimeout(() => {
         setHighlightConsent(false);
         setError(null);
@@ -328,13 +335,20 @@ export default function PickupPage() {
           error={verification.error}
           handleSendVerification={verification.handleSendVerification}
           handleVerifyCode={verification.handleVerifyCode}
+          handleSkipVerification={verification.handleSkipVerification}
           allConsent={allConsent}
           setAllConsent={setAllConsent}
           personalInfoConsent={personalInfoConsent}
           setPersonalInfoConsent={setPersonalInfoConsent}
+          termsConsent={termsConsent}
+          setTermsConsent={setTermsConsent}
+          eftTermsConsent={eftTermsConsent}
+          setEftTermsConsent={setEftTermsConsent}
           marketingOptIn={marketingOptIn}
           setMarketingOptIn={setMarketingOptIn}
           onShowPersonalInfoDialog={() => setShowPersonalInfoDialog(true)}
+          onShowTermsDialog={() => setShowTermsDialog(true)}
+          onShowEftTermsDialog={() => setShowEftTermsDialog(true)}
           onShowMarketingDialog={() => setShowMarketingDialog(true)}
           highlightConsent={highlightConsent}
         />
@@ -382,6 +396,36 @@ export default function PickupPage() {
             </div>
             <p className="text-xs text-gray-500">
               위 개인정보 수집에 동의하지 않을 권리가 있으며, 동의를 거부할 경우 서비스 이용이 제한됩니다.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 이용약관 Dialog */}
+      <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
+        <DialogContent onClose={() => setShowTermsDialog(false)}>
+          <DialogHeader>
+            <DialogTitle>이용약관</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm max-h-[60vh] overflow-y-auto">
+            <p className="text-gray-600">본 약관은 올때만두(이하 &quot;쇼핑몰&quot;)가 제공하는 서비스의 이용 조건을 규정합니다.</p>
+            <p className="text-xs text-gray-400">
+              전체 이용약관은 <a href="/terms" target="_blank" className="text-blue-600 underline">여기</a>에서 확인하실 수 있습니다.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 전자금융거래 이용약관 Dialog */}
+      <Dialog open={showEftTermsDialog} onOpenChange={setShowEftTermsDialog}>
+        <DialogContent onClose={() => setShowEftTermsDialog(false)}>
+          <DialogHeader>
+            <DialogTitle>전자금융거래 이용약관</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm max-h-[60vh] overflow-y-auto">
+            <p className="text-gray-600">본 약관은 올때만두(이하 &quot;회사&quot;)가 토스페이먼츠를 통해 제공하는 전자금융거래 서비스의 이용 조건을 규정합니다.</p>
+            <p className="text-xs text-gray-400">
+              전체 전자금융거래 이용약관은 <a href="/eft-terms" target="_blank" className="text-blue-600 underline">여기</a>에서 확인하실 수 있습니다.
             </p>
           </div>
         </DialogContent>
