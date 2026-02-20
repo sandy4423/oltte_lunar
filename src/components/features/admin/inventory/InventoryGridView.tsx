@@ -1,7 +1,5 @@
 'use client';
 
-import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
 import { AlertTriangle, MessageSquare, X } from 'lucide-react';
 import type { InventoryItemRow } from '@/types/database';
 
@@ -13,11 +11,11 @@ interface InventoryGridViewProps {
 
 const CATEGORY_ORDER = ['전골', '쫄면', '기타', '포장'];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  전골: 'bg-orange-50 text-orange-700',
-  쫄면: 'bg-yellow-50 text-yellow-700',
-  기타: 'bg-blue-50 text-blue-700',
-  포장: 'bg-gray-50 text-gray-600',
+const CATEGORY_LABEL_COLORS: Record<string, string> = {
+  전골: 'bg-orange-100 text-orange-700',
+  쫄면: 'bg-yellow-100 text-yellow-700',
+  기타: 'bg-blue-100 text-blue-700',
+  포장: 'bg-gray-200 text-gray-600',
 };
 
 function isLowStock(item: InventoryItemRow): boolean {
@@ -27,6 +25,49 @@ function isLowStock(item: InventoryItemRow): boolean {
 
 function isNoData(item: InventoryItemRow): boolean {
   return item.main_qty == null;
+}
+
+function CellCard({ item, onClick }: { item: InventoryItemRow; onClick: () => void }) {
+  const low = isLowStock(item);
+  const noData = isNoData(item);
+
+  const bg = low
+    ? 'bg-red-50 border-red-300 ring-1 ring-red-200'
+    : noData
+      ? 'bg-gray-50 border-gray-200'
+      : 'bg-white border-gray-200';
+
+  const qtyColor = low
+    ? 'text-red-600 font-bold'
+    : noData
+      ? 'text-gray-300'
+      : 'text-gray-800 font-semibold';
+
+  const qtyText = item.main_qty != null
+    ? `${item.main_qty}`
+    : '—';
+
+  return (
+    <button
+      onClick={onClick}
+      className={`${bg} border rounded-lg px-2 py-1.5 text-left hover:shadow-sm transition-shadow active:bg-gray-100 w-full`}
+    >
+      <div className="flex items-center gap-1 min-h-[18px]">
+        <span className="text-xs text-gray-700 truncate leading-tight">{item.name}</span>
+        {low && <AlertTriangle className="h-2.5 w-2.5 text-red-500 shrink-0" />}
+        {item.last_memo && <MessageSquare className="h-2.5 w-2.5 text-orange-400 shrink-0" />}
+      </div>
+      <div className={`text-sm ${qtyColor} leading-tight`}>
+        {qtyText}
+        <span className="text-[10px] text-gray-400 font-normal ml-0.5">{item.unit}</span>
+        {item.detail_qty != null && item.detail_unit && (
+          <span className="text-[10px] text-gray-400 font-normal ml-1">
+            +{item.detail_qty}{item.detail_unit}
+          </span>
+        )}
+      </div>
+    </button>
+  );
 }
 
 export function InventoryGridView({ items, onClose, onItemClick }: InventoryGridViewProps) {
@@ -40,113 +81,56 @@ export function InventoryGridView({ items, onClose, onItemClick }: InventoryGrid
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-bold text-gray-800">전체 재고 현황 (표)</h2>
-          <div className="flex gap-3 mt-1">
-            {lowCount > 0 && (
-              <span className="text-xs text-red-600 font-medium flex items-center gap-0.5">
-                <AlertTriangle className="h-3 w-3" />
-                발주 필요 {lowCount}건
-              </span>
-            )}
-            {noDataCount > 0 && (
-              <span className="text-xs text-gray-400">미입력 {noDataCount}건</span>
-            )}
-          </div>
+      {/* 헤더 */}
+      <div className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-bold text-gray-800">전체 재고</h2>
+          {lowCount > 0 && (
+            <span className="text-[10px] text-red-600 font-medium flex items-center gap-0.5 bg-red-50 px-1.5 py-0.5 rounded-full">
+              <AlertTriangle className="h-2.5 w-2.5" />
+              발주 {lowCount}
+            </span>
+          )}
+          {noDataCount > 0 && (
+            <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+              미입력 {noDataCount}
+            </span>
+          )}
         </div>
         <button
           onClick={onClose}
           title="닫기"
-          className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+          className="p-1 rounded-full hover:bg-gray-100 transition-colors"
         >
-          <X className="h-5 w-5 text-gray-400" />
+          <X className="h-4 w-4 text-gray-400" />
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200 text-left">
-              <th className="px-3 py-2 font-medium text-gray-600 whitespace-nowrap">품목</th>
-              <th className="px-3 py-2 font-medium text-gray-600 whitespace-nowrap text-right">수량</th>
-              <th className="px-3 py-2 font-medium text-gray-600 whitespace-nowrap text-right">기준</th>
-              <th className="px-3 py-2 font-medium text-gray-600 whitespace-nowrap">최근점검</th>
-              <th className="px-3 py-2 font-medium text-gray-600 whitespace-nowrap">메모</th>
-            </tr>
-          </thead>
-          {CATEGORY_ORDER.map((category) => {
-            const catItems = grouped[category];
-            if (!catItems || catItems.length === 0) return null;
+      {/* 카테고리별 그리드 */}
+      <div className="p-2 space-y-2">
+        {CATEGORY_ORDER.map((category) => {
+          const catItems = grouped[category];
+          if (!catItems || catItems.length === 0) return null;
 
-            return (
-              <tbody key={category}>
-                <tr>
-                  <td
-                    colSpan={5}
-                    className={`px-3 py-1.5 text-xs font-semibold border-b border-gray-100 ${CATEGORY_COLORS[category] ?? 'bg-gray-50 text-gray-600'}`}
-                  >
-                    {category} ({catItems.length})
-                  </td>
-                </tr>
-                {catItems.map((item) => {
-                  const low = isLowStock(item);
-                  const noData = isNoData(item);
-                  const rowCls = low
-                    ? 'bg-red-50/60'
-                    : noData
-                      ? 'bg-yellow-50/40'
-                      : '';
-
-                  const qtyLabel = item.main_qty != null
-                    ? `${item.main_qty} ${item.unit}${item.detail_qty != null && item.detail_unit ? ` / ${item.detail_qty} ${item.detail_unit}` : ''}`
-                    : '—';
-
-                  const minLabel = item.min_qty != null ? `${item.min_qty}` : '';
-
-                  const lastCheck = item.last_checked_at
-                    ? formatDistanceToNow(new Date(item.last_checked_at), { addSuffix: true, locale: ko })
-                    : '';
-
-                  return (
-                    <tr
-                      key={item.id}
-                      className={`border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${rowCls}`}
-                      onClick={() => onItemClick(item)}
-                    >
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <span className="font-medium text-gray-800">{item.name}</span>
-                        {item.notes && (
-                          <span className="ml-1 text-xs text-gray-400">({item.notes})</span>
-                        )}
-                        {low && (
-                          <AlertTriangle className="h-3 w-3 text-red-500 inline ml-1" />
-                        )}
-                      </td>
-                      <td className={`px-3 py-2 text-right whitespace-nowrap ${low ? 'text-red-600 font-bold' : noData ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {qtyLabel}
-                      </td>
-                      <td className="px-3 py-2 text-right whitespace-nowrap text-gray-400 text-xs">
-                        {minLabel}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-400">
-                        {lastCheck}
-                      </td>
-                      <td className="px-3 py-2 max-w-[120px] truncate text-xs text-orange-600">
-                        {item.last_memo && (
-                          <span className="flex items-center gap-0.5" title={item.last_memo}>
-                            <MessageSquare className="h-3 w-3 shrink-0" />
-                            {item.last_memo}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            );
-          })}
-        </table>
+          return (
+            <div key={category}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${CATEGORY_LABEL_COLORS[category] ?? 'bg-gray-100 text-gray-600'}`}>
+                  {category}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {catItems.map((item) => (
+                  <CellCard
+                    key={item.id}
+                    item={item}
+                    onClick={() => onItemClick(item)}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
