@@ -12,6 +12,18 @@ const nextConfig = {
     // Next.js 14 App Router에서 useSearchParams()의 Suspense 경고를 무시합니다.
     missingSuspenseWithCSRBailout: false,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/bookkeeping',
+        destination: 'https://oltte-bookkeeping.vercel.app',
+      },
+      {
+        source: '/bookkeeping/:path*',
+        destination: 'https://oltte-bookkeeping.vercel.app/:path*',
+      },
+    ]
+  },
 };
 
 export default nextConfig;
