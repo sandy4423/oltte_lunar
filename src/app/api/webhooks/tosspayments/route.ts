@@ -80,6 +80,12 @@ export async function POST(request: NextRequest) {
 
     // 입금 완료 처리
     if (status === 'DONE') {
+      // 이미 처리된 주문은 중복 처리 방지 (웹훅 재발송 대응)
+      if (order.status === 'PAID' || order.status === 'LATE_DEPOSIT') {
+        console.log(`[Webhook] Order ${actualOrderId} already paid (${order.status}), skipping duplicate webhook`);
+        return NextResponse.json({ success: true, status: order.status, skipped: true });
+      }
+
       const now = new Date().toISOString();
       const cutoffAt = new Date(order.cutoff_at);
       const isPaid = new Date() <= cutoffAt;

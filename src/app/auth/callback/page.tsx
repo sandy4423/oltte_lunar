@@ -14,7 +14,11 @@ export default function AuthCallbackPage() {
     if (code) {
       supabase.auth
         .exchangeCodeForSession(code)
-        .finally(() => router.replace('/'));
+        .then(() => router.replace('/'))
+        .catch((err) => {
+          console.error('카카오 로그인 처리 실패:', err);
+          router.replace('/?loginError=1');
+        });
     } else {
       router.replace('/');
     }

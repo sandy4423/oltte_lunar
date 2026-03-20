@@ -21,6 +21,8 @@ export default function PaymentSuccessPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+
     const confirmPayment = async () => {
       try {
         const paymentKey = searchParams.get('paymentKey');
@@ -60,7 +62,7 @@ export default function PaymentSuccessPage() {
         console.log('[Success] Payment confirmed:', data);
 
         // 주문 완료 페이지로 리다이렉트
-        setTimeout(() => {
+        timer = setTimeout(() => {
           router.push(`/order/complete?orderId=${data.orderId}`);
         }, 1500);
 
@@ -72,6 +74,7 @@ export default function PaymentSuccessPage() {
     };
 
     confirmPayment();
+    return () => clearTimeout(timer);
   }, [searchParams, router]);
 
   if (error) {

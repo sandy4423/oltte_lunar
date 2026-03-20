@@ -179,6 +179,7 @@ export const ORDER_STATUS_LABEL: Record<string, { label: string; color: string }
   WAITING_FOR_DEPOSIT: { label: '입금대기', color: 'bg-yellow-500 text-white' },
   PAID: { label: '결제완료', color: 'bg-green-600 text-white' },
   CANCELLED: { label: '취소됨', color: 'bg-red-600 text-white' },
+  CANCELED: { label: '취소됨', color: 'bg-red-600 text-white' },
   AUTO_CANCELED: { label: '자동취소', color: 'bg-red-600 text-white' },
   OUT_FOR_DELIVERY: { label: '배송중', color: 'bg-blue-600 text-white' },
   DELIVERED: { label: '배송완료', color: 'bg-purple-600 text-white' },

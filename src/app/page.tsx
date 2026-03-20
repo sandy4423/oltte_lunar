@@ -30,10 +30,14 @@ export default function HomePage() {
   const [isDangol, setIsDangol] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState('');
   const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [loginError, setLoginError] = useState(false);
 
-  // 유입 경로 캡처
+  // 유입 경로 캡처 + 로그인 오류 감지
   useEffect(() => {
     captureSource(searchParams);
+    if (searchParams.get('loginError') === '1') {
+      setLoginError(true);
+    }
   }, [searchParams]);
 
   // 페이지뷰 추적
@@ -136,6 +140,14 @@ export default function HomePage() {
           <p className="text-orange-100 text-lg">전골은 제가 끓여드릴게요</p>
         </div>
       </header>
+
+      {/* 로그인 오류 표시 */}
+      {loginError && (
+        <div className="max-w-2xl mx-auto px-4 py-2 bg-red-50 border-b border-red-100 flex items-center justify-between">
+          <p className="text-sm text-red-700">⚠️ 카카오 로그인에 실패했습니다. 다시 시도해주세요.</p>
+          <button onClick={() => setLoginError(false)} className="text-xs text-red-400 underline ml-2">닫기</button>
+        </div>
+      )}
 
       {/* 로그인 상태 표시 */}
       {!sessionLoading && session && (
