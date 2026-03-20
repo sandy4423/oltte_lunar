@@ -1,216 +1,215 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { AlertCircle } from 'lucide-react';
+import { Minus, Plus, AlertCircle, ChevronDown } from 'lucide-react';
+import type { Session } from '@supabase/supabase-js';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
-import { APARTMENTS, getApartmentFullName, STORE_INFO, DANGOL_DISCOUNT } from '@/lib/constants';
 import { Footer } from '@/components/Footer';
-import { usePhoneVerification } from '@/hooks/usePhoneVerification';
+
+import { supabase } from '@/lib/supabase';
+import { captureSource, getStoredSource } from '@/lib/sourceTracking';
+import { trackPageView } from '@/lib/trackPageView';
+import {
+  PRODUCTS,
+  PICKUP_EVENT_DATES,
+  PICKUP_EVENT_TIME_SLOTS,
+  DANGOL_DISCOUNT_PER_ITEM,
+  DANGOL_DISCOUNT_ELIGIBLE_SKUS,
+  getOrderCutoffForDate,
+  getAvailableEventDates,
+} from '@/lib/constants';
 import { useCart } from '@/hooks/useCart';
 import { useOrderSubmit } from '@/hooks/useOrderSubmit';
-import { useOrderPopups } from '@/hooks/useOrderPopups';
-import { PhoneVerification } from '@/components/features/PhoneVerification';
-import { DeliveryForm } from '@/components/features/DeliveryForm';
-import { ProductSelector } from '@/components/features/ProductSelector';
-import { OrderSummaryBar } from '@/components/features/OrderSummaryBar';
-import { ProductDetailImage } from '@/components/features/ProductDetailImage';
-import { DeliveryMethodDialog } from '@/components/features/DeliveryMethodDialog';
-import { trackPageView } from '@/lib/trackPageView';
-import { captureSource, getStoredSource } from '@/lib/sourceTracking';
-
-// ============================================
-// Page Component
-// ============================================
 
 export default function OrderPage() {
   const searchParams = useSearchParams();
-  const aptCode = searchParams.get('apt');
+  const router = useRouter();
 
-  // 단지 정보
-  const apartment = aptCode ? APARTMENTS[aptCode] : null;
+  // 세션
+  const [session, setSession] = useState<Session | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
 
-  // 유입 경로 캡처 (페이지 로드 시 1회)
-  useEffect(() => {
-    captureSource(searchParams);
-  }, []); // 빈 배열로 한 번만 실행
-
-  // 단골톡방 할인 감지
-  const [dangolDiscount, setDangolDiscount] = useState(0);
-  useEffect(() => {
-    const source = getStoredSource();
-    if (source === 'dangol') {
-      setDangolDiscount(DANGOL_DISCOUNT);
-    }
-  }, []);
-
-  // setTimeout cleanup
-  useEffect(() => {
-    return () => {
-      if (consentTimerRef.current) clearTimeout(consentTimerRef.current);
-    };
-  }, []);
-
-  // 페이지 방문 추적
-  useEffect(() => {
-    trackPageView('/order', aptCode || undefined);
-  }, [aptCode]);
-
-  // 전화번호 인증 훅
-  const verification = usePhoneVerification();
-
-  // 배송 정보 상태
+  // 고객 정보
   const [name, setName] = useState('');
-  const [dong, setDong] = useState('');
-  const [ho, setHo] = useState('');
-  const [allConsent, setAllConsent] = useState(false);
+  const [phone, setPhone] = useState('');
+
+  // 픽업 선택
+  const [pickupDate, setPickupDate] = useState('');
+  const [pickupTime, setPickupTime] = useState('');
+
+  // 단골톡방 할인
+  const [isDangol, setIsDangol] = useState(false);
+
+  // 마감 상태
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
+  const [timeRemaining, setTimeRemaining] = useState('');
+
+  // 동의 상태
   const [personalInfoConsent, setPersonalInfoConsent] = useState(false);
   const [termsConsent, setTermsConsent] = useState(false);
   const [eftTermsConsent, setEftTermsConsent] = useState(false);
   const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [allConsent, setAllConsent] = useState(false);
+  const [highlightConsent, setHighlightConsent] = useState(false);
+  const consentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 약관 다이얼로그
   const [showPersonalInfoDialog, setShowPersonalInfoDialog] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [showEftTermsDialog, setShowEftTermsDialog] = useState(false);
-  const [showMarketingDialog, setShowMarketingDialog] = useState(false);
-  const [highlightConsent, setHighlightConsent] = useState(false);
-  const [showDeliveryMethodDialog, setShowDeliveryMethodDialog] = useState(false);
-  const consentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 장바구니 훅
-  const { cart, updateQuantity, totalQty, totalAmount, isMinOrderMet } = useCart();
+  // 결제 처리 상태
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
 
-  // 팝업 관리 훅
-  const { activePopup, closePopup, isExpired, isDeliveryDatePassed } = useOrderPopups(apartment);
+  // 장바구니
+  const { cart, updateQuantity, totalQty, totalAmount, calcDangolDiscount } = useCart();
 
-  // 실시간 현재 시각
-  const [currentTime, setCurrentTime] = useState('');
-  const [timeRemaining, setTimeRemaining] = useState('');
+  const dangolDiscount = calcDangolDiscount(isDangol);
+  const finalAmount = totalAmount - dangolDiscount;
 
-  // 현재 시각 업데이트 (1초마다)
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(format(now, 'M월 d일 HH:mm:ss', { locale: ko }));
-    };
-    
-    updateTime(); // 초기 설정
-    const timer = setInterval(updateTime, 1000);
-    
-    return () => clearInterval(timer); // cleanup
-  }, []);
-
-  // 마감까지 남은 시간 계산
-  useEffect(() => {
-    if (!apartment) return;
-
-    const updateRemaining = () => {
-      const now = new Date();
-      const cutoff = new Date(apartment.cutoffAt);
-      const diff = cutoff.getTime() - now.getTime();
-      
-      if (diff <= 0) {
-        setTimeRemaining('마감됨');
-        return;
-      }
-      
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      
-      if (hours > 0) {
-        setTimeRemaining(`${hours}시간 ${minutes}분`);
-      } else {
-        setTimeRemaining(`${minutes}분`);
-      }
-    };
-    
-    updateRemaining(); // 초기 설정
-    const timer = setInterval(updateRemaining, 1000);
-    
-    return () => clearInterval(timer); // cleanup
-  }, [apartment]);
-
-  // 추가 주문 마감 시간 (배송일 새벽 6시)
-  const extendedOrderDeadline = useMemo(() => {
-    if (!apartment) return null;
-    const deadline = new Date(apartment.deliveryDate);
-    deadline.setHours(6, 0, 0, 0);
-    return deadline;
-  }, [apartment]);
-
-  // 추가 주문 마감까지 남은 시간
-  const [extendedTimeRemaining, setExtendedTimeRemaining] = useState('');
-
-  useEffect(() => {
-    if (!extendedOrderDeadline || activePopup !== 'extendedOrder') return;
-    
-    const updateExtendedRemaining = () => {
-      const now = new Date();
-      const diff = extendedOrderDeadline.getTime() - now.getTime();
-      
-      if (diff <= 0) {
-        setExtendedTimeRemaining('마감됨');
-        return;
-      }
-      
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      
-      if (hours > 0) {
-        setExtendedTimeRemaining(`${hours}시간 ${minutes}분`);
-      } else {
-        setExtendedTimeRemaining(`${minutes}분`);
-      }
-    };
-    
-    updateExtendedRemaining(); // 초기 설정
-    const timer = setInterval(updateExtendedRemaining, 1000);
-    
-    return () => clearInterval(timer); // cleanup
-  }, [extendedOrderDeadline, activePopup]);
-
-  // 고객 정보 자동 채우기
-  useEffect(() => {
-    if (verification.customerInfo) {
-      if (verification.customerInfo.name) setName(verification.customerInfo.name);
-      if (verification.customerInfo.dong) setDong(verification.customerInfo.dong);
-      if (verification.customerInfo.ho) setHo(verification.customerInfo.ho);
-    }
-  }, [verification.customerInfo]);
-
-  // 주문 제출 훅
+  // 주문 제출
   const orderSubmit = useOrderSubmit({
-    apartment,
-    phone: verification.phone,
+    phone,
     name,
-    dong,
-    ho,
     personalInfoConsent,
     marketingOptIn,
     cart,
     totalQty,
     totalAmount,
+    pickupDate,
+    pickupTime,
   });
 
-  // 폼 유효성 (동의 체크 제외 - 별도 검증)
-  const isFormValid = 
-    verification.isPhoneVerified && 
-    name.trim() !== '' && 
-    dong !== '' && 
-    ho.trim() !== '' && 
-    isMinOrderMet;
+  // 세션 로드
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setSessionLoading(false);
+      // 카카오 닉네임 자동 채우기
+      const kakaoName =
+        session?.user?.user_metadata?.name ||
+        session?.user?.user_metadata?.full_name ||
+        '';
+      if (kakaoName) setName(kakaoName);
+    });
 
-  // 에러 통합 (인증 에러 또는 제출 에러)
-  const error = verification.error || orderSubmit.error;
-  const setError = (err: string | null) => {
-    verification.setError(err);
-    orderSubmit.setError(err);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setSessionLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // 미로그인 시 홈으로 리다이렉트
+  useEffect(() => {
+    if (!sessionLoading && !session) {
+      router.replace('/');
+    }
+  }, [sessionLoading, session, router]);
+
+  // 유입 경로 캡처 + 단골 확인
+  useEffect(() => {
+    captureSource(searchParams);
+    setIsDangol(getStoredSource() === 'dangol');
+  }, [searchParams]);
+
+  // 페이지뷰 추적
+  useEffect(() => {
+    trackPageView('/order');
+  }, []);
+
+  // 가용 날짜 + 카운트다운
+  useEffect(() => {
+    const update = () => {
+      const dates = getAvailableEventDates();
+      setAvailableDates(dates);
+
+      if (dates.length === 0) {
+        setTimeRemaining('마감됨');
+        return;
+      }
+
+      const nextCutoff = new Date(getOrderCutoffForDate(dates[0]));
+      const now = new Date();
+      const diff = nextCutoff.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setTimeRemaining('마감됨');
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      setTimeRemaining(`${hours}시간 ${minutes}분`);
+    };
+
+    update();
+    const timer = setInterval(update, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 전체 동의 처리
+  const handleAllConsent = (checked: boolean) => {
+    setAllConsent(checked);
+    setPersonalInfoConsent(checked);
+    setTermsConsent(checked);
+    setEftTermsConsent(checked);
+    setMarketingOptIn(checked);
+  };
+
+  useEffect(() => {
+    setAllConsent(personalInfoConsent && termsConsent && eftTermsConsent && marketingOptIn);
+  }, [personalInfoConsent, termsConsent, eftTermsConsent, marketingOptIn]);
+
+  // 픽업 날짜 변경 시 시간 초기화
+  const handleDateChange = (date: string) => {
+    setPickupDate(date);
+    setPickupTime('');
+  };
+
+  // 주문 생성 후 토스 결제 호출
+  useEffect(() => {
+    if (orderSubmit.createdOrderId && orderSubmit.finalAmount > 0) {
+      handleCardPayment(orderSubmit.createdOrderId, orderSubmit.finalAmount);
+    }
+  }, [orderSubmit.createdOrderId]);
+
+  const handleCardPayment = async (orderId: number, amount: number) => {
+    setIsPaymentProcessing(true);
+    try {
+      const { loadTossPayments } = await import('@tosspayments/payment-sdk');
+      const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY;
+      if (!clientKey) throw new Error('결제 시스템 설정 오류');
+
+      const tossPayments = await loadTossPayments(clientKey);
+      await tossPayments.requestPayment('카드', {
+        amount,
+        orderId: `CARD_${orderId}_${Date.now()}`,
+        orderName: '올때만두 만두전골',
+        customerName: name,
+        successUrl: `${window.location.origin}/order/success`,
+        failUrl: `${window.location.origin}/order/fail?orderId=${orderId}`,
+      });
+    } catch (err: unknown) {
+      const tossErr = err as { code?: string; message?: string };
+      if (tossErr?.code === 'USER_CANCEL') {
+        orderSubmit.setError('결제를 취소하셨습니다.');
+      } else {
+        orderSubmit.setError(tossErr?.message || '결제 중 오류가 발생했습니다.');
+      }
+      setIsPaymentProcessing(false);
+    }
   };
 
   // 주문 제출 핸들러 (동의 검증 포함)
@@ -221,35 +220,54 @@ export default function OrderPage() {
       if (!termsConsent) missing.push('이용약관');
       if (!eftTermsConsent) missing.push('전자금융거래 이용약관');
       if (!personalInfoConsent) missing.push('개인정보 수집 및 이용');
-      setError(`${missing.join(', ')} 동의가 필요합니다.`);
+      orderSubmit.setError(`${missing.join(', ')} 동의가 필요합니다.`);
       if (consentTimerRef.current) clearTimeout(consentTimerRef.current);
       consentTimerRef.current = setTimeout(() => {
         setHighlightConsent(false);
-        setError(null);
+        orderSubmit.setError(null);
         consentTimerRef.current = null;
       }, 3000);
       return;
     }
-    
-    setShowDeliveryMethodDialog(true);
+    await orderSubmit.handleSubmit();
   };
 
-  // 배달/픽업 선택 후 실제 주문 진행
-  const handleDeliveryMethodSelect = async (isPickup: boolean, pickupDate?: string, pickupTime?: string) => {
-    await orderSubmit.handleSubmit(isPickup, pickupDate, pickupTime);
-  };
+  const isFormValid =
+    totalQty > 0 &&
+    name.trim() !== '' &&
+    phone.trim().length >= 10 &&
+    pickupDate !== '' &&
+    pickupTime !== '';
 
-  // 단지 없음
-  if (!apartment) {
+  const isEventClosed = availableDates.length === 0;
+
+  const mainProducts = PRODUCTS.filter((p) => !p.isOption);
+  const optionProducts = PRODUCTS.filter((p) => p.isOption);
+
+  // 로딩 중
+  if (sessionLoading) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-4">
+      <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-orange-50 to-amber-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand border-t-transparent mx-auto mb-4" />
+          <p className="text-gray-600">잠시만 기다려주세요...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // 마감 상태
+  if (isEventClosed) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-orange-50 to-amber-50">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
-            <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
-            <h1 className="text-xl font-bold mb-2">접근할 수 없는 페이지입니다</h1>
-            <p className="text-muted-foreground">
-              QR코드를 다시 스캔해주세요.
-            </p>
+            <p className="text-4xl mb-4">🍲</p>
+            <h1 className="text-xl font-bold mb-2">예약이 마감되었습니다</h1>
+            <p className="text-muted-foreground mb-4">다음 이벤트를 기다려주세요!</p>
+            <Link href="/">
+              <Button className="w-full bg-brand hover:bg-brand-dark">홈으로 돌아가기</Button>
+            </Link>
           </CardContent>
         </Card>
       </main>
@@ -262,24 +280,11 @@ export default function OrderPage() {
       <header className="bg-brand text-white p-6 shadow-lg">
         <div className="max-w-lg mx-auto text-center">
           <div className="flex justify-center mb-1">
-            <Image
-              src="/images/logo.png"
-              alt="올때만두"
-              width={200}
-              height={53}
-              priority
-            />
+            <Image src="/images/logo.png" alt="올때만두" width={200} height={53} priority />
           </div>
-          <p className="text-orange-100 text-sm">설 만두는 제가 빚을게요</p>
+          <p className="text-orange-100 text-sm">전골은 제가 끓여드릴게요</p>
         </div>
       </header>
-
-      {/* 비회원 주문 안내 */}
-      <div className="max-w-lg mx-auto px-4 py-2 bg-blue-50 border-b border-blue-100">
-        <p className="text-xs text-blue-700 text-center">
-          ✓ 회원가입 없이 휴대폰 번호만으로 주문하실 수 있습니다 (비회원 주문)
-        </p>
-      </div>
 
       {/* 주문내역 확인 링크 */}
       <div className="text-center py-2">
@@ -288,418 +293,477 @@ export default function OrderPage() {
         </Link>
       </div>
 
-      {/* 단지 정보 */}
-      <div className="max-w-lg mx-auto px-4 -mt-4">
+      {/* 이벤트 정보 카드 */}
+      <div className="max-w-lg mx-auto px-4 -mt-1">
         <Card className="bg-white shadow-xl border-0">
-          <CardContent className="pt-6">
+          <CardContent className="pt-5 pb-4">
             <div className="text-center">
-              <h2 className="text-lg font-bold text-gray-900 mb-3">
-                {getApartmentFullName(apartment)} 공동구매
-              </h2>
-              
-              {/* 현재 시각 및 남은 시간 */}
-              <div className="mb-4 space-y-1">
-                <p className="text-sm text-gray-500">
-                  현재 시각: <span className="font-semibold text-gray-700">{currentTime}</span>
-                </p>
-                {!isExpired && timeRemaining !== '마감됨' && (
-                  <p className="text-sm text-orange-600 font-medium">
-                    ⏰ 마감까지 {timeRemaining}
-                  </p>
-                )}
-              </div>
-              
+              <h2 className="text-lg font-bold text-gray-900 mb-3">🍲 주말 만두전골 예약주문</h2>
+
               <div className="flex justify-center gap-6 text-sm">
                 <div>
-                  <p className="text-gray-500 mb-1">주문마감</p>
-                  
-                  {/* 마감일 지나지 않은 경우 */}
-                  {!isExpired && (
-                    <>
-                      <p className="font-bold text-lg text-brand-dark">
-                        {format(new Date(apartment.cutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
-                      </p>
-                      <p className="text-xs text-gray-400 line-through mt-1">
-                        전단지상: {format(new Date(apartment.originalCutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
-                      </p>
-                      <p className="text-xs text-green-600 font-medium mt-2">
-                        📢 많은 고객님들의 요청에 따라<br />마감일이 연장되었습니다
-                      </p>
-                    </>
-                  )}
-                  
-                  {/* 마감일 지났지만 배송일 전 (추가 주문 가능) */}
-                  {isExpired && !isDeliveryDatePassed && (
-                    <>
-                      <p className="font-bold text-lg text-orange-600">
-                        추가주문 가능!
-                      </p>
-                      <p className="text-xs text-orange-600 font-medium mt-1">
-                        {format(new Date(apartment.deliveryDate), 'M.d(EEE) 06:00', { locale: ko })}까지
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1 line-through">
-                        원래 마감: {format(new Date(apartment.cutoffAt), 'M.d(EEE) HH:mm', { locale: ko })}
-                      </p>
-                    </>
-                  )}
-                  
-                  {/* 배송일 지남 (픽업만 가능) */}
-                  {isDeliveryDatePassed && (
-                    <>
-                      <p className="font-bold text-lg text-red-600">
-                        마감됨
-                      </p>
-                      <p className="text-xs text-blue-600 font-medium mt-1">
-                        픽업만 가능
-                      </p>
-                    </>
-                  )}
+                  <p className="text-gray-500 mb-1">픽업 날짜</p>
+                  <p className="font-bold text-lg text-brand">
+                    {PICKUP_EVENT_DATES.map((d) =>
+                      format(new Date(d + 'T00:00:00'), 'M/d(EEE)', { locale: ko })
+                    ).join(', ')}
+                  </p>
                 </div>
                 <div className="border-l border-gray-200" />
                 <div>
-                  <p className="text-gray-500">배송일</p>
-                  <p className="font-bold text-lg text-brand">
-                    {format(new Date(apartment.deliveryDate), 'M월 d일 (EEE)', { locale: ko })}
+                  <p className="text-gray-500 mb-1">주문 마감</p>
+                  <p className="font-bold text-lg text-brand-dark">
+                    각 날짜 낮 12:00
                   </p>
                 </div>
               </div>
+
+              {timeRemaining && timeRemaining !== '마감됨' && (
+                <p className="text-sm text-orange-600 font-medium mt-3">
+                  ⏰ 다음 마감까지 <strong>{timeRemaining}</strong>
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* 상품 상세 이미지 */}
-      <div className="max-w-lg mx-auto mt-6">
-        <ProductDetailImage />
-      </div>
+      {/* 단골 할인 배너 */}
+      {isDangol && (
+        <div className="max-w-lg mx-auto px-4 mt-4">
+          <div className="bg-yellow-400 rounded-lg p-3 text-center">
+            <p className="text-yellow-900 font-bold">
+              🎉 단골톡방 전용 할인 – 전골 1개당 {DANGOL_DISCOUNT_PER_ITEM.toLocaleString()}원 할인!
+            </p>
+          </div>
+        </div>
+      )}
 
-      <div className="max-w-lg mx-auto px-4 mt-6 space-y-6">
-        {/* 상품 선택 */}
-        <ProductSelector
-          cart={cart}
-          updateQuantity={updateQuantity}
-          totalQty={totalQty}
-          isMinOrderMet={isMinOrderMet}
-        />
+      <div className="max-w-lg mx-auto px-4 mt-5 space-y-5">
 
-        {/* 배송 정보 */}
-        <DeliveryForm
-          name={name}
-          setName={setName}
-          dong={dong}
-          setDong={setDong}
-          ho={ho}
-          setHo={setHo}
-        />
+        {/* 전골 선택 */}
+        <Card>
+          <CardContent className="pt-5">
+            <h3 className="text-base font-bold text-gray-900 mb-4">전골 선택</h3>
+            <div className="space-y-4">
+              {mainProducts.map((product) => {
+                const cartItem = cart.find((c) => c.sku === product.sku);
+                const qty = cartItem?.qty ?? 0;
+                const displayPrice = isDangol
+                  ? product.price - DANGOL_DISCOUNT_PER_ITEM
+                  : product.price;
 
-        {/* 전화번호 인증 */}
-        <PhoneVerification
-          phone={verification.phone}
-          setPhone={verification.setPhone}
-          verificationCode={verification.verificationCode}
-          setVerificationCode={verification.setVerificationCode}
-          isPhoneVerified={verification.isPhoneVerified}
-          isVerifying={verification.isVerifying}
-          isSending={verification.isSending}
-          verificationSent={verification.verificationSent}
-          error={verification.error}
-          handleSendVerification={verification.handleSendVerification}
-          handleVerifyCode={verification.handleVerifyCode}
-          handleSkipVerification={verification.handleSkipVerification}
-          allConsent={allConsent}
-          setAllConsent={setAllConsent}
-          personalInfoConsent={personalInfoConsent}
-          setPersonalInfoConsent={setPersonalInfoConsent}
-          termsConsent={termsConsent}
-          setTermsConsent={setTermsConsent}
-          eftTermsConsent={eftTermsConsent}
-          setEftTermsConsent={setEftTermsConsent}
-          marketingOptIn={marketingOptIn}
-          setMarketingOptIn={setMarketingOptIn}
-          onShowPersonalInfoDialog={() => setShowPersonalInfoDialog(true)}
-          onShowTermsDialog={() => setShowTermsDialog(true)}
-          onShowEftTermsDialog={() => setShowEftTermsDialog(true)}
-          onShowMarketingDialog={() => setShowMarketingDialog(true)}
-          highlightConsent={highlightConsent}
-        />
+                return (
+                  <div key={product.sku} className="flex items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">
+                        {product.emoji} {product.name}
+                      </p>
+                      <p className="text-sm text-gray-500">{product.description}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-brand">
+                          {displayPrice.toLocaleString()}원
+                        </p>
+                        {isDangol && (
+                          <p className="text-xs text-gray-400 line-through">
+                            {product.price.toLocaleString()}원
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateQuantity(product.sku, -1)}
+                        aria-label={`${product.name} 수량 감소`}
+                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
+                        disabled={qty === 0}
+                      >
+                        <Minus className="h-4 w-4 text-gray-600" />
+                      </button>
+                      <span className="w-8 text-center font-bold text-gray-900">{qty}</span>
+                      <button
+                        onClick={() => updateQuantity(product.sku, 1)}
+                        aria-label={`${product.name} 수량 증가`}
+                        className="w-8 h-8 rounded-full border border-brand flex items-center justify-center hover:bg-orange-50 transition-colors"
+                      >
+                        <Plus className="h-4 w-4 text-brand" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 추가 옵션 */}
+        <Card>
+          <CardContent className="pt-5">
+            <h3 className="text-base font-bold text-gray-900 mb-4">추가 옵션</h3>
+            <div className="space-y-4">
+              {optionProducts.map((product) => {
+                const cartItem = cart.find((c) => c.sku === product.sku);
+                const qty = cartItem?.qty ?? 0;
+
+                return (
+                  <div key={product.sku} className="flex items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">
+                        {product.emoji} {product.name}
+                      </p>
+                      <p className="text-sm text-gray-500">{product.description}</p>
+                      <p className="text-sm font-bold text-gray-700">
+                        {product.price.toLocaleString()}원
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateQuantity(product.sku, -1)}
+                        aria-label={`${product.name} 수량 감소`}
+                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors disabled:opacity-40"
+                        disabled={qty === 0}
+                      >
+                        <Minus className="h-4 w-4 text-gray-600" />
+                      </button>
+                      <span className="w-8 text-center font-bold text-gray-900">{qty}</span>
+                      <button
+                        onClick={() => updateQuantity(product.sku, 1)}
+                        aria-label={`${product.name} 수량 증가`}
+                        className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                      >
+                        <Plus className="h-4 w-4 text-gray-600" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 픽업 날짜/시간 선택 */}
+        <Card>
+          <CardContent className="pt-5 space-y-4">
+            <h3 className="text-base font-bold text-gray-900">픽업 날짜 / 시간 선택</h3>
+
+            {/* 날짜 선택 */}
+            <div>
+              <Label className="text-sm font-semibold mb-2 block">
+                픽업 날짜 <span className="text-destructive">*</span>
+              </Label>
+              <div className="flex gap-2">
+                {availableDates.map((date) => (
+                  <button
+                    key={date}
+                    onClick={() => handleDateChange(date)}
+                    className={`flex-1 py-3 px-4 rounded-lg border-2 text-sm font-semibold transition-colors ${
+                      pickupDate === date
+                        ? 'border-brand bg-orange-50 text-brand'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-orange-200'
+                    }`}
+                  >
+                    {format(new Date(date + 'T00:00:00'), 'M월 d일 (EEE)', { locale: ko })}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 시간 선택 */}
+            {pickupDate && (
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">
+                  픽업 시간 <span className="text-destructive">*</span>
+                </Label>
+                <div className="relative">
+                  <select
+                    value={pickupTime}
+                    onChange={(e) => setPickupTime(e.target.value)}
+                    aria-label="픽업 시간 선택"
+                    className="w-full appearance-none border border-gray-300 rounded-lg px-4 py-3 pr-10 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
+                  >
+                    <option value="">시간 선택</option>
+                    {PICKUP_EVENT_TIME_SLOTS.map((time) => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            )}
+
+            {/* 픽업 장소 안내 */}
+            <div className="bg-orange-50 rounded-lg p-3">
+              <p className="text-xs text-orange-700 font-medium">📍 픽업 장소</p>
+              <p className="text-xs text-orange-600 mt-0.5">
+                e편한세상송도 후문상가 안쪽. 컴포즈 옆 (랜드마크로 113)
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 주문자 정보 */}
+        <Card>
+          <CardContent className="pt-5 space-y-4">
+            <h3 className="text-base font-bold text-gray-900">주문자 정보</h3>
+
+            <div>
+              <Label htmlFor="name" className="text-sm font-semibold">
+                이름 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="이름을 입력해주세요"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="mt-1.5"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="phone" className="text-sm font-semibold">
+                연락처 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="010-0000-0000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="mt-1.5"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                픽업 안내 및 주문 확인 연락에 사용됩니다
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 주문 금액 요약 */}
+        {totalQty > 0 && (
+          <Card className="bg-orange-50 border-orange-200">
+            <CardContent className="pt-4 pb-4">
+              <h3 className="text-sm font-bold text-gray-700 mb-3">주문 요약</h3>
+              <div className="space-y-1.5 text-sm">
+                {cart.filter((item) => item.qty > 0).map((item) => {
+                  const product = PRODUCTS.find((p) => p.sku === item.sku)!;
+                  return (
+                    <div key={item.sku} className="flex justify-between">
+                      <span className="text-gray-600">
+                        {product.name} × {item.qty}
+                      </span>
+                      <span className="font-medium">
+                        {(product.price * item.qty).toLocaleString()}원
+                      </span>
+                    </div>
+                  );
+                })}
+                {dangolDiscount > 0 && (
+                  <div className="flex justify-between text-red-600 pt-1 border-t border-orange-200">
+                    <span>단골톡방 할인</span>
+                    <span className="font-medium">-{dangolDiscount.toLocaleString()}원</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-base pt-2 border-t border-orange-300">
+                  <span>총 결제금액</span>
+                  <span className="text-brand">{finalAmount.toLocaleString()}원</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 약관 동의 */}
+        <Card className={highlightConsent ? 'ring-2 ring-destructive' : ''}>
+          <CardContent className="pt-5 space-y-3">
+            {/* 전체 동의 */}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={allConsent}
+                onChange={(e) => handleAllConsent(e.target.checked)}
+                className="w-5 h-5 rounded accent-brand"
+              />
+              <span className="font-bold text-gray-900">전체 동의</span>
+            </label>
+            <hr />
+
+            {/* 이용약관 */}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={termsConsent}
+                onChange={(e) => setTermsConsent(e.target.checked)}
+                className="w-4 h-4 rounded accent-brand"
+              />
+              <span className="text-sm flex-1">
+                <span className="text-destructive">[필수]</span> 이용약관 동의
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowTermsDialog(true)}
+                className="text-xs text-gray-400 underline shrink-0"
+              >
+                보기
+              </button>
+            </label>
+
+            {/* 전자금융거래 이용약관 */}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={eftTermsConsent}
+                onChange={(e) => setEftTermsConsent(e.target.checked)}
+                className="w-4 h-4 rounded accent-brand"
+              />
+              <span className="text-sm flex-1">
+                <span className="text-destructive">[필수]</span> 전자금융거래 이용약관
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowEftTermsDialog(true)}
+                className="text-xs text-gray-400 underline shrink-0"
+              >
+                보기
+              </button>
+            </label>
+
+            {/* 개인정보 */}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={personalInfoConsent}
+                onChange={(e) => setPersonalInfoConsent(e.target.checked)}
+                className="w-4 h-4 rounded accent-brand"
+              />
+              <span className="text-sm flex-1">
+                <span className="text-destructive">[필수]</span> 개인정보 수집 및 이용 동의
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowPersonalInfoDialog(true)}
+                className="text-xs text-gray-400 underline shrink-0"
+              >
+                보기
+              </button>
+            </label>
+
+            {/* 마케팅 */}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={marketingOptIn}
+                onChange={(e) => setMarketingOptIn(e.target.checked)}
+                className="w-4 h-4 rounded accent-brand"
+              />
+              <span className="text-sm text-gray-600">
+                [선택] 마케팅 정보 수신 동의 (할인/이벤트 안내)
+              </span>
+            </label>
+          </CardContent>
+        </Card>
 
         {/* 에러 메시지 */}
-        {error && (
+        {orderSubmit.error && (
           <div className="p-4 bg-red-50 text-red-700 rounded-lg flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <p>{error}</p>
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <p className="text-sm">{orderSubmit.error}</p>
           </div>
         )}
       </div>
 
-      {/* Footer - PG 심사용 사업자 정보 */}
-      <Footer />
-
-      {/* 하단 고정 결제 버튼 */}
-      <OrderSummaryBar
-        totalQty={totalQty}
-        totalAmount={totalAmount}
-        isFormValid={isFormValid}
-        isSubmitting={orderSubmit.isSubmitting}
-        onSubmit={handleOrderSubmit}
-        dangolDiscount={dangolDiscount}
-      />
-
-      {/* 개인정보 수집 동의 Dialog */}
-      <Dialog open={showPersonalInfoDialog} onOpenChange={setShowPersonalInfoDialog}>
-        <DialogContent onClose={() => setShowPersonalInfoDialog(false)}>
-          <DialogHeader>
-            <DialogTitle>개인정보 수집 및 이용 동의</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-sm">
-            <div>
-              <h4 className="font-semibold mb-2">수집하는 개인정보 항목</h4>
-              <p className="text-gray-600">이름, 전화번호, 주소(동·호수), 주문 내역</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">수집 및 이용 목적</h4>
-              <p className="text-gray-600">주문 처리 및 배송, 다음 주문 시 편의 제공</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">보유 및 이용 기간</h4>
-              <p className="text-gray-600">최종 주문일로부터 1년</p>
-            </div>
-            <p className="text-xs text-gray-500">
-              위 개인정보 수집에 동의하지 않을 권리가 있으며, 동의를 거부할 경우 서비스 이용이 제한됩니다.
+      {/* 하단 결제 버튼 (고정) */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
+        <div className="max-w-lg mx-auto">
+          <Button
+            onClick={handleOrderSubmit}
+            disabled={!isFormValid || orderSubmit.isSubmitting || isPaymentProcessing}
+            className="w-full bg-brand hover:bg-brand-dark text-white font-bold text-lg py-6 rounded-xl disabled:opacity-50"
+            size="lg"
+          >
+            {orderSubmit.isSubmitting || isPaymentProcessing ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2" />
+                {orderSubmit.isSubmitting ? '주문 처리 중...' : '결제창 열기...'}
+              </>
+            ) : (
+              <>
+                카드로 결제하기{' '}
+                {finalAmount > 0 && `· ${finalAmount.toLocaleString()}원`}
+              </>
+            )}
+          </Button>
+          {!isFormValid && totalQty === 0 && (
+            <p className="text-center text-xs text-gray-500 mt-2">
+              전골을 1개 이상 선택해주세요
             </p>
-          </div>
-        </DialogContent>
-      </Dialog>
+          )}
+        </div>
+      </div>
 
-      {/* 이용약관 Dialog */}
+      {/* 약관 다이얼로그들 */}
       <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
-        <DialogContent onClose={() => setShowTermsDialog(false)}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>이용약관</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 text-sm max-h-[60vh] overflow-y-auto">
-            <p className="text-gray-600">본 약관은 올때만두(이하 &quot;쇼핑몰&quot;)가 제공하는 인터넷 쇼핑몰 서비스의 이용 조건 및 절차를 규정합니다.</p>
-            <div>
-              <h4 className="font-semibold mb-1">제1조 (목적)</h4>
-              <p className="text-gray-600">본 약관은 이용자가 쇼핑몰이 제공하는 서비스를 이용함에 있어 쇼핑몰과 이용자의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-1">제2조 (정의)</h4>
-              <p className="text-gray-600">&quot;비회원&quot;이란 회원가입 없이 휴대폰 인증을 통해 쇼핑몰이 제공하는 서비스를 이용하는 자를 말합니다. 본 쇼핑몰은 회원가입 없이 비회원으로 주문하실 수 있습니다.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-1">제3조 (서비스의 제공)</h4>
-              <p className="text-gray-600">쇼핑몰은 상품의 판매, 배송, 픽업 서비스를 제공하며, 결제는 가상계좌 및 신용카드를 통해 이루어집니다.</p>
-            </div>
-            <p className="text-xs text-gray-400">
-              전체 이용약관은 <a href="/terms" target="_blank" className="text-blue-600 underline">여기</a>에서 확인하실 수 있습니다.
-            </p>
+          <div className="text-sm text-gray-600 space-y-3 whitespace-pre-line">
+            {`제1조 (목적)
+본 약관은 올때만두(이하 "회사")가 제공하는 온라인 주문 서비스 이용에 관한 조건 및 절차를 규정합니다.
+
+제2조 (서비스 이용)
+이용자는 본 서비스를 통해 상품을 예약 주문할 수 있으며, 결제 완료 후 주문이 확정됩니다.
+
+제3조 (주문 및 결제)
+주문 확정 후 결제 취소는 픽업 전까지 가능합니다. 픽업 당일 취소는 불가합니다.
+
+제4조 (개인정보)
+수집된 개인정보는 주문 처리 및 고객 안내 목적으로만 사용됩니다.`}
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* 전자금융거래 이용약관 Dialog */}
       <Dialog open={showEftTermsDialog} onOpenChange={setShowEftTermsDialog}>
-        <DialogContent onClose={() => setShowEftTermsDialog(false)}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>전자금융거래 이용약관</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 text-sm max-h-[60vh] overflow-y-auto">
-            <p className="text-gray-600">본 약관은 올때만두(이하 &quot;회사&quot;)가 토스페이먼츠를 통해 제공하는 전자금융거래 서비스의 이용 조건을 규정합니다.</p>
-            <div>
-              <h4 className="font-semibold mb-1">제1조 (목적)</h4>
-              <p className="text-gray-600">본 약관은 전자금융거래법에 따라 회사가 제공하는 전자금융거래 서비스를 이용자가 이용함에 있어 필요한 사항을 정합니다.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-1">제2조 (전자지급수단)</h4>
-              <p className="text-gray-600">회사가 제공하는 전자지급수단은 신용카드, 가상계좌입니다.</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-1">제3조 (거래지시의 철회)</h4>
-              <p className="text-gray-600">이용자는 전자금융거래법에서 정하는 바에 따라 거래지시의 철회를 요청할 수 있습니다.</p>
-            </div>
+          <div className="text-sm text-gray-600 space-y-3 whitespace-pre-line">
+            {`제1조 (목적)
+본 약관은 전자금융거래법에 따라 전자금융거래 서비스 이용 조건을 규정합니다.
+
+제2조 (전자금융거래 서비스)
+결제 서비스는 토스페이먼츠(주)를 통해 제공되며, 카드 결제가 지원됩니다.
+
+제3조 (오류 처리)
+결제 오류 발생 시 즉시 회사에 통보하여 처리받으실 수 있습니다.
+
+제4조 (분쟁 처리)
+전자금융거래 관련 분쟁은 전자금융거래법에 따라 처리됩니다.`}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPersonalInfoDialog} onOpenChange={setShowPersonalInfoDialog}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>개인정보 수집 및 이용 동의</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-gray-600 space-y-3">
+            <p className="font-semibold">수집 항목</p>
+            <p>이름, 휴대폰 번호</p>
+            <p className="font-semibold">수집 목적</p>
+            <p>주문 처리, 픽업 안내, 고객 서비스 제공</p>
+            <p className="font-semibold">보유 기간</p>
+            <p>주문일로부터 1년</p>
             <p className="text-xs text-gray-400">
-              전체 전자금융거래 이용약관은 <a href="/eft-terms" target="_blank" className="text-blue-600 underline">여기</a>에서 확인하실 수 있습니다.
+              동의를 거부할 수 있으며, 거부 시 서비스 이용이 제한됩니다.
             </p>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* 마케팅 정보 수신 동의 Dialog */}
-      <Dialog open={showMarketingDialog} onOpenChange={setShowMarketingDialog}>
-        <DialogContent onClose={() => setShowMarketingDialog(false)}>
-          <DialogHeader>
-            <DialogTitle>마케팅 정보 수신 동의</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-sm">
-            <div>
-              <h4 className="font-semibold mb-2">수신 정보</h4>
-              <p className="text-gray-600">신규 상품 안내, 이벤트 정보, 프로모션 안내</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">수신 방법</h4>
-              <p className="text-gray-600">SMS 문자 메시지</p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">동의 철회</h4>
-              <p className="text-gray-600">언제든지 고객센터를 통해 철회 가능합니다.</p>
-            </div>
-            <p className="text-xs text-gray-500">
-              마케팅 정보 수신은 선택 사항이며, 동의하지 않아도 서비스 이용에 제한이 없습니다.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 배달/픽업 선택 다이얼로그 */}
-      {apartment && (
-        <DeliveryMethodDialog
-          open={showDeliveryMethodDialog}
-          onOpenChange={setShowDeliveryMethodDialog}
-          deliveryDate={apartment.deliveryDate}
-          onSelect={handleDeliveryMethodSelect}
-        />
-      )}
-
-      {/* 마감일 지났지만 추가 주문 받는다는 팝업 */}
-      <Dialog open={activePopup === 'extendedOrder'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">📢 추가 주문 안내</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-center py-4">
-            <p className="text-center text-xl font-bold text-brand-dark">
-              QR을 찍어주셔서 감사합니다!
-            </p>
-            <div className="text-lg font-semibold text-brand">
-              주문 마감일이 지났지만,<br />
-              많은 분들의 요청에 따라
-            </div>
-            <div className="text-2xl font-bold text-brand-dark">
-              배송일 새벽 6시까지 추가주문 받습니다!
-            </div>
-            
-            {/* 마감 시간 및 카운트다운 */}
-            <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 space-y-2">
-              <p className="text-sm text-gray-600">현재 시각: {currentTime}</p>
-              <div className="text-2xl font-bold text-orange-600">
-                {format(new Date(apartment.deliveryDate), 'M월 d일 (EEE) 06:00', { locale: ko })}에 마감!
-              </div>
-              <p className="text-lg font-semibold text-orange-600">
-                ⏰ {extendedTimeRemaining} 남음
-              </p>
-            </div>
-            
-            <p className="text-gray-600 text-sm">
-              설 만두 준비를 놓치신 분들을 위해<br />
-              특별히 주문을 연장합니다.
-            </p>
-            <p className="text-orange-600 font-medium">
-              서둘러 주문해주세요! 🥟
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 주문 0일 전 팝업 */}
-      <Dialog open={activePopup === 'zeroDayWarning'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">⏰ 주문 마감 임박!</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-center py-4">
-            <p className="text-center text-xl font-bold text-brand-dark">
-              QR을 찍어주셔서 감사합니다!
-            </p>
-            <div className="text-2xl font-bold text-red-600">
-              {getApartmentFullName(apartment)} 오늘 주문 마감입니다!
-            </div>
-            
-            {/* 현재 시각 및 남은 시간 강조 */}
-            <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 space-y-2">
-              <p className="text-sm text-gray-600">현재 시각: {currentTime}</p>
-              <div className="text-2xl font-bold text-red-600">
-                {format(new Date(apartment.cutoffAt), 'HH:mm', { locale: ko })}에 마감!
-              </div>
-              <p className="text-lg font-semibold text-orange-600">
-                ⏰ {timeRemaining} 남음
-              </p>
-            </div>
-            
-            <p className="text-gray-600 text-sm">
-              마감 시간 이후에는<br />
-              주문이 불가능합니다.
-            </p>
-            <p className="text-brand font-medium">
-              지금 바로 주문하세요! 🥟
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 배송일 지나서 픽업만 가능 팝업 */}
-      <Dialog open={activePopup === 'pickupOnly'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">🏪 매장 픽업 주문</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-center py-4">
-            <p className="text-center text-xl font-bold text-brand-dark">
-              QR을 찍어주셔서 감사합니다!
-            </p>
-            <div className="text-lg font-semibold text-gray-900">
-              배송일이 지나서<br />
-              <span className="text-brand-dark">매장 픽업만 가능</span>합니다
-            </div>
-            <div className="bg-orange-50 border-2 border-orange-200 rounded-lg p-4 space-y-2">
-              <div className="text-2xl font-bold text-orange-600">
-                픽업 시 3,000원 할인!
-              </div>
-              <div className="text-sm text-gray-600">
-                픽업 주소: {STORE_INFO.address}
-              </div>
-            </div>
-            <p className="text-gray-600 text-sm">
-              주문 후 매장에서 직접 픽업해 주세요.<br />
-              픽업 일시는 배송일({format(new Date(apartment.deliveryDate), 'M월 d일 (EEE)', { locale: ko })})과 동일합니다.
-            </p>
-            <p className="text-brand font-medium">
-              지금 바로 주문하세요! 🥟
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 마감 전 환영 팝업 */}
-      <Dialog open={activePopup === 'welcome'} onOpenChange={closePopup}>
-        <DialogContent className="sm:max-w-md" onClose={closePopup} clickToClose={true}>
-          <div className="space-y-4 py-6">
-            <p className="text-center text-2xl font-bold text-brand-dark">
-              QR을 찍어주셔서 감사합니다!
-            </p>
-            <p className="text-center text-gray-700">
-              저희는 e편한세상 후문에서<br />
-              열심히 만두 빚고있는 <span className="font-bold text-brand">올때만두</span>입니다.
-            </p>
-            <div className="bg-orange-50 border-l-4 border-orange-400 p-4 rounded">
-              <p className="text-center text-gray-800">
-                이번 설을 맞아,<br />
-                정-말 정성스럽게 <span className="font-semibold">만두와 떡과 육수</span>를<br />
-                준비했습니다.
-              </p>
-            </div>
-            <p className="text-center text-gray-700">
-              아래 주문페이지에서 주문 부탁드립니다 :)
-            </p>
-            <p className="text-center text-lg font-semibold text-brand">
-              맛있게 배달해드릴게요!
-            </p>
-            <p className="text-center text-gray-600 text-sm">
-              감사합니다.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <Footer />
     </main>
   );
 }

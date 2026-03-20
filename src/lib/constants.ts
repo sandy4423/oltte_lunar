@@ -120,52 +120,48 @@ export const getApartmentFullName = (apt: ApartmentConfig): string => {
 };
 
 // ============================================
-// 상품 정보 (PRD 3. 상품 구성)
+// 상품 정보
 // ============================================
 
 export interface Product {
-  sku: 'meat' | 'kimchi' | 'half' | 'ricecake_1kg' | 'broth_1200ml';
+  sku: 'hotpot_cool' | 'hotpot_spicy' | 'broth_add' | 'dumpling_add';
   name: string;
   description: string;
   price: number;
   emoji: string;
+  isOption?: boolean; // 추가 옵션 여부 (단골톡방 할인 미적용)
 }
 
 export const PRODUCTS: Product[] = [
   {
-    sku: 'ricecake_1kg',
-    name: '떡국떡',
-    description: '1kg',
-    price: 10000,
-    emoji: '🍚',
-  },
-  {
-    sku: 'broth_1200ml',
-    name: '양지육수',
-    description: '1200ml',
-    price: 5000,
+    sku: 'hotpot_cool',
+    name: '시원 만두전골',
+    description: '1인분',
+    price: 15900,
     emoji: '🍲',
   },
   {
-    sku: 'meat',
-    name: '고기만두',
-    description: '1팩 8알',
-    price: 10000,
-    emoji: '🥟',
-  },
-  {
-    sku: 'kimchi',
-    name: '김치만두',
-    description: '1팩 8알 (매콤)',
-    price: 10000,
+    sku: 'hotpot_spicy',
+    name: '얼큰 만두전골',
+    description: '1인분 (매콤)',
+    price: 17900,
     emoji: '🌶️',
   },
   {
-    sku: 'half',
-    name: '반반만두',
-    description: '고기4 + 김치4',
-    price: 10000,
+    sku: 'broth_add',
+    name: '육수 추가',
+    description: '1200ml',
+    price: 5000,
+    emoji: '🥣',
+    isOption: true,
+  },
+  {
+    sku: 'dumpling_add',
+    name: '만두 추가',
+    description: '8알',
+    price: 7000,
     emoji: '🥟',
+    isOption: true,
   },
 ];
 
@@ -193,13 +189,10 @@ export const ORDER_STATUS_LABEL: Record<string, { label: string; color: string }
 };
 
 // ============================================
-// 최소 주문 수량
+// 최소 주문 수량 (하위 호환성 유지)
 // ============================================
 
-export const MIN_ORDER_QUANTITY = 3;
-
-// 무료배송 조건에 포함되는 상품 (만두, 떡만)
-export const FREE_SHIPPING_ELIGIBLE_SKUS = ['meat', 'kimchi', 'half', 'ricecake_1kg'] as const;
+export const MIN_ORDER_QUANTITY = 1;
 
 // ============================================
 // 관리자 연락처 (Deprecated - Slack으로 전환)
@@ -214,7 +207,40 @@ export const FREE_SHIPPING_ELIGIBLE_SKUS = ['meat', 'kimchi', 'half', 'ricecake_
 export const PICKUP_DISCOUNT = 3000;
 export const PICKUP_DISCOUNT_THRESHOLD = 30000; // 픽업 할인 적용 최소 금액
 export const PICKUP_MIN_ORDER_AMOUNT = 10000; // 픽업 최소 주문 금액
-export const DANGOL_DISCOUNT = 1000;
+
+// 단골톡방 할인 (전골 1개당 1,000원, 추가 옵션 제외)
+export const DANGOL_DISCOUNT = 1000; // 하위 호환성
+export const DANGOL_DISCOUNT_PER_ITEM = 1000;
+export const DANGOL_DISCOUNT_ELIGIBLE_SKUS = ['hotpot_cool', 'hotpot_spicy'] as const;
+
+// ============================================
+// 전골 이벤트 스케줄
+// ============================================
+
+/** 픽업 가능 날짜 목록 */
+export const PICKUP_EVENT_DATES = ['2026-03-21', '2026-03-22'];
+
+/** 픽업 가능 시간 슬롯 (09:00 ~ 21:00, 1시간 단위) */
+export const PICKUP_EVENT_TIME_SLOTS = [
+  '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
+  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00',
+];
+
+/** 각 픽업 날짜의 주문 마감 시각 (당일 낮 12:00) */
+export const getOrderCutoffForDate = (date: string): string =>
+  `${date}T12:00:00+09:00`;
+
+/** 현재 시각 기준으로 주문 가능한 이벤트 날짜 목록 반환 */
+export function getAvailableEventDates(): string[] {
+  const now = new Date();
+  return PICKUP_EVENT_DATES.filter((date) => {
+    const cutoff = new Date(getOrderCutoffForDate(date));
+    return now < cutoff;
+  });
+}
+
+/** 이벤트 코드 */
+export const EVENT_APT_CODE = 'EVENT';
 
 /** 고객 문의 전화번호 */
 export const CUSTOMER_SUPPORT_PHONE = '010-2592-4423';

@@ -1,48 +1,53 @@
 /**
  * 주문 제출 훅
- * 
- * 주문 생성, DB 저장, 토스페이먼츠 가상계좌 발급을 처리합니다.
+ *
+ * 전골 이벤트 픽업 주문 전용.
+ * 주문 생성 후 createdOrderId / finalAmount를 반환하면
+ * 호출 측에서 토스페이먼츠 카드 결제를 처리합니다.
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { PRODUCTS, getApartmentFullName, PICKUP_DISCOUNT, PICKUP_DISCOUNT_THRESHOLD, DANGOL_DISCOUNT, PICKUP_APT_CODE, PICKUP_CONFIG } from '@/lib/constants';
+import {
+  PRODUCTS,
+  DANGOL_DISCOUNT_PER_ITEM,
+  DANGOL_DISCOUNT_ELIGIBLE_SKUS,
+  EVENT_APT_CODE,
+  getOrderCutoffForDate,
+} from '@/lib/constants';
 import { getStoredSource } from '@/lib/sourceTracking';
 import type { CartItem } from '@/types/order';
-import type { ApartmentConfig } from '@/lib/constants';
 
 interface UseOrderSubmitParams {
-  apartment?: ApartmentConfig | null;
   phone: string;
   name: string;
-  dong?: string;
-  ho?: string;
   personalInfoConsent: boolean;
   marketingOptIn: boolean;
   cart: CartItem[];
   totalQty: number;
   totalAmount: number;
-  pickupDate?: string;
-  pickupTime?: string;
+  pickupDate: string;
+  pickupTime: string;
 }
 
 export function useOrderSubmit(params: UseOrderSubmitParams) {
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
+  const [finalAmount, setFinalAmount] = useState<number>(0);
 
-  const handleSubmit = async (isPickup: boolean = false, overridePickupDate?: string, overridePickupTime?: string) => {
-    const { apartment, phone, name, dong, ho, personalInfoConsent, marketingOptIn, cart, totalQty, totalAmount } = params;
-    const pickupDate = overridePickupDate || params.pickupDate;
-    const pickupTime = overridePickupTime || params.pickupTime;
-    
-    // 픽업 주문인 경우: apartment가 없어도 진행 가능
-    // 일반 주문인 경우: apartment 필수
-    const isPickupOrder = !apartment && pickupDate && pickupTime;
-    
-    if (!apartment && !isPickupOrder) {
-      setError('주문 정보가 올바르지 않습니다.');
+  const handleSubmit = async () => {
+    const {
+      phone, name, personalInfoConsent, marketingOptIn,
+      cart, totalQty, totalAmount, pickupDate, pickupTime,
+    } = params;
+
+    if (!phone || !name || !pickupDate || !pickupTime) {
+      setError('필수 정보를 모두 입력해주세요.');
+      return;
+    }
+    if (!personalInfoConsent) {
+      setError('개인정보 수집 및 이용에 동의해주세요.');
       return;
     }
 
@@ -51,20 +56,22 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
 
     try {
       const normalizedPhone = phone.replace(/-/g, '');
-      
-      // 유입 경로 가져오기
       const source = getStoredSource();
 
-      // 픽업 주문이거나 픽업 선택 시 할인 적용 (3만원 이상)
-      const pickupDiscount = ((isPickup || isPickupOrder) && totalAmount >= PICKUP_DISCOUNT_THRESHOLD) ? PICKUP_DISCOUNT : 0;
-      // 단골톡방 할인 적용
-      const dangolDiscount = (source === 'dangol') ? DANGOL_DISCOUNT : 0;
-      const finalAmount = totalAmount - pickupDiscount - dangolDiscount;
+      // 단골톡방 할인 계산
+      let dangolDiscount = 0;
+      if (source === 'dangol') {
+        cart.forEach((item) => {
+          if ((DANGOL_DISCOUNT_ELIGIBLE_SKUS as readonly string[]).includes(item.sku)) {
+            dangolDiscount += DANGOL_DISCOUNT_PER_ITEM * item.qty;
+          }
+        });
+      }
+      const computed = totalAmount - dangolDiscount;
 
-      // 1. 고객 생성 또는 조회
+      // 고객 생성/조회
       let customerId: string;
-      
-      // 기존 고객 조회 또는 생성
+
       const { data: existingCustomer } = await supabase
         .from('customers')
         .select('id')
@@ -76,75 +83,45 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
       } else {
         const { data: newCustomer, error: customerError } = await supabase
           .from('customers')
-          .insert({
-            phone: normalizedPhone,
-            name: name,
-            marketing_opt_in: marketingOptIn,
-          })
+          .insert({ phone: normalizedPhone, name, marketing_opt_in: marketingOptIn })
           .select('id')
           .single();
 
-        if (customerError || !newCustomer) {
-          throw new Error('고객 정보 저장 실패');
-        }
+        if (customerError || !newCustomer) throw new Error('고객 정보 저장 실패');
         customerId = newCustomer.id;
       }
 
-      // 2. 주문 생성
-      const orderData: Record<string, unknown> = {
-        customer_id: customerId,
-        status: 'CREATED',
-        total_qty: totalQty,
-        total_amount: finalAmount,
-        payment_method: 'vbank',
-        source: source,
-      };
-
-      // 픽업 전용 주문
-      if (isPickupOrder) {
-        orderData.apt_code = PICKUP_APT_CODE;
-        orderData.apt_name = PICKUP_CONFIG.name;
-        orderData.dong = '-';
-        orderData.ho = '-';
-        orderData.delivery_date = PICKUP_CONFIG.deliveryDate;
-        orderData.cutoff_at = PICKUP_CONFIG.cutoffAt;
-        orderData.is_pickup = true;
-        orderData.pickup_discount = pickupDiscount;
-        orderData.dangol_discount = dangolDiscount;
-        orderData.pickup_date = pickupDate;
-        orderData.pickup_time = pickupTime;
-      } 
-      // 일반 주문
-      else if (apartment) {
-        orderData.apt_code = apartment.code;
-        orderData.apt_name = getApartmentFullName(apartment);
-        orderData.dong = dong || '-';
-        orderData.ho = ho || '-';
-        orderData.delivery_date = apartment.deliveryDate;
-        orderData.cutoff_at = apartment.cutoffAt;
-        orderData.is_pickup = isPickup;
-        orderData.pickup_discount = pickupDiscount;
-        orderData.dangol_discount = dangolDiscount;
-        if (isPickup && pickupDate && pickupTime) {
-          orderData.pickup_date = pickupDate;
-          orderData.pickup_time = pickupTime;
-        }
-      }
-
+      // 주문 생성
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .insert(orderData)
+        .insert({
+          customer_id: customerId,
+          status: 'CREATED',
+          total_qty: totalQty,
+          total_amount: computed,
+          payment_method: 'card',
+          source,
+          apt_code: EVENT_APT_CODE,
+          apt_name: '전골이벤트',
+          dong: '-',
+          ho: '-',
+          delivery_date: pickupDate,
+          cutoff_at: getOrderCutoffForDate(pickupDate),
+          is_pickup: true,
+          pickup_discount: 0,
+          dangol_discount: dangolDiscount,
+          pickup_date: pickupDate,
+          pickup_time: pickupTime,
+        })
         .select('id')
         .single();
 
-      if (orderError || !order) {
-        throw new Error('주문 생성 실패');
-      }
+      if (orderError || !order) throw new Error('주문 생성 실패');
 
-      // 3. 주문 상품 생성
+      // 주문 상품 생성
       const orderItems = cart
-        .filter((item: CartItem) => item.qty > 0)
-        .map((item: CartItem) => {
+        .filter((item) => item.qty > 0)
+        .map((item) => {
           const product = PRODUCTS.find((p) => p.sku === item.sku)!;
           return {
             order_id: order.id,
@@ -155,37 +132,27 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
           };
         });
 
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+      if (itemsError) throw new Error('주문 상품 저장 실패');
 
-      if (itemsError) {
-        throw new Error('주문 상품 저장 실패');
-      }
-
-      // 4. 결제 수단 선택 페이지로 이동
-      router.push(`/order/payment-method?orderId=${order.id}`);
+      setFinalAmount(computed);
+      setCreatedOrderId(order.id);
     } catch (err) {
-      console.error('Order error:', err);
-      const errorMessage = err instanceof Error ? err.message : '주문 처리 중 오류가 발생했습니다.';
-      setError(errorMessage);
-      
-      // Slack 에러 알림
+      const msg = err instanceof Error ? err.message : '주문 처리 중 오류가 발생했습니다.';
+      setError(msg);
+
       try {
         await fetch('/api/error-alert', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            errorType: '주문 제출 오류',
-            errorMessage: errorMessage,
-            customerName: name,
-            customerPhone: phone,
-            aptName: apartment ? getApartmentFullName(apartment) : (isPickupOrder ? PICKUP_CONFIG.name : undefined),
+            errorType: '전골 주문 제출 오류',
+            errorMessage: msg,
+            customerName: params.name,
+            customerPhone: params.phone,
           }),
         });
-      } catch (alertError) {
-        console.error('[Error Alert]', alertError);
-      }
+      } catch { /* ignore */ }
     } finally {
       setIsSubmitting(false);
     }
@@ -196,5 +163,7 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
     error,
     setError,
     handleSubmit,
+    createdOrderId,
+    finalAmount,
   };
 }
