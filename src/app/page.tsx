@@ -281,42 +281,61 @@ export default function HomePage() {
       {/* 메뉴 소개 */}
       <div className="max-w-2xl mx-auto px-4 mt-6">
         <h3 className="text-base font-bold text-gray-700 mb-3 px-1">🍲 메뉴 안내</h3>
-        <div className="space-y-3">
-          {mainProducts.map((product) => (
-            <div
-              key={product.sku}
-              className="bg-white rounded-lg p-4 shadow-sm border border-orange-100 flex justify-between items-center"
-            >
-              <div>
-                <p className="font-semibold text-gray-900">
-                  {product.emoji} {product.name}
-                </p>
-                <p className="text-sm text-gray-500">{product.description}</p>
-                {isDangol && (
-                  <p className="text-xs text-red-500 mt-0.5 font-medium">
-                    단골 할인 적용 →{' '}
-                    {(product.price - DANGOL_DISCOUNT_PER_ITEM).toLocaleString()}원
-                  </p>
+        <div className="space-y-4">
+          {mainProducts.map((product) => {
+            const menuImage = product.sku === 'hotpot_cool'
+              ? '/images/hotpot-cool.jpg'
+              : product.sku === 'hotpot_spicy'
+                ? '/images/hotpot-spicy.jpg'
+                : null;
+            return (
+              <div
+                key={product.sku}
+                className="bg-white rounded-xl shadow-sm border border-orange-100 overflow-hidden"
+              >
+                {menuImage && (
+                  <div className="relative w-full h-48">
+                    <Image
+                      src={menuImage}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
                 )}
-              </div>
-              <div className="text-right">
-                {isDangol ? (
-                  <>
-                    <p className="font-bold text-brand text-lg">
-                      {(product.price - DANGOL_DISCOUNT_PER_ITEM).toLocaleString()}원
+                <div className="p-4 flex justify-between items-center">
+                  <div>
+                    <p className="font-semibold text-gray-900 text-lg">
+                      {product.emoji} {product.name}
                     </p>
-                    <p className="text-xs text-gray-400 line-through">
-                      {product.price.toLocaleString()}원
-                    </p>
-                  </>
-                ) : (
-                  <p className="font-bold text-brand text-lg">
-                    {product.price.toLocaleString()}원
-                  </p>
-                )}
+                    <p className="text-sm text-gray-500">{product.description}</p>
+                    {isDangol && (
+                      <p className="text-xs text-red-500 mt-0.5 font-medium">
+                        단골 할인 적용 →{' '}
+                        {(product.price - DANGOL_DISCOUNT_PER_ITEM).toLocaleString()}원
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    {isDangol ? (
+                      <>
+                        <p className="font-bold text-brand text-xl">
+                          {(product.price - DANGOL_DISCOUNT_PER_ITEM).toLocaleString()}원
+                        </p>
+                        <p className="text-xs text-gray-400 line-through">
+                          {product.price.toLocaleString()}원
+                        </p>
+                      </>
+                    ) : (
+                      <p className="font-bold text-brand text-xl">
+                        {product.price.toLocaleString()}원
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* 추가 옵션 */}
