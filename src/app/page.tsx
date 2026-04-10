@@ -127,6 +127,16 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 pb-8">
+      {/* 단골톡방 할인 — 최상단 고정 배너 */}
+      {isDangol && (
+        <div className="bg-yellow-400 text-center py-3 px-4 shadow-md sticky top-0 z-50">
+          <p className="text-yellow-900 font-bold text-base">🎉 단골톡방 전용 예약할인</p>
+          <p className="text-yellow-800 text-sm">
+            전골 <strong>{DANGOL_DISCOUNT_PER_ITEM.toLocaleString()}원</strong>, 칼국수 <strong>{NOODLE_DISCOUNT_PER_ITEM.toLocaleString()}원</strong> 할인!
+          </p>
+        </div>
+      )}
+
       {/* 헤더 */}
       <header className="bg-brand text-white p-8 shadow-lg">
         <div className="max-w-2xl mx-auto text-center">
@@ -179,18 +189,6 @@ export default function HomePage() {
           주문내역 확인
         </Link>
       </div>
-
-      {/* 단골톡방 할인 배너 */}
-      {isDangol && (
-        <div className="max-w-2xl mx-auto px-4 mt-2">
-          <div className="bg-yellow-400 rounded-lg p-4 text-center shadow-sm">
-            <p className="text-yellow-900 font-bold text-lg">🎉 단골톡방 전용 예약할인</p>
-            <p className="text-yellow-800 text-sm mt-1">
-              전골 1개당 <strong>{DANGOL_DISCOUNT_PER_ITEM.toLocaleString()}원</strong>, 칼국수 <strong>{NOODLE_DISCOUNT_PER_ITEM.toLocaleString()}원</strong> 할인!
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* 이벤트 정보 카드 */}
       <div className="max-w-2xl mx-auto px-4 mt-4">
