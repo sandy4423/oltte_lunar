@@ -356,25 +356,34 @@ export default function OrderPage() {
                   ? product.price - DANGOL_DISCOUNT_PER_ITEM
                   : product.price;
 
+                const menuThumb = product.sku === 'hotpot_cool'
+                  ? '/images/hotpot-cool.jpg'
+                  : product.sku === 'hotpot_spicy'
+                    ? '/images/hotpot-spicy.jpg'
+                    : null;
+
                 return (
-                  <div key={product.sku} className="flex items-center justify-between gap-3">
-                    <div className="flex-1">
+                  <div key={product.sku} className="flex items-center gap-3">
+                    {menuThumb && (
+                      <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                        <Image src={menuThumb} alt={product.name} fill className="object-cover" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900">
-                        {product.emoji} {product.name}
+                        {product.name}
                       </p>
                       <p className="text-sm text-gray-500">{product.description}</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-brand">
-                          {displayPrice.toLocaleString()}원
-                        </p>
-                        {isDangol && (
-                          <p className="text-xs text-gray-400 line-through">
-                            {product.price.toLocaleString()}원
-                          </p>
-                        )}
-                      </div>
+                      {isDangol ? (
+                        <div>
+                          <p className="text-xs text-gray-400 line-through">{product.price.toLocaleString()}원</p>
+                          <p className="text-sm font-bold text-red-600">단톡방 한정 {displayPrice.toLocaleString()}원</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm font-bold text-brand">{product.price.toLocaleString()}원</p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <button
                         onClick={() => updateQuantity(product.sku, -1)}
                         aria-label={`${product.name} 수량 감소`}
@@ -420,16 +429,14 @@ export default function OrderPage() {
                         {product.emoji} {product.name}
                       </p>
                       <p className="text-sm text-gray-500">{product.description}</p>
-                      <div className="flex items-center gap-2">
-                        <p className={`text-sm font-bold ${noodleDiscounted ? 'text-brand' : 'text-gray-700'}`}>
-                          {optionDisplayPrice.toLocaleString()}원
-                        </p>
-                        {noodleDiscounted && (
-                          <p className="text-xs text-gray-400 line-through">
-                            {product.price.toLocaleString()}원
-                          </p>
-                        )}
-                      </div>
+                      {noodleDiscounted ? (
+                        <div>
+                          <p className="text-xs text-gray-400 line-through">{product.price.toLocaleString()}원</p>
+                          <p className="text-sm font-bold text-red-600">단톡방 한정 {optionDisplayPrice.toLocaleString()}원</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm font-bold text-gray-700">{product.price.toLocaleString()}원</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
