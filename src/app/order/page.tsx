@@ -549,14 +549,32 @@ export default function OrderPage() {
               <Input
                 id="phone"
                 type="tel"
-                placeholder="010-0000-0000"
+                inputMode="numeric"
+                placeholder="01012345678"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="mt-1.5"
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, '').slice(0, 11);
+                  setPhone(digits);
+                }}
+                className={`mt-1.5 ${phone.length > 0 && (phone.length < 10 || !phone.startsWith('010')) ? 'border-red-400 focus:ring-red-400' : ''}`}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                픽업 안내 및 주문 확인 연락에 사용됩니다
-              </p>
+              {phone.length > 0 && !phone.startsWith('010') ? (
+                <p className="text-xs text-red-500 mt-1">
+                  010으로 시작하는 번호를 입력해주세요
+                </p>
+              ) : phone.length > 0 && phone.length < 11 ? (
+                <p className="text-xs text-red-500 mt-1">
+                  전화번호 11자리를 모두 입력해주세요 (현재 {phone.length}자리)
+                </p>
+              ) : phone.length === 11 ? (
+                <p className="text-xs text-green-600 mt-1">
+                  {phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')} — 픽업 시 이 번호 뒤 4자리를 말씀해주세요
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  픽업 안내 및 주문 확인에 사용됩니다 (숫자만 입력)
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
