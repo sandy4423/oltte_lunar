@@ -113,16 +113,18 @@ export default function OrderCompletePage() {
           </>
         )}
 
-        {/* 현금영수증 */}
-        <CashReceiptForm
-          orderId={order.id}
-          totalAmount={order.total_amount}
-          status={order.status}
-          initialType={order.cash_receipt_type as '소득공제' | '지출증빙' | null}
-          initialNumber={order.cash_receipt_number}
-          issued={order.cash_receipt_issued}
-          receiptUrl={order.cash_receipt_url}
-        />
+        {/* 현금영수증 (가상계좌 결제 시에만 표시) */}
+        {!isCardPayment && (
+          <CashReceiptForm
+            orderId={order.id}
+            totalAmount={order.total_amount}
+            status={order.status}
+            initialType={order.cash_receipt_type as '소득공제' | '지출증빙' | null}
+            initialNumber={order.cash_receipt_number}
+            issued={order.cash_receipt_issued}
+            receiptUrl={order.cash_receipt_url}
+          />
+        )}
 
         {/* 입금 마감 시간 (가상계좌 결제 시에만 표시) */}
         {!isCardPayment && (
@@ -219,11 +221,20 @@ export default function OrderCompletePage() {
           </CardContent>
         </Card>
 
-        {/* 안내 */}
+        {/* 픽업 안내 */}
+        {isCardPayment && order.is_pickup && (
+          <Card className="bg-purple-50 border-purple-200">
+            <CardContent className="pt-5 pb-4 text-center">
+              <p className="text-sm font-bold text-purple-800 mb-1">픽업 시 안내</p>
+              <p className="text-sm text-purple-700">
+                매장 방문 시 <strong>전화번호 뒤 4자리</strong>를 직원에게 말씀해주세요
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="text-center text-sm text-gray-500 space-y-1">
-          {isCardPayment ? (
-            <p>배송일에 맞춰 신선하게 준비해 드리겠습니다.</p>
-          ) : (
+          {!isCardPayment && (
             <p>입금 확인 시 자동으로 확정 문자가 발송됩니다.</p>
           )}
           <p className="text-xs text-gray-400">문의: {STORE_INFO.phone}</p>
