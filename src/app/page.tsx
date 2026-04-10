@@ -204,34 +204,25 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              {/* 픽업 날짜/시간 정보 */}
-              <div className="flex justify-center gap-8 text-sm mb-4">
-                <div className="text-center">
-                  <p className="text-gray-500 mb-1">픽업 날짜</p>
-                  <p className="font-bold text-lg text-brand">
-                    {PICKUP_EVENT_DATES.map((d) =>
-                      format(new Date(d + 'T00:00:00'), 'M/d(EEE)', { locale: ko })
-                    ).join(', ')}
+              {/* 픽업 일정 — 간결 표시 */}
+              <div className="text-center text-sm mb-4 space-y-1">
+                {PICKUP_EVENT_DATES.map((d) => (
+                  <p key={d} className="font-bold text-base text-gray-800">
+                    📅 {format(new Date(d + 'T00:00:00'), 'M월 d일 (EEE)', { locale: ko })}{' '}
+                    <span className="text-brand">{PICKUP_EVENT_TIME_SLOTS[0]}~{PICKUP_EVENT_TIME_SLOTS[PICKUP_EVENT_TIME_SLOTS.length - 1]}</span>
                   </p>
-                </div>
-                <div className="border-l border-gray-200" />
-                <div className="text-center">
-                  <p className="text-gray-500 mb-1">픽업 시간</p>
-                  <p className="font-bold text-lg text-brand-dark">
-                    {PICKUP_EVENT_TIME_SLOTS[0]} ~ {PICKUP_EVENT_TIME_SLOTS[PICKUP_EVENT_TIME_SLOTS.length - 1]}
-                  </p>
-                </div>
+                ))}
               </div>
 
-              {/* 마감 카운트다운 */}
+              {/* 마감 안내 */}
+              <p className="text-center text-sm text-red-500 font-semibold mb-2">
+                ⏰ 당일 낮 12시 예약 마감!
+              </p>
               {timeRemaining && timeRemaining !== '마감됨' && (
-                <p className="text-center text-sm text-orange-600 font-medium mb-3">
-                  ⏰ 다음 마감까지 <strong>{timeRemaining}</strong> 남았습니다
+                <p className="text-center text-xs text-orange-600 mb-4">
+                  다음 마감까지 <strong>{timeRemaining}</strong> 남았습니다
                 </p>
               )}
-              <p className="text-center text-xs text-gray-500 mb-5">
-                📢 각 날짜 낮 12시에 예약 마감됩니다
-              </p>
 
               {/* 로그인 / 예약하기 버튼 */}
               {sessionLoading ? (
@@ -303,35 +294,23 @@ export default function HomePage() {
                     />
                   </div>
                 )}
-                <div className="p-4 flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold text-gray-900 text-lg">
-                      {product.emoji} {product.name}
+                <div className="p-4">
+                  <p className="font-semibold text-gray-900 text-lg">
+                    {product.emoji} {product.name}
+                  </p>
+                  <p className="text-sm text-gray-500 mb-2">{product.description}</p>
+                  {isDangol ? (
+                    <div>
+                      <p className="text-sm text-gray-400 line-through">{product.price.toLocaleString()}원</p>
+                      <p className="font-bold text-red-600 text-xl">
+                        단톡방 한정 {(product.price - DANGOL_DISCOUNT_PER_ITEM).toLocaleString()}원
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="font-bold text-brand text-xl">
+                      {product.price.toLocaleString()}원
                     </p>
-                    <p className="text-sm text-gray-500">{product.description}</p>
-                    {isDangol && (
-                      <p className="text-xs text-red-500 mt-0.5 font-medium">
-                        단골 할인 적용 →{' '}
-                        {(product.price - DANGOL_DISCOUNT_PER_ITEM).toLocaleString()}원
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    {isDangol ? (
-                      <>
-                        <p className="font-bold text-brand text-xl">
-                          {(product.price - DANGOL_DISCOUNT_PER_ITEM).toLocaleString()}원
-                        </p>
-                        <p className="text-xs text-gray-400 line-through">
-                          {product.price.toLocaleString()}원
-                        </p>
-                      </>
-                    ) : (
-                      <p className="font-bold text-brand text-xl">
-                        {product.price.toLocaleString()}원
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             );
@@ -347,30 +326,21 @@ export default function HomePage() {
             return (
               <div
                 key={product.sku}
-                className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 flex justify-between items-center"
+                className="bg-white rounded-lg p-4 shadow-sm border border-gray-100"
               >
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {product.emoji} {product.name}
-                  </p>
-                  <p className="text-sm text-gray-500">{product.description}</p>
-                  {noodleDiscounted && (
-                    <p className="text-xs text-red-500 mt-0.5 font-medium">
-                      단골 할인 적용 → {(product.price - NOODLE_DISCOUNT_PER_ITEM).toLocaleString()}원
-                    </p>
-                  )}
-                </div>
+                <p className="font-semibold text-gray-900">
+                  {product.emoji} {product.name}
+                </p>
+                <p className="text-sm text-gray-500 mb-1">{product.description}</p>
                 {noodleDiscounted ? (
-                  <div className="text-right">
-                    <p className="font-bold text-brand text-lg">
-                      {(product.price - NOODLE_DISCOUNT_PER_ITEM).toLocaleString()}원
-                    </p>
-                    <p className="text-xs text-gray-400 line-through">
-                      {product.price.toLocaleString()}원
+                  <div>
+                    <p className="text-sm text-gray-400 line-through">{product.price.toLocaleString()}원</p>
+                    <p className="font-bold text-red-600">
+                      단톡방 한정 {(product.price - NOODLE_DISCOUNT_PER_ITEM).toLocaleString()}원
                     </p>
                   </div>
                 ) : (
-                  <p className="font-bold text-gray-700 text-lg">
+                  <p className="font-bold text-gray-700">
                     {product.price.toLocaleString()}원
                   </p>
                 )}

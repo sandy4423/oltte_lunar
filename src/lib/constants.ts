@@ -158,7 +158,7 @@ export const PRODUCTS: Product[] = [
   {
     sku: 'dumpling_add',
     name: '만두 추가',
-    description: '8알',
+    description: '고기5개 + 김치5개 (총 10알)',
     price: 7000,
     emoji: '🥟',
     isOption: true,
