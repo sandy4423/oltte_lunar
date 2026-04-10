@@ -17,6 +17,8 @@ import {
   PICKUP_EVENT_DATES,
   PICKUP_EVENT_TIME_SLOTS,
   DANGOL_DISCOUNT_PER_ITEM,
+  NOODLE_DISCOUNT_PER_ITEM,
+  NOODLE_DISCOUNT_SKU,
   getOrderCutoffForDate,
   getAvailableEventDates,
 } from '@/lib/constants';
@@ -182,9 +184,9 @@ export default function HomePage() {
       {isDangol && (
         <div className="max-w-2xl mx-auto px-4 mt-2">
           <div className="bg-yellow-400 rounded-lg p-4 text-center shadow-sm">
-            <p className="text-yellow-900 font-bold text-lg">🎉 단골톡방 전용 할인</p>
+            <p className="text-yellow-900 font-bold text-lg">🎉 단골톡방 전용 예약할인</p>
             <p className="text-yellow-800 text-sm mt-1">
-              전골 1개당 <strong>{DANGOL_DISCOUNT_PER_ITEM.toLocaleString()}원</strong> 할인 적용됩니다!
+              전골 1개당 <strong>{DANGOL_DISCOUNT_PER_ITEM.toLocaleString()}원</strong>, 칼국수 <strong>{NOODLE_DISCOUNT_PER_ITEM.toLocaleString()}원</strong> 할인!
             </p>
           </div>
         </div>
@@ -322,22 +324,42 @@ export default function HomePage() {
         {/* 추가 옵션 */}
         <h3 className="text-base font-bold text-gray-700 mt-5 mb-3 px-1">➕ 추가 옵션</h3>
         <div className="space-y-3">
-          {optionProducts.map((product) => (
-            <div
-              key={product.sku}
-              className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 flex justify-between items-center"
-            >
-              <div>
-                <p className="font-semibold text-gray-900">
-                  {product.emoji} {product.name}
-                </p>
-                <p className="text-sm text-gray-500">{product.description}</p>
+          {optionProducts.map((product) => {
+            const isNoodle = product.sku === NOODLE_DISCOUNT_SKU;
+            const noodleDiscounted = isDangol && isNoodle;
+            return (
+              <div
+                key={product.sku}
+                className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 flex justify-between items-center"
+              >
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {product.emoji} {product.name}
+                  </p>
+                  <p className="text-sm text-gray-500">{product.description}</p>
+                  {noodleDiscounted && (
+                    <p className="text-xs text-red-500 mt-0.5 font-medium">
+                      단골 할인 적용 → {(product.price - NOODLE_DISCOUNT_PER_ITEM).toLocaleString()}원
+                    </p>
+                  )}
+                </div>
+                {noodleDiscounted ? (
+                  <div className="text-right">
+                    <p className="font-bold text-brand text-lg">
+                      {(product.price - NOODLE_DISCOUNT_PER_ITEM).toLocaleString()}원
+                    </p>
+                    <p className="text-xs text-gray-400 line-through">
+                      {product.price.toLocaleString()}원
+                    </p>
+                  </div>
+                ) : (
+                  <p className="font-bold text-gray-700 text-lg">
+                    {product.price.toLocaleString()}원
+                  </p>
+                )}
               </div>
-              <p className="font-bold text-gray-700 text-lg">
-                {product.price.toLocaleString()}원
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

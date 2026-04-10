@@ -29,7 +29,12 @@ export type ProductSku =
   | 'kimchi'        // 김치만두
   | 'half'          // 반반만두
   | 'ricecake_1kg'  // 떡국떡 1kg
-  | 'broth_1200ml'; // 양지육수 1200ml
+  | 'broth_1200ml'  // 양지육수 1200ml
+  | 'hotpot_cool'   // 시원 만두전골
+  | 'hotpot_spicy'  // 얼큰 만두전골
+  | 'broth_add'     // 육수 추가
+  | 'dumpling_add'  // 만두 추가
+  | 'noodle';       // 칼국수
 
 // ============================================
 // Table Row Types (SELECT 결과)

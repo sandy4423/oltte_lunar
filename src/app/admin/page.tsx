@@ -4,7 +4,8 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { RefreshCw, Plus, EyeOff, Eye } from 'lucide-react';
+import { RefreshCw, Plus, EyeOff, Eye, Search } from 'lucide-react';
+import { useNewOrderAlert } from '@/hooks/useNewOrderAlert';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -22,6 +23,9 @@ import { OrderDetailDialog } from '@/components/features/admin/OrderDetailDialog
 export default function AdminPage() {
   const router = useRouter();
   const admin = useAdminPage();
+
+  // 신규 주문 소리 알림 (로그인 상태에서만 활성화)
+  useNewOrderAlert(admin.isAuthenticated);
 
   if (!admin.isAuthenticated) {
     return (
@@ -71,6 +75,11 @@ export default function AdminPage() {
             )}
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Button onClick={() => router.push('/admin/lookup')} variant="outline" className="text-sm md:text-base px-2 md:px-4 border-orange-300 text-orange-600 hover:bg-orange-50">
+              <Search className="mr-1 md:mr-2 h-4 w-4" />
+              <span className="hidden sm:inline">주문 조회</span>
+              <span className="sm:hidden">조회</span>
+            </Button>
             <Button
               onClick={() => admin.setShowHidden(!admin.showHidden)}
               variant={admin.showHidden ? 'default' : 'outline'}

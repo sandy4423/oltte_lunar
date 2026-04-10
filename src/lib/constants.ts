@@ -163,6 +163,14 @@ export const PRODUCTS: Product[] = [
     emoji: '🥟',
     isOption: true,
   },
+  {
+    sku: 'noodle',
+    name: '칼국수',
+    description: '1인분',
+    price: 2000,
+    emoji: '🍜',
+    isOption: true,
+  },
 ];
 
 // SKU로 상품 찾기
@@ -209,17 +217,19 @@ export const PICKUP_DISCOUNT = 3000;
 export const PICKUP_DISCOUNT_THRESHOLD = 30000; // 픽업 할인 적용 최소 금액
 export const PICKUP_MIN_ORDER_AMOUNT = 10000; // 픽업 최소 주문 금액
 
-// 단골톡방 할인 (전골 1개당 1,000원, 추가 옵션 제외)
-export const DANGOL_DISCOUNT = 1000; // 하위 호환성
-export const DANGOL_DISCOUNT_PER_ITEM = 1000;
+// 단골톡방 할인 (전골 1개당 2,000원, 칼국수 500원, 기타 옵션 제외)
+export const DANGOL_DISCOUNT = 2000; // 하위 호환성
+export const DANGOL_DISCOUNT_PER_ITEM = 2000;
 export const DANGOL_DISCOUNT_ELIGIBLE_SKUS = ['hotpot_cool', 'hotpot_spicy'] as const;
+export const NOODLE_DISCOUNT_PER_ITEM = 500;
+export const NOODLE_DISCOUNT_SKU = 'noodle';
 
 // ============================================
 // 전골 이벤트 스케줄
 // ============================================
 
 /** 픽업 가능 날짜 목록 */
-export const PICKUP_EVENT_DATES = ['2026-03-21', '2026-03-22'];
+export const PICKUP_EVENT_DATES = ['2026-04-11', '2026-04-12'];
 
 /** 픽업 가능 시간 슬롯 (09:00 ~ 21:00, 1시간 단위) */
 export const PICKUP_EVENT_TIME_SLOTS = [

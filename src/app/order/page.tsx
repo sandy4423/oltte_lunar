@@ -25,6 +25,8 @@ import {
   PICKUP_EVENT_TIME_SLOTS,
   DANGOL_DISCOUNT_PER_ITEM,
   DANGOL_DISCOUNT_ELIGIBLE_SKUS,
+  NOODLE_DISCOUNT_PER_ITEM,
+  NOODLE_DISCOUNT_SKU,
   getOrderCutoffForDate,
   getAvailableEventDates,
 } from '@/lib/constants';
@@ -72,7 +74,7 @@ export default function OrderPage() {
   const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
 
   // 장바구니
-  const { cart, updateQuantity, totalQty, totalAmount, calcDangolDiscount } = useCart();
+  const { cart, updateQuantity, totalQty, totalAmount, hotpotQty, calcDangolDiscount } = useCart();
 
   const dangolDiscount = calcDangolDiscount(isDangol);
   const finalAmount = totalAmount - dangolDiscount;
@@ -234,6 +236,7 @@ export default function OrderPage() {
 
   const isFormValid =
     totalQty > 0 &&
+    hotpotQty > 0 &&
     name.trim() !== '' &&
     phone.trim().length >= 10 &&
     pickupDate !== '' &&
@@ -333,7 +336,7 @@ export default function OrderPage() {
         <div className="max-w-lg mx-auto px-4 mt-4">
           <div className="bg-yellow-400 rounded-lg p-3 text-center">
             <p className="text-yellow-900 font-bold">
-              🎉 단골톡방 전용 할인 – 전골 1개당 {DANGOL_DISCOUNT_PER_ITEM.toLocaleString()}원 할인!
+              🎉 단골톡방 전용 할인 – 전골 {DANGOL_DISCOUNT_PER_ITEM.toLocaleString()}원, 칼국수 {NOODLE_DISCOUNT_PER_ITEM.toLocaleString()}원 할인!
             </p>
           </div>
         </div>
@@ -404,6 +407,11 @@ export default function OrderPage() {
               {optionProducts.map((product) => {
                 const cartItem = cart.find((c) => c.sku === product.sku);
                 const qty = cartItem?.qty ?? 0;
+                const isNoodle = product.sku === NOODLE_DISCOUNT_SKU;
+                const noodleDiscounted = isDangol && isNoodle;
+                const optionDisplayPrice = noodleDiscounted
+                  ? product.price - NOODLE_DISCOUNT_PER_ITEM
+                  : product.price;
 
                 return (
                   <div key={product.sku} className="flex items-center justify-between gap-3">
@@ -412,9 +420,16 @@ export default function OrderPage() {
                         {product.emoji} {product.name}
                       </p>
                       <p className="text-sm text-gray-500">{product.description}</p>
-                      <p className="text-sm font-bold text-gray-700">
-                        {product.price.toLocaleString()}원
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm font-bold ${noodleDiscounted ? 'text-brand' : 'text-gray-700'}`}>
+                          {optionDisplayPrice.toLocaleString()}원
+                        </p>
+                        {noodleDiscounted && (
+                          <p className="text-xs text-gray-400 line-through">
+                            {product.price.toLocaleString()}원
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
