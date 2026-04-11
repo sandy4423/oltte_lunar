@@ -124,7 +124,7 @@ export const getApartmentFullName = (apt: ApartmentConfig): string => {
 // ============================================
 
 export interface Product {
-  sku: 'hotpot_cool' | 'hotpot_spicy' | 'broth_add' | 'dumpling_add';
+  sku: 'hotpot_cool' | 'hotpot_spicy' | 'broth_add' | 'dumpling_add' | 'noodle';
   name: string;
   description: string;
   price: number;
@@ -158,7 +158,7 @@ export const PRODUCTS: Product[] = [
   {
     sku: 'dumpling_add',
     name: '만두 추가',
-    description: '고기5개 + 김치5개 (총 10알)',
+    description: '고기4개 + 김치4개 (총 8알)',
     price: 7000,
     emoji: '🥟',
     isOption: true,

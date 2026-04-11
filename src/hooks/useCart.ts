@@ -5,7 +5,8 @@
  */
 
 import { useState, useMemo } from 'react';
-import { PRODUCTS, DANGOL_DISCOUNT_PER_ITEM, DANGOL_DISCOUNT_ELIGIBLE_SKUS, NOODLE_DISCOUNT_PER_ITEM, NOODLE_DISCOUNT_SKU, type Product } from '@/lib/constants';
+import { PRODUCTS, DANGOL_DISCOUNT_ELIGIBLE_SKUS, type Product } from '@/lib/constants';
+import { calculateDangolDiscount } from '@/lib/pricing';
 import type { CartItem } from '@/types/order';
 
 export function useCart() {
@@ -36,19 +37,9 @@ export function useCart() {
     return { totalQty: qty, totalAmount: amount };
   }, [cart]);
 
-  /** 단골톡방 할인 금액 계산 (전골 2종: 2,000원, 칼국수: 500원) */
-  const calcDangolDiscount = (isDangol: boolean): number => {
-    if (!isDangol) return 0;
-    return cart.reduce((acc, item) => {
-      if ((DANGOL_DISCOUNT_ELIGIBLE_SKUS as readonly string[]).includes(item.sku)) {
-        return acc + DANGOL_DISCOUNT_PER_ITEM * item.qty;
-      }
-      if (item.sku === NOODLE_DISCOUNT_SKU) {
-        return acc + NOODLE_DISCOUNT_PER_ITEM * item.qty;
-      }
-      return acc;
-    }, 0);
-  };
+  /** 단골톡방 할인 금액 계산 — src/lib/pricing.ts 공유 함수 위임 */
+  const calcDangolDiscount = (isDangol: boolean): number =>
+    calculateDangolDiscount(cart, isDangol);
 
   /** 전골(메인 상품) 수량 */
   const hotpotQty = useMemo(() => {

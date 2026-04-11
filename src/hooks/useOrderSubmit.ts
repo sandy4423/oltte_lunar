@@ -10,11 +10,10 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   PRODUCTS,
-  DANGOL_DISCOUNT_PER_ITEM,
-  DANGOL_DISCOUNT_ELIGIBLE_SKUS,
   EVENT_APT_CODE,
   getOrderCutoffForDate,
 } from '@/lib/constants';
+import { calculateDangolDiscount } from '@/lib/pricing';
 import { getStoredSource } from '@/lib/sourceTracking';
 import type { CartItem } from '@/types/order';
 
@@ -58,15 +57,8 @@ export function useOrderSubmit(params: UseOrderSubmitParams) {
       const normalizedPhone = phone.replace(/-/g, '');
       const source = getStoredSource();
 
-      // 단골톡방 할인 계산
-      let dangolDiscount = 0;
-      if (source === 'dangol') {
-        cart.forEach((item) => {
-          if ((DANGOL_DISCOUNT_ELIGIBLE_SKUS as readonly string[]).includes(item.sku)) {
-            dangolDiscount += DANGOL_DISCOUNT_PER_ITEM * item.qty;
-          }
-        });
-      }
+      // 단골톡방 할인 계산 — src/lib/pricing.ts 공유 함수 사용
+      const dangolDiscount = calculateDangolDiscount(cart, source === 'dangol');
       const computed = totalAmount - dangolDiscount;
 
       // 고객 생성/조회
