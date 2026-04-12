@@ -281,28 +281,28 @@ https://toss.place/_p/bGynOJ0Bc`;
 }
 
 /**
- * 배송 완료 SMS 생성
+ * 전달 완료 SMS 생성
  */
 export function createDeliveredSMS(params: {
   customerName: string;
   isPickup?: boolean;
 }): string {
   const { customerName, isPickup } = params;
-  
+
   if (isPickup) {
     return `[올때만두 공식] ${customerName}님, 픽업해 가주셔서 감사합니다!
 
-맛있는 설 보내세요!
+따뜻한 한 끼 되세요!
 
 [매장 안내]
 다음엔 더 편하게!
 https://toss.place/_p/bGynOJ0Bc`;
   }
-  
-  return `[올때만두 공식] ${customerName}님, 배송 완료되었습니다!
+
+  return `[올때만두 공식] ${customerName}님, 주문하신 만두전골 전달 완료되었습니다!
 
 문 앞을 확인해주세요
-맛있는 설 보내세요!
+따뜻한 한 끼 되세요!
 
 [매장 안내]
 다음엔 더 편하게!
@@ -463,8 +463,8 @@ ${deliveryInfo}
 ⏰ ${dueDate}까지 입금해주시면
    예정대로 ${deliveryDateShort}에 받으실 수 있어요!
 
-💡 설 특수로 주문이 몰리고 있어
-   조기 품절이 예상됩니다
+💡 주말 예약이 조기 마감될 수 있어요
+   서둘러 입금 부탁드립니다
 
 [문의하기]
 네이버 톡톡 또는 전화 상담
@@ -500,6 +500,8 @@ ${newPickupDate} ${newPickupTime}
 
 /**
  * 픽업시간 회신 요청 SMS 템플릿
+ *
+ * 주말 전골 예약 주문 고객에게 픽업 날짜·시간 선택 링크를 전송.
  */
 export function createPickupTimeRequestSMS(params: {
   customerName: string;
@@ -509,21 +511,19 @@ export function createPickupTimeRequestSMS(params: {
   orderItems?: OrderItemForSMS[];
   totalAmount?: number;
 }): string {
-  const { customerName, orderDate, deliveryDate, link, orderItems, totalAmount } = params;
-  
+  const { customerName, orderDate, link, orderItems, totalAmount } = params;
+
   // 주문 내역 섹션
   const orderSection = orderItems && orderItems.length > 0
     ? `\n[주문 내역]\n${formatOrderItemsForSMS(orderItems)}${totalAmount ? `\n합계: ${totalAmount.toLocaleString()}원` : ''}\n`
     : '';
-  
+
   return `[올때만두] ${customerName}님 안녕하세요!
 
 주문일: ${orderDate}
-수령예정일: ${deliveryDate}
 ${orderSection}
-픽업 기간이 2/15(일)까지 연장되었습니다!
-2/15 일요일도 09시~21시까지 픽업 가능하니
-편한 날짜와 시간을 선택해주세요 :)
+주말 전골 예약 주문 감사합니다!
+편한 픽업 날짜와 시간을 선택해주세요 :)
 
 아래 링크를 눌러 픽업 시간을 선택해주세요
 ${link}

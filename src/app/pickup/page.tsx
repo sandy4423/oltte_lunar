@@ -144,7 +144,7 @@ export default function PickupPage() {
               priority
             />
           </div>
-          <p className="text-orange-100 text-sm">설 만두는 제가 빚을게요</p>
+          <p className="text-orange-100 text-sm">주말 만두전골은 제가 빚을게요</p>
         </div>
       </header>
 

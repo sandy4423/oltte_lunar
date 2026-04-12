@@ -190,7 +190,7 @@ export const ORDER_STATUS_LABEL: Record<string, { label: string; color: string }
   CANCELED: { label: '취소됨', color: 'bg-red-600 text-white' },
   AUTO_CANCELED: { label: '자동취소', color: 'bg-red-600 text-white' },
   OUT_FOR_DELIVERY: { label: '배송중', color: 'bg-blue-600 text-white' },
-  DELIVERED: { label: '배송완료', color: 'bg-purple-600 text-white' },
+  DELIVERED: { label: '전달완료', color: 'bg-purple-600 text-white' },
   LATE_DEPOSIT: { label: '결제완료 (마감후입금)', color: 'bg-green-600 text-white' },
   CANCEL_REQUESTED: { label: '계좌정보 대기', color: 'bg-yellow-500 text-white' },
   REFUND_PROCESSING: { label: '환불처리중', color: 'bg-orange-600 text-white' },

@@ -17,7 +17,7 @@ export type OrderStatus =
   | 'CANCELLED'           // 고객 요청 취소
   | 'AUTO_CANCELED'       // 마감 미입금 자동 취소
   | 'OUT_FOR_DELIVERY'    // 배송중
-  | 'DELIVERED'           // 배송완료
+  | 'DELIVERED'           // 전달완료
   | 'LATE_DEPOSIT'        // (예외) 마감 후 입금
   | 'CANCEL_REQUESTED'    // 취소 요청됨 (계좌정보 대기)
   | 'REFUND_PROCESSING'   // 환불 처리 중

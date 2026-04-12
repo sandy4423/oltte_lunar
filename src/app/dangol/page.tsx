@@ -60,7 +60,7 @@ export default function DangolPage() {
               priority
             />
           </div>
-          <p className="text-orange-100 text-lg">설 만두는 제가 빚을게요</p>
+          <p className="text-orange-100 text-lg">주말 만두전골은 제가 빚을게요</p>
         </div>
       </header>
 
@@ -93,21 +93,20 @@ export default function DangolPage() {
         </div>
       </div>
 
-      {/* 설날 예약주문 안내 */}
+      {/* 주말 전골 예약주문 안내 */}
       <div className="max-w-2xl mx-auto px-4 mt-8">
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-5 sm:p-6 shadow-sm">
           <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 flex items-center gap-2 flex-wrap">
-            <span>🎊</span>
-            <span>설 명절 특별 주문</span>
-            <span className="text-sm sm:text-base font-semibold text-orange-600">- 단지별 마감 임박</span>
+            <span>🍲</span>
+            <span>주말 만두전골 예약 주문</span>
           </h3>
           <p className="text-sm sm:text-base text-gray-700 mb-4 leading-relaxed">
-            설날 음식 준비 걱정 끝! 떡국떡, 양지육수, 수제만두를 한 번에
+            주말 저녁 한 상 걱정 끝! 시원·얼큰 만두전골을 원하는 시간에 바로 받아보세요
           </p>
           <ul className="space-y-2 text-sm sm:text-base text-gray-800">
             <li className="flex items-start gap-2">
               <span className="text-brand font-semibold">•</span>
-              <span><span className="font-semibold">단지별 배송:</span> 우리 아파트 선택하기</span>
+              <span><span className="font-semibold">매장 픽업:</span> 원하는 날짜·시간에 매장에서 수령</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-brand font-semibold">•</span>

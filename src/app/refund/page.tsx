@@ -44,9 +44,9 @@ export default function RefundPage() {
               </div>
 
               <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                <h3 className="font-bold text-red-800 mb-2">❌ 배송 후 취소</h3>
+                <h3 className="font-bold text-red-800 mb-2">❌ 수령 후 취소</h3>
                 <ul className="list-disc list-inside space-y-1 text-red-700">
-                  <li>식품 특성상 배송 완료 후 <strong>단순 변심에 의한 환불 불가</strong></li>
+                  <li>식품 특성상 수령 후 <strong>단순 변심에 의한 환불 불가</strong></li>
                   <li>상품 하자 시에만 교환/환불 가능</li>
                 </ul>
               </div>

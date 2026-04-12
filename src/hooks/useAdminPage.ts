@@ -231,10 +231,10 @@ export function useAdminPage() {
   };
 
   // ============================================
-  // 핸들러: 개별 배송완료
+  // 핸들러: 개별 전달완료
   // ============================================
   const handleSingleDelivered = async (orderId: string) => {
-    if (!confirm('배송완료 처리하시겠습니까?')) return;
+    if (!confirm('전달완료 처리하시겠습니까?')) return;
     try {
       const response = await fetch('/api/admin/orders/status', {
         method: 'POST',
@@ -246,13 +246,13 @@ export function useAdminPage() {
       });
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || '배송완료 처리에 실패했습니다.');
+        throw new Error(data.error || '전달완료 처리에 실패했습니다.');
       }
       await fetchOrders();
-      alert('배송완료 처리되었습니다.');
+      alert('전달완료 처리되었습니다.');
     } catch (error: any) {
       console.error('[SingleDelivered] Error:', error);
-      alert(error.message || '배송완료 처리 중 오류가 발생했습니다.');
+      alert(error.message || '전달완료 처리 중 오류가 발생했습니다.');
     }
   };
 

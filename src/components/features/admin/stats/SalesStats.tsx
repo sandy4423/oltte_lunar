@@ -201,7 +201,7 @@ export function SalesStats({ sales }: SalesStatsProps) {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-700 flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-purple-500 inline-block" />
-                  배송완료
+                  전달완료
                 </span>
                 <span className="text-sm font-bold text-purple-600">
                   {sales.byStatus.delivered.toLocaleString()}원

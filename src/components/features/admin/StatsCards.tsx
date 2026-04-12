@@ -36,7 +36,7 @@ export function StatsCards({ orders }: StatsCardsProps) {
       </Card>
       <Card>
         <CardContent className="pt-4">
-          <p className="text-sm text-gray-500">배송완료</p>
+          <p className="text-sm text-gray-500">전달완료</p>
           <p className="text-2xl font-bold text-purple-600">{deliveredCount}</p>
         </CardContent>
       </Card>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Plus, Minus, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Minus, AlertCircle, CheckCircle } from 'lucide-react';
 import { getAdminPassword } from '@/lib/adminAuth';
 import {
   Dialog,
@@ -24,9 +24,6 @@ interface ManualOrderDialogProps {
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
 }
-
-// 픽업 마감 시각 (2026-02-14 토 13:00)
-const PICKUP_DEADLINE = new Date('2026-02-14T13:00:00+09:00');
 
 interface CartItem {
   sku: string;
@@ -64,7 +61,7 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
   }, []);
 
   // 배송 마감 상태
-  const [deliveryStatus, setDeliveryStatus] = useState<'available' | 'pickup_only' | 'closed'>('available');
+  const [deliveryStatus, setDeliveryStatus] = useState<'available' | 'pickup_only'>('available');
   const [deliveryMessage, setDeliveryMessage] = useState('');
 
   // 단지 선택 시 배송 마감 체크
@@ -82,17 +79,10 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
     const cutoffAt = new Date(apartment.cutoffAt);
     const deliveryDate = new Date(apartment.deliveryDate);
 
-    // 픽업 마감 체크
-    if (now >= PICKUP_DEADLINE) {
-      setDeliveryStatus('closed');
-      setDeliveryMessage('❌ 설날 운영이 종료되었습니다 (2/14 토 13시 마감)');
-      return;
-    }
-
     // 배송 마감 체크
     if (now >= cutoffAt) {
       setDeliveryStatus('pickup_only');
-      setDeliveryMessage(`⚠️ 배송 마감되었습니다. 픽업만 가능합니다. (픽업 마감: 2/14 토 13시)`);
+      setDeliveryMessage('⚠️ 배송 마감되었습니다. 픽업만 가능합니다.');
       setIsPickup(true); // 자동으로 픽업 선택
     } else {
       setDeliveryStatus('available');
@@ -173,12 +163,6 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
 
     if (totalQty < 3) {
       setError('최소 주문 수량은 3개입니다.');
-      return;
-    }
-
-    // 완전 마감 체크
-    if (deliveryStatus === 'closed') {
-      setError('설날 운영이 종료되어 주문을 받을 수 없습니다.');
       return;
     }
 
@@ -325,14 +309,11 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
                 className={`p-3 rounded-lg flex items-start gap-2 ${
                   deliveryStatus === 'available'
                     ? 'bg-green-50 border border-green-200'
-                    : deliveryStatus === 'pickup_only'
-                    ? 'bg-yellow-50 border border-yellow-200'
-                    : 'bg-red-50 border border-red-200'
+                    : 'bg-yellow-50 border border-yellow-200'
                 }`}
               >
                 {deliveryStatus === 'available' && <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />}
                 {deliveryStatus === 'pickup_only' && <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />}
-                {deliveryStatus === 'closed' && <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />}
                 <p className="text-sm font-medium">{deliveryMessage}</p>
               </div>
             )}
@@ -373,7 +354,7 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
                 id="isPickup"
                 checked={isPickup}
                 onCheckedChange={(checked) => setIsPickup(checked as boolean)}
-                disabled={deliveryStatus === 'pickup_only' || deliveryStatus === 'closed'}
+                disabled={deliveryStatus === 'pickup_only'}
               />
               <Label
                 htmlFor="isPickup"
@@ -513,7 +494,7 @@ export function ManualOrderDialog({ open, onOpenChange, onSuccess }: ManualOrder
             </Button>
             <Button
               type="submit"
-              disabled={loading || deliveryStatus === 'closed'}
+              disabled={loading}
             >
               {loading ? '처리 중...' : '주문 접수'}
             </Button>

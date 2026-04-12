@@ -203,7 +203,7 @@ export function OrderFiltersAndActions({
             className="text-purple-600 border-purple-200 hover:bg-purple-50"
           >
             <CheckCircle className="mr-2 h-4 w-4" />
-            배송완료 ({selectedOrdersCount})
+            전달완료 ({selectedOrdersCount})
           </Button>
           <Button
             onClick={onOpenCancelDialog}
