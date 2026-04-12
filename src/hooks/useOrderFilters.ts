@@ -8,10 +8,25 @@ import { useState, useMemo } from 'react';
 import type { OrderFull } from '@/types/database';
 import { PICKUP_APT_CODE } from '@/lib/constants';
 
+/** 주문의 수령날짜(픽업은 pickup_date, 배달은 delivery_date) */
+function getReceiveDate(order: Pick<OrderFull, 'is_pickup' | 'pickup_date' | 'delivery_date'>): string {
+  return order.is_pickup && order.pickup_date ? order.pickup_date : order.delivery_date;
+}
+
+/** KST 기준 오늘 날짜 (YYYY-MM-DD) */
+function getTodayKST(): string {
+  const now = new Date();
+  // 로컬 타임존 사용 — 관리자 PC가 항상 KST라는 가정
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export function useOrderFilters(orders: OrderFull[]) {
   const [filterApt, setFilterApt] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterDeliveryDate, setFilterDeliveryDate] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('PAID');
+  const [filterDeliveryDate, setFilterDeliveryDate] = useState<string>('today');
   const [filterDeliveryMethod, setFilterDeliveryMethod] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('delivery_date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -20,12 +35,14 @@ export function useOrderFilters(orders: OrderFull[]) {
 
   // 필터링 및 정렬된 주문
   const filteredOrders = useMemo(() => {
+    const today = getTodayKST();
+
     const filtered = orders.filter((order) => {
       // 숨긴 주문 토글: showHidden이 false면 숨긴 주문 제외
       if (!showHidden && order.is_hidden) return false;
       // showHidden이 true면 숨긴 주문만 표시
       if (showHidden && !order.is_hidden) return false;
-      
+
       // 일반 필터
       if (filterStatus !== 'all' && order.status !== filterStatus) return false;
       if (filterApt !== 'all') {
@@ -36,8 +53,14 @@ export function useOrderFilters(orders: OrderFull[]) {
           if (order.apt_code !== filterApt) return false;
         }
       }
-      if (filterDeliveryDate !== 'all' && order.delivery_date !== filterDeliveryDate) return false;
-      
+
+      // 수령날짜 필터 — 픽업은 pickup_date, 배달은 delivery_date로 비교
+      if (filterDeliveryDate !== 'all') {
+        const receiveDate = getReceiveDate(order);
+        const target = filterDeliveryDate === 'today' ? today : filterDeliveryDate;
+        if (receiveDate !== target) return false;
+      }
+
       // 배달방법 필터
       if (filterDeliveryMethod === 'delivery' && order.is_pickup) return false;
       if (filterDeliveryMethod === 'pickup' && !order.is_pickup) return false;
@@ -81,9 +104,13 @@ export function useOrderFilters(orders: OrderFull[]) {
     });
   }, [orders, filterApt, filterStatus, filterDeliveryDate, filterDeliveryMethod, searchQuery, showHidden, sortBy, sortOrder]);
 
-  // 고유 배송일 목록
+  // 고유 수령날짜 목록 (픽업은 pickup_date, 배달은 delivery_date)
   const uniqueDeliveryDates = useMemo(() => {
-    const dates = new Set(orders.map((o) => o.delivery_date));
+    const dates = new Set<string>();
+    orders.forEach((o) => {
+      const d = getReceiveDate(o);
+      if (d) dates.add(d);
+    });
     return Array.from(dates).sort();
   }, [orders]);
 

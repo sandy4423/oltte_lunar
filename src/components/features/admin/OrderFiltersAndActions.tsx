@@ -104,10 +104,11 @@ export function OrderFiltersAndActions({
 
           <Select value={filterDeliveryDate} onValueChange={setFilterDeliveryDate}>
             <SelectTrigger>
-              <SelectValue placeholder="배송일 선택" />
+              <SelectValue placeholder="수령날짜 선택" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">전체 배송일</SelectItem>
+              <SelectItem value="today">오늘</SelectItem>
+              <SelectItem value="all">전체 수령날짜</SelectItem>
               {uniqueDeliveryDates.map((date) => (
                 <SelectItem key={date} value={date}>
                   {format(new Date(date), 'M월 d일 (EEE)', { locale: ko })}
