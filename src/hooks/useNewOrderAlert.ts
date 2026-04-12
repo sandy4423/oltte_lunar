@@ -5,12 +5,12 @@
  *
  * Supabase Realtime으로 orders 테이블 INSERT를 감지하여
  * ElevenLabs TTS로 날짜, 시간, 메뉴를 포함한 알림을 재생합니다.
- * ElevenLabs 호출 실패 시 브라우저 내장 Web Speech API로 자동 폴백.
+ * TTS 재생은 `@/lib/clientTts`의 공유 싱글톤 사용.
  */
 
 import { useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getAdminPassword } from '@/lib/adminAuth';
+import { speakText, stopSpeaking } from '@/lib/clientTts';
 import type { ProductSku } from '@/types/database';
 
 const SKU_LABELS: Record<ProductSku, string> = {
@@ -35,78 +35,6 @@ function formatDate(dateStr: string): string {
 
 export function useNewOrderAlert(enabled: boolean) {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-  const currentAudioUrlRef = useRef<string | null>(null);
-
-  /** 기존에 재생 중인 오디오 정리 */
-  const stopCurrentAudio = useCallback(() => {
-    if (currentAudioRef.current) {
-      currentAudioRef.current.pause();
-      currentAudioRef.current.src = '';
-      currentAudioRef.current = null;
-    }
-    if (currentAudioUrlRef.current) {
-      URL.revokeObjectURL(currentAudioUrlRef.current);
-      currentAudioUrlRef.current = null;
-    }
-  }, []);
-
-  /** Web Speech API 폴백 */
-  const speakWithBrowserTTS = useCallback((text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'ko-KR';
-    utterance.rate = 1;
-    utterance.volume = 1;
-    utterance.pitch = 1.1;
-    window.speechSynthesis.speak(utterance);
-  }, []);
-
-  /** ElevenLabs TTS 호출 → 실패 시 Web Speech API 폴백 */
-  const speak = useCallback(async (text: string) => {
-    if (typeof window === 'undefined') return;
-
-    stopCurrentAudio();
-
-    try {
-      const response = await fetch('/api/tts/speak', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-password': getAdminPassword(),
-        },
-        body: JSON.stringify({ text }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`TTS API ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.volume = 1;
-
-      currentAudioRef.current = audio;
-      currentAudioUrlRef.current = url;
-
-      const cleanup = () => {
-        if (currentAudioUrlRef.current === url) {
-          URL.revokeObjectURL(url);
-          currentAudioUrlRef.current = null;
-          currentAudioRef.current = null;
-        }
-      };
-      audio.onended = cleanup;
-      audio.onerror = cleanup;
-
-      await audio.play();
-    } catch (err) {
-      console.warn('[TTS] ElevenLabs 실패, Web Speech API로 폴백:', err);
-      speakWithBrowserTTS(text);
-    }
-  }, [stopCurrentAudio, speakWithBrowserTTS]);
 
   const announceOrder = useCallback(async (orderId: string, order: Record<string, any>) => {
     // 날짜: 픽업 주문이면 pickup_date, 아니면 delivery_date
@@ -136,8 +64,8 @@ export function useNewOrderAlert(enabled: boolean) {
     }
 
     const message = `전골 예약 주문! ${datePart}${timePart}${menuPart}`;
-    speak(message);
-  }, [speak]);
+    speakText(message);
+  }, []);
 
   useEffect(() => {
     if (!enabled) return;
@@ -167,7 +95,7 @@ export function useNewOrderAlert(enabled: boolean) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
-      stopCurrentAudio();
+      stopSpeaking();
     };
-  }, [enabled, speak, announceOrder, stopCurrentAudio]);
+  }, [enabled, announceOrder]);
 }

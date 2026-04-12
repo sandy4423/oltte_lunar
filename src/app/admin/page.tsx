@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { RefreshCw, Plus, EyeOff, Eye, Search } from 'lucide-react';
 import { useNewOrderAlert } from '@/hooks/useNewOrderAlert';
+import { useUpcomingOrderAlert } from '@/hooks/useUpcomingOrderAlert';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -26,6 +27,9 @@ export default function AdminPage() {
 
   // 신규 주문 소리 알림 (로그인 상태에서만 활성화)
   useNewOrderAlert(admin.isAuthenticated);
+
+  // 예약 픽업 20분 전 음성 알림
+  useUpcomingOrderAlert(admin.orders, admin.isAuthenticated);
 
   if (!admin.isAuthenticated) {
     return (
