@@ -6,11 +6,12 @@ export async function POST(req: NextRequest) {
 
   const name = formData.get('name') as string;
   const phone = formData.get('phone') as string;
-  const positions = JSON.parse(formData.get('positions') as string) as string[];
+  const part = formData.get('part') as string;
+  const startDate = formData.get('startDate') as string;
   const intro = (formData.get('intro') as string) || '';
   const photo = formData.get('photo') as File | null;
 
-  if (!name || !phone || positions.length === 0) {
+  if (!name || !phone || !part || !startDate) {
     return NextResponse.json({ error: '필수 항목을 입력해주세요.' }, { status: 400 });
   }
 
@@ -38,7 +39,9 @@ export async function POST(req: NextRequest) {
   const { error } = await supabase.from('hire_applications').insert({
     name,
     phone,
-    positions,
+    part,
+    start_date: startDate,
+    positions: [part],
     intro,
     photo_url: photoUrl,
   });
