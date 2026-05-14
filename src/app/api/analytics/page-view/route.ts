@@ -7,20 +7,21 @@ import { createServerSupabaseClient } from '@/lib/supabase';
  */
 export async function POST(req: NextRequest) {
   try {
-    const { page, aptCode, source, userAgent } = await req.json();
-    
+    const { page, aptCode, source, event, userAgent } = await req.json();
+
     if (!page) {
       return NextResponse.json(
         { error: 'Page is required' },
         { status: 400 }
       );
     }
-    
+
     const supabase = createServerSupabaseClient();
     const { error } = await supabase.from('page_views').insert({
       page,
       apt_code: aptCode || null,
       source: source || null,
+      event: event || 'view',
       user_agent: userAgent || null,
     });
     

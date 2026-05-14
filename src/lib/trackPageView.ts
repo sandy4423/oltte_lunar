@@ -4,10 +4,14 @@
 
 import { getStoredSource } from './sourceTracking';
 
-export async function trackPageView(page: string, aptCode?: string) {
+export async function trackPageView(
+  page: string,
+  aptCode?: string,
+  event?: string
+) {
   try {
     const source = getStoredSource();
-    
+
     await fetch('/api/analytics/page-view', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -15,6 +19,7 @@ export async function trackPageView(page: string, aptCode?: string) {
         page,
         aptCode,
         source,
+        event,
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
       }),
     });
@@ -23,3 +28,6 @@ export async function trackPageView(page: string, aptCode?: string) {
     console.error('[Analytics] Page view tracking failed:', error);
   }
 }
+
+export const trackHireEvent = (event: 'view' | 'submit_click' | 'submit_success') =>
+  trackPageView('/hire', undefined, event);

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Footer } from '@/components/Footer';
+import { trackHireEvent } from '@/lib/trackPageView';
 
 const PART_OPTIONS = [
   { value: 'weekday_morning', label: '평일 오전' },
@@ -24,6 +25,10 @@ export default function HirePage() {
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    trackHireEvent('view');
+  }, []);
+
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -44,6 +49,7 @@ export default function HirePage() {
     if (!part) return setError('지원 파트를 선택해주세요.');
     if (!startDate.trim()) return setError('근무 시작 가능일을 입력해주세요.');
 
+    trackHireEvent('submit_click');
     setSubmitting(true);
 
     try {
@@ -58,6 +64,7 @@ export default function HirePage() {
       const res = await fetch('/api/hire', { method: 'POST', body: formData });
       if (!res.ok) throw new Error('제출 실패');
 
+      trackHireEvent('submit_success');
       setSubmitted(true);
     } catch {
       setError('제출 중 오류가 발생했습니다. 다시 시도해주세요.');
