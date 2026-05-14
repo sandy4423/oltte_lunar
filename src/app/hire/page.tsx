@@ -115,8 +115,7 @@ export default function HirePage() {
       <main className="max-w-lg mx-auto px-4 py-8 space-y-10">
         {/* 2. 모집 파트 */}
         <section>
-          <h2 className="text-xl font-bold text-gray-900 mb-3">모집 파트</h2>
-          <p className="text-sm text-brand-dark font-medium mb-4">주말 파트는 시급이 더 높습니다.</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">모집 파트</h2>
 
           <div className="space-y-3">
             {SCHEDULE.map((s) => (
