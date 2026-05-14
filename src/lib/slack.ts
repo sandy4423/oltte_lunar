@@ -350,6 +350,43 @@ ${link}
 고객이 링크를 통해 픽업시간을 선택할 수 있습니다.`;
 }
 
+const PART_LABEL: Record<string, string> = {
+  weekday_morning: '평일 오전',
+  weekday_evening: '평일 오후',
+  weekend_morning: '주말 오전',
+  weekend_evening: '주말 오후',
+  any: '상관없음',
+};
+
+export function createHireApplicationNotification(params: {
+  name: string;
+  phone: string;
+  part: string;
+  startDate: string;
+  intro: string;
+  photoUrl: string | null;
+}): string {
+  const { name, phone, part, startDate, intro, photoUrl } = params;
+  const partLabel = PART_LABEL[part] ?? part;
+
+  let message = `🧑‍🍳 신규 직원 지원
+
+이름: ${name}
+연락처: ${phone}
+지원파트: ${partLabel}
+시작가능일: ${startDate}`;
+
+  if (intro && intro.trim()) {
+    message += `\n\n[자기소개]\n${intro.trim()}`;
+  }
+
+  if (photoUrl) {
+    message += `\n\n사진: ${photoUrl}`;
+  }
+
+  return message;
+}
+
 export function createCancellationNotification(params: {
   orderId: string;
   customerName: string;

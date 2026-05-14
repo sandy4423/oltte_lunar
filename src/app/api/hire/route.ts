@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { sendSlackMessage, createHireApplicationNotification } from '@/lib/slack';
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -50,6 +51,17 @@ export async function POST(req: NextRequest) {
     console.error('hire insert error:', error);
     return NextResponse.json({ error: '저장 실패' }, { status: 500 });
   }
+
+  sendSlackMessage(
+    createHireApplicationNotification({
+      name,
+      phone,
+      part,
+      startDate,
+      intro,
+      photoUrl,
+    })
+  ).catch((e) => console.error('hire slack notify failed:', e));
 
   return NextResponse.json({ ok: true });
 }

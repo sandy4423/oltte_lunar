@@ -100,13 +100,13 @@ export default function HirePage() {
           <div className="text-sm text-gray-700 leading-relaxed space-y-3">
             <p>
               올때만두는 송도 e편한세상 후문상가에 자리 잡은<br />
-              6평 규모의 포장 전문 만두 매장입니다.
+              6평 규모의 포장 전문 만두가게입니다.
             </p>
             <p>
-              대표메뉴는 특새우만두와 쫄면.<br />
-              작지만 매일 정성껏 만두를 빚고,<br />
+              대표메뉴는 특새우만두와 쫄면입니다.<br />
+              작지만 매일 정성껏 만두를 빚고 있어요.<br />
               한 분 한 분 단골이 되어주신 동네 손님들 덕분에<br />
-              조금씩 자라고 있는 가게입니다.
+              조금씩 성장하고 있는 가게입니다.
             </p>
             <p>
               저희는 멈춰있지 않습니다.<br />
@@ -117,7 +117,7 @@ export default function HirePage() {
             <p>
               지금 함께해주실 분은<br />
               단순히 일손이 아니라,<br />
-              이 여정의 동료로 모시고 싶습니다.
+              이 여정을 함께 할 동료로 모시고 싶습니다.
             </p>
           </div>
         </section>
@@ -132,7 +132,7 @@ export default function HirePage() {
             </div>
             <div>
               <p className="font-semibold">✔ 성장하는 가게에서 함께 자라는 자리입니다</p>
-              <p className="text-gray-600 ml-5">매뉴얼이 매일 다듬어지고, 좋은 의견은 바로 반영됩니다.</p>
+              <p className="text-gray-600 ml-5">매뉴얼이 매일 다듬어지고, 좋은 의견은 반영됩니다.</p>
             </div>
             <div>
               <p className="font-semibold">✔ 작은 가게라 한 분의 역할이 큽니다</p>
@@ -521,7 +521,7 @@ export default function HirePage() {
         <div className="text-center text-xs text-gray-400 leading-relaxed border-t border-gray-100 pt-6">
           <p className="font-medium text-gray-500">올때만두</p>
           <p>인천 송도 e편한세상 후문상가 (랜드마크로 113)</p>
-          <p>문의: 032-831-9995</p>
+          <p>문의: 010-5877-4424</p>
         </div>
       </main>
 
