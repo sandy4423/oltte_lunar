@@ -254,7 +254,7 @@ export function getAvailableEventDates(): string[] {
 export const EVENT_APT_CODE = 'EVENT';
 
 /** 고객 문의 전화번호 */
-export const CUSTOMER_SUPPORT_PHONE = '010-2592-4423';
+export const CUSTOMER_SUPPORT_PHONE = '010-5877-4424';
 
 export const STORE_INFO = {
   name: '올때만두',
