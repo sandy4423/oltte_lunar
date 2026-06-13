@@ -228,8 +228,8 @@ export const NOODLE_DISCOUNT_SKU = 'noodle';
 // 전골 이벤트 스케줄
 // ============================================
 
-/** 픽업 가능 날짜 목록 */
-export const PICKUP_EVENT_DATES = ['2026-04-11', '2026-04-12'];
+/** 픽업 가능 날짜 목록 — 2026-06-13/14 단톡방 만두전골 이벤트 */
+export const PICKUP_EVENT_DATES = ['2026-06-13', '2026-06-14'];
 
 /** 픽업 가능 시간 슬롯 (09:00 ~ 21:00, 1시간 단위) */
 export const PICKUP_EVENT_TIME_SLOTS = [
