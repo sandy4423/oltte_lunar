@@ -33,8 +33,22 @@ function formatDate(dateStr: string): string {
   return DAY_NAMES[d.getDay()];
 }
 
-export function useNewOrderAlert(enabled: boolean) {
+interface UseNewOrderAlertOptions {
+  onNewOrder?: () => void;
+  onOrderUpdate?: () => void;
+}
+
+export function useNewOrderAlert(enabled: boolean, options: UseNewOrderAlertOptions = {}) {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const { onNewOrder, onOrderUpdate } = options;
+  const onNewOrderRef = useRef(onNewOrder);
+  const onOrderUpdateRef = useRef(onOrderUpdate);
+
+  // 최신 콜백 참조 유지 (구독 재생성 없이)
+  useEffect(() => {
+    onNewOrderRef.current = onNewOrder;
+    onOrderUpdateRef.current = onOrderUpdate;
+  }, [onNewOrder, onOrderUpdate]);
 
   const announceOrder = useCallback(async (orderId: string, order: Record<string, any>) => {
     // 날짜: 픽업 주문이면 pickup_date, 아니면 delivery_date
@@ -83,7 +97,21 @@ export function useNewOrderAlert(enabled: boolean) {
           const order = payload.new;
           if (order?.id) {
             announceOrder(order.id, order);
+            // 화면 자동 갱신 콜백
+            onNewOrderRef.current?.();
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+        },
+        () => {
+          // 다른 관리자/시스템에서 주문 상태가 변경된 경우 갱신
+          onOrderUpdateRef.current?.();
         }
       )
       .subscribe();

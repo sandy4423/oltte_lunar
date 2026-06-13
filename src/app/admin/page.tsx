@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useRef } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import Image from 'next/image';
@@ -25,8 +26,20 @@ export default function AdminPage() {
   const router = useRouter();
   const admin = useAdminPage();
 
-  // 신규 주문 소리 알림 (로그인 상태에서만 활성화)
-  useNewOrderAlert(admin.isAuthenticated);
+  // UPDATE 이벤트 debounce용 타이머 (다중 UPDATE 폭주 방지)
+  const updateDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleOrderUpdate = useCallback(() => {
+    if (updateDebounceRef.current) clearTimeout(updateDebounceRef.current);
+    updateDebounceRef.current = setTimeout(() => {
+      admin.fetchOrders();
+    }, 500);
+  }, [admin.fetchOrders]);
+
+  // 신규 주문 소리 알림 + 화면 자동 갱신 (Supabase Realtime, 로그인 상태에서만)
+  useNewOrderAlert(admin.isAuthenticated, {
+    onNewOrder: admin.fetchOrders,
+    onOrderUpdate: handleOrderUpdate,
+  });
 
   // 예약 픽업 20분 전 음성 알림
   useUpcomingOrderAlert(admin.orders, admin.isAuthenticated);
