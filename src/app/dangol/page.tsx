@@ -112,19 +112,6 @@ export default function DangolPage() {
         </div>
       </div>
 
-      {/* 사장님 손글씨 인사말 */}
-      <div className="max-w-2xl mx-auto px-4 mt-6">
-        <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-4 sm:p-6 shadow-sm border border-orange-100">
-          <Image
-            src="/images/handwriting-greeting.png"
-            alt="사장님 손글씨 인사말"
-            width={800}
-            height={400}
-            className="w-full h-auto"
-          />
-        </div>
-      </div>
-
       {/* 이벤트 상세 안내 */}
       <div className="max-w-2xl mx-auto px-4 mt-8">
         <div className="bg-white border border-orange-200 rounded-lg p-5 sm:p-6 shadow-sm">
@@ -292,32 +279,6 @@ export default function DangolPage() {
           </div>
         </div>
       )}
-
-      {/* 이미 주문하신 고객 환불 안내 */}
-      <div className="max-w-2xl mx-auto px-4 mt-12">
-        <div className="bg-sky-50 border border-sky-200 rounded-xl p-5 sm:p-6 shadow-sm">
-          <h3 className="text-base sm:text-lg font-bold text-sky-900 mb-2 flex items-center gap-2">
-            <span>💬</span>
-            <span>이미 주문하셨나요?</span>
-          </h3>
-          <p className="text-sm sm:text-base text-sky-800 leading-relaxed mb-4">
-            단골톡방에 계시면서 이미 주문하신 고객님은<br />
-            아래 링크를 통해 연락주시면 <span className="font-bold text-red-600">{DANGOL_DISCOUNT.toLocaleString()}원을 돌려드립니다!</span>
-          </p>
-          <a
-            href="http://pf.kakao.com/_xmKULn/chat"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button
-              className="w-full h-12 text-base font-semibold bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] border-0 shadow-md hover:shadow-lg transition-all"
-            >
-              <span className="mr-2">💬</span>
-              카카오톡으로 연락하기
-            </Button>
-          </a>
-        </div>
-      </div>
 
       <Footer />
 
