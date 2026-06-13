@@ -205,6 +205,7 @@ export async function POST(request: NextRequest) {
           pickupDate: pickupDateFormatted,
           pickupTime: order.pickup_time || undefined,
           orderItems: order.order_items || [],
+          paymentMethod: 'virtual_account',
         }));
         
         console.log(`[Webhook] Admin payment notification sent to Slack`);

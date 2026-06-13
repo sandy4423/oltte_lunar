@@ -98,7 +98,15 @@ export async function sendSlackMessage(text: string): Promise<SlackResult> {
 }
 
 /**
- * 신규 주문 알림 메시지 생성
+ * 신규 주문(가상계좌 발급) 알림 메시지 생성 (미니멀 포맷)
+ *
+ * 사장님 요청 포맷:
+ *   🔔 신규 주문 (입금 대기)
+ *   👤 {고객명}
+ *   📞 {전화번호}
+ *   📅 {픽업일} {픽업시간} 픽업   (또는 배송지)
+ *   🍴 메뉴 목록
+ *   💳 가상계좌 / {금액}
  */
 export function createOrderNotification(params: {
   orderId: string;
@@ -114,26 +122,72 @@ export function createOrderNotification(params: {
   pickupTime?: string;
   orderItems?: SlackOrderItem[];
 }): string {
-  const { orderId, customerName, customerPhone, aptName, dong, ho, amount, deliveryDate, isPickup, pickupDate, pickupTime, orderItems } = params;
-  
-  const deliveryInfo = isPickup 
-    ? `픽업: ${pickupDate || ''} ${pickupTime || ''}`
-    : `배송지: ${aptName} ${dong}동 ${ho}호`;
-  
-  const itemsText = orderItems ? formatOrderItems(orderItems) : '';
-  
-  return `🔔 신규 주문
+  const { customerName, customerPhone, aptName, dong, ho, amount, deliveryDate, isPickup, pickupDate, pickupTime, orderItems } = params;
 
-주문번호: ${orderId}
-고객명: ${customerName}
-연락처: ${customerPhone}
-${deliveryInfo}
-금액: ${amount.toLocaleString()}원
-${isPickup ? '픽업일' : '배송일'}: ${deliveryDate}${itemsText}`;
+  let scheduleLine: string;
+  if (isPickup) {
+    const datePart = pickupDate || deliveryDate;
+    const timePart = pickupTime ? ` ${formatPickupTimeKorean(pickupTime)}` : '';
+    scheduleLine = `📅 ${datePart}${timePart} 픽업`;
+  } else {
+    scheduleLine = `📅 ${deliveryDate} 배송 — ${aptName} ${dong}동 ${ho}호`;
+  }
+
+  const itemsLine = orderItems && orderItems.length > 0
+    ? `🍴 주문 메뉴\n${formatOrderItemsMinimal(orderItems)}`
+    : '🍴 주문 메뉴 정보 없음';
+
+  return `🔔 신규 주문 (입금 대기)
+👤 ${customerName}
+📞 ${customerPhone}
+${scheduleLine}
+${itemsLine}
+💳 가상계좌 / ${amount.toLocaleString()}원`;
 }
 
 /**
- * 결제 완료 알림 메시지 생성
+ * "HH:mm" 픽업 시간을 한국어 오전/오후 형식으로 포맷팅
+ * 예: "14:00" → "오후 2:00", "09:30" → "오전 9:30"
+ */
+function formatPickupTimeKorean(time: string): string {
+  const match = time.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return time;
+  const hour = parseInt(match[1], 10);
+  const minute = match[2];
+  if (Number.isNaN(hour)) return time;
+  const meridiem = hour < 12 ? '오전' : '오후';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${meridiem} ${displayHour}:${minute}`;
+}
+
+/**
+ * 미니멀 주문 상품 요약 ("- 메뉴명 x 수량" 라인)
+ */
+function formatOrderItemsMinimal(items: SlackOrderItem[]): string {
+  if (!items || items.length === 0) return '';
+  return items.map(item => {
+    const product = getProductBySku(item.sku);
+    const name = product ? product.name : item.sku;
+    return `- ${name} x ${item.qty}`;
+  }).join('\n');
+}
+
+const PAYMENT_METHOD_LABEL: Record<string, string> = {
+  card: '카드',
+  virtual_account: '가상계좌',
+  transfer: '계좌이체',
+};
+
+/**
+ * 결제 완료 알림 메시지 생성 (미니멀 포맷)
+ *
+ * 사장님 요청 포맷:
+ *   🍲 새 주문이 들어왔습니다
+ *   👤 {고객명}
+ *   📞 {전화번호}           (전체 번호, 마스킹 없음)
+ *   📅 {픽업일} {픽업시간} 픽업   (또는 배송지)
+ *   🍴 메뉴 목록
+ *   💳 {결제수단} / {금액}
  */
 export function createPaymentConfirmation(params: {
   orderId: string;
@@ -148,23 +202,37 @@ export function createPaymentConfirmation(params: {
   pickupDate?: string;
   pickupTime?: string;
   orderItems?: SlackOrderItem[];
+  paymentMethod?: string;
 }): string {
-  const { orderId, customerName, customerPhone, aptName, dong, ho, amount, deliveryDate, isPickup, pickupDate, pickupTime, orderItems } = params;
-  
-  const deliveryInfo = isPickup 
-    ? `픽업: ${pickupDate || ''} ${pickupTime || ''}`
-    : `배송지: ${aptName} ${dong}동 ${ho}호`;
-  
-  const itemsText = orderItems ? formatOrderItems(orderItems) : '';
-  
-  return `💰 결제 완료
+  const { customerName, customerPhone, aptName, dong, ho, amount, deliveryDate, isPickup, pickupDate, pickupTime, orderItems, paymentMethod } = params;
 
-주문번호: ${orderId}
-고객명: ${customerName}
-연락처: ${customerPhone}
-${deliveryInfo}
-금액: ${amount.toLocaleString()}원
-${isPickup ? '픽업일' : '배송일'}: ${deliveryDate}${itemsText}`;
+  // 픽업/배송 라인
+  let scheduleLine: string;
+  if (isPickup) {
+    const datePart = pickupDate || deliveryDate;
+    const timePart = pickupTime ? ` ${formatPickupTimeKorean(pickupTime)}` : '';
+    scheduleLine = `📅 ${datePart}${timePart} 픽업`;
+  } else {
+    scheduleLine = `📅 ${deliveryDate} 배송 — ${aptName} ${dong}동 ${ho}호`;
+  }
+
+  // 메뉴 라인
+  const itemsLine = orderItems && orderItems.length > 0
+    ? `🍴 주문 메뉴\n${formatOrderItemsMinimal(orderItems)}`
+    : '🍴 주문 메뉴 정보 없음';
+
+  // 결제 라인
+  const methodLabel = paymentMethod ? (PAYMENT_METHOD_LABEL[paymentMethod] || paymentMethod) : '';
+  const paymentLine = methodLabel
+    ? `💳 ${methodLabel} / ${amount.toLocaleString()}원`
+    : `💳 ${amount.toLocaleString()}원`;
+
+  return `🍲 새 주문이 들어왔습니다
+👤 ${customerName}
+📞 ${customerPhone}
+${scheduleLine}
+${itemsLine}
+${paymentLine}`;
 }
 
 /**

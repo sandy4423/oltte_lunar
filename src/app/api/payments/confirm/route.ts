@@ -38,6 +38,10 @@ export async function POST(request: NextRequest) {
         customer:customers (
           phone,
           name
+        ),
+        order_items (
+          sku,
+          qty
         )
       `)
       .eq('id', actualOrderId)
@@ -125,7 +129,8 @@ export async function POST(request: NextRequest) {
     // Slack 알림 (관리자)
     try {
       const deliveryDateFormatted = formatKST(order.delivery_date, 'M월 d일 (EEE)');
-      
+      const pickupDateFormatted = order.pickup_date ? formatKST(order.pickup_date, 'M월 d일 (EEE)') : undefined;
+
       await sendSlackMessage(createPaymentConfirmation({
         orderId: actualOrderId,
         customerName: order.customer?.name || '고객',
@@ -135,6 +140,11 @@ export async function POST(request: NextRequest) {
         ho: order.ho,
         amount: order.total_amount,
         deliveryDate: deliveryDateFormatted,
+        isPickup: order.is_pickup,
+        pickupDate: pickupDateFormatted,
+        pickupTime: order.pickup_time || undefined,
+        orderItems: order.order_items || [],
+        paymentMethod: 'card',
       }));
       
       console.log(`[API] Admin payment notification sent to Slack`);
