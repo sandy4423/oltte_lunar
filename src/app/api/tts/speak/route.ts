@@ -13,8 +13,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAuth } from '@/lib/adminAuth';
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-// 기본 voice: Rachel (다국어 모델에서 한국어도 자연스러운 편)
-const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
+// 기본 voice: Bella (밝고 친근한 한국어 여자 톤, 다국어 모델 호환)
+const VOICE_ID = 'EXAVITQu4vr4xnSDxMaL';
 const MODEL_ID = 'eleven_multilingual_v2';
 const MAX_TEXT_LENGTH = 500;
 
