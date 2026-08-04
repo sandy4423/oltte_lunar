@@ -10,7 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminAuth } from '@/lib/adminAuth';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 // 기본 voice: Bella (밝고 친근한 한국어 여자 톤, 다국어 모델 호환)
@@ -19,7 +19,7 @@ const MODEL_ID = 'eleven_multilingual_v2';
 const MAX_TEXT_LENGTH = 500;
 
 export async function POST(request: NextRequest) {
-  const authError = verifyAdminAuth(request);
+  const authError = await verifyAdminAuth(request);
   if (authError) return authError;
 
   if (!ELEVENLABS_API_KEY) {

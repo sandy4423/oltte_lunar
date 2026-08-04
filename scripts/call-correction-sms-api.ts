@@ -5,9 +5,17 @@
  */
 
 const API_URL = 'https://www.olttefood.com/api/admin/send-correction-sms';
-const ADMIN_PASSWORD = '4423';
+
+// 비밀번호는 절대 소스에 하드코딩하지 않는다 (이 레포는 public).
+// 실행: STAFF_PASSWORD=... npx tsx scripts/call-correction-sms-api.ts
+const STAFF_PASSWORD = process.env.STAFF_PASSWORD;
 
 async function main() {
+  if (!STAFF_PASSWORD) {
+    console.error('STAFF_PASSWORD 환경변수가 필요합니다. (staff_accounts 활성 계정 비밀번호)');
+    process.exit(1);
+  }
+
   console.log('정정 SMS 발송 API 호출 중...\n');
 
   try {
@@ -15,7 +23,7 @@ async function main() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-admin-password': ADMIN_PASSWORD,
+        'x-admin-password': STAFF_PASSWORD,
       },
     });
 

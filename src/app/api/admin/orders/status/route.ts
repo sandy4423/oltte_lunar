@@ -8,13 +8,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { verifyAdminAuth } from '@/lib/adminAuth';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
 import { sendSMS, createDeliveredSMS } from '@/lib/sms';
 import type { OrderStatus } from '@/types/database';
 
 export async function POST(request: NextRequest) {
   try {
-    const authError = verifyAdminAuth(request);
+    const authError = await verifyAdminAuth(request);
     if (authError) return authError;
 
     const body = await request.json();

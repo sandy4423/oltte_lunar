@@ -6,12 +6,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { verifyAdminAuth } from '@/lib/adminAuth';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  const authError = verifyAdminAuth(request);
+  const authError = await verifyAdminAuth(request);
   if (authError) return authError;
 
   const phone4 = request.nextUrl.searchParams.get('phone4');

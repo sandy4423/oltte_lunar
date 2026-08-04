@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { verifyAdminAuth, invalidateAdminAuthCache } from '@/lib/adminAuth.server';
 
 /** GET /api/admin/accounts — 전체 계정 목록 */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authError = await verifyAdminAuth(req);
+  if (authError) return authError;
+
   const supabase = createServerSupabaseClient();
 
   const { data, error } = await supabase
@@ -19,6 +23,9 @@ export async function GET() {
 
 /** POST /api/admin/accounts — 계정 추가 */
 export async function POST(req: NextRequest) {
+  const authError = await verifyAdminAuth(req);
+  if (authError) return authError;
+
   const { name, password, role } = await req.json();
 
   if (!name || !password) {
@@ -40,11 +47,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // 새 계정이 즉시 로그인 가능하도록 비밀번호 캐시를 버린다
+  invalidateAdminAuthCache();
+
   return NextResponse.json({ account: data });
 }
 
 /** PATCH /api/admin/accounts — 계정 수정 */
 export async function PATCH(req: NextRequest) {
+  const authError = await verifyAdminAuth(req);
+  if (authError) return authError;
+
   const { id, name, password, role, is_active } = await req.json();
 
   if (!id) {
@@ -70,11 +83,17 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // 비밀번호 변경·계정 비활성화가 즉시 반영되도록 캐시를 버린다
+  invalidateAdminAuthCache();
+
   return NextResponse.json({ account: data });
 }
 
 /** DELETE /api/admin/accounts — 계정 삭제 */
 export async function DELETE(req: NextRequest) {
+  const authError = await verifyAdminAuth(req);
+  if (authError) return authError;
+
   const { id } = await req.json();
 
   if (!id) {
@@ -91,6 +110,9 @@ export async function DELETE(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // 삭제된 계정이 즉시 차단되도록 캐시를 버린다
+  invalidateAdminAuthCache();
 
   return NextResponse.json({ success: true });
 }

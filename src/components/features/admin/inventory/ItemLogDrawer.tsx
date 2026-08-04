@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X, RefreshCw, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { getAdminPassword } from '@/lib/adminAuth';
 import type { InventoryItemRow, InventoryLogRow } from '@/types/database';
 
 interface ItemLogDrawerProps {
@@ -25,7 +26,9 @@ export function ItemLogDrawer({ item, open, onClose }: ItemLogDrawerProps) {
     const fetchLogs = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/admin/inventory/logs?item_id=${item.id}`);
+        const res = await fetch(`/api/admin/inventory/logs?item_id=${item.id}`, {
+          headers: { 'x-admin-password': getAdminPassword() },
+        });
         if (res.ok) {
           const data = await res.json();
           setLogs(data.logs);

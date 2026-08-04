@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
 
 /** GET /api/admin/inventory/logs?item_id=xxx — 특정 품목의 입력 이력 */
 export async function GET(req: NextRequest) {
+  const authError = await verifyAdminAuth(req);
+  if (authError) return authError;
+
   const itemId = req.nextUrl.searchParams.get('item_id');
 
   if (!itemId) {

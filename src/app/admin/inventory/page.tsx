@@ -10,6 +10,7 @@ import { InventoryTable } from '@/components/features/admin/inventory/InventoryT
 import { InventoryGridView } from '@/components/features/admin/inventory/InventoryGridView';
 import { ItemLogDrawer } from '@/components/features/admin/inventory/ItemLogDrawer';
 import { AdminLoginForm } from '@/components/features/admin/AdminLoginForm';
+import { getAdminPassword } from '@/lib/adminAuth';
 import type { InventoryItemRow } from '@/types/database';
 
 interface AdminUser {
@@ -79,6 +80,8 @@ export default function InventoryPage() {
       setIsAuthenticated(true);
       sessionStorage.setItem('adminUser', JSON.stringify(user));
       sessionStorage.setItem('admin_auth', 'true');
+      // 관리자 API 호출 시 x-admin-password 헤더로 사용됨 (useAdminPage와 동일한 방식)
+      sessionStorage.setItem('admin_password', passwordInput);
     } catch {
       setLoginError('서버 연결에 실패했습니다.');
     } finally {
@@ -89,7 +92,10 @@ export default function InventoryPage() {
   const fetchInventory = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/inventory', { cache: 'no-store' });
+      const res = await fetch('/api/admin/inventory', {
+        cache: 'no-store',
+        headers: { 'x-admin-password': getAdminPassword() },
+      });
       if (!res.ok) throw new Error('fetch failed');
       const { items, todayItems: today } = await res.json();
       setAllItems(items);
@@ -110,7 +116,10 @@ export default function InventoryPage() {
       try {
         const res = await fetch('/api/admin/inventory', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-password': getAdminPassword(),
+          },
           body: JSON.stringify({
             id,
             main_qty: mainQty,

@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminAuth } from '@/lib/adminAuth';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
 import { sendSMS } from '@/lib/sms';
 
 const RECIPIENTS = [
@@ -34,7 +34,7 @@ const CORRECTION_MESSAGE = `[올때만두]
 export async function POST(request: NextRequest) {
   try {
     // 관리자 인증 확인
-    const authError = verifyAdminAuth(request);
+    const authError = await verifyAdminAuth(request);
     if (authError) return authError;
 
     const results = [];

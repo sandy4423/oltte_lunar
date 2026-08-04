@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyAdminAuth } from '@/lib/adminAuth';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +18,7 @@ const supabase = createClient(
  */
 export async function POST(request: NextRequest) {
   try {
-    const authError = verifyAdminAuth(request);
+    const authError = await verifyAdminAuth(request);
     if (authError) return authError;
 
     const body = await request.json();

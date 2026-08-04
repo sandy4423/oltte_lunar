@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { verifyAdminAuth } from '@/lib/adminAuth';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
 
 // 캐싱 비활성화
 export const dynamic = 'force-dynamic';
@@ -27,7 +27,7 @@ const VALID_SKUS = ['meat', 'kimchi', 'half', 'ricecake_1kg', 'broth_1200ml'];
 
 export async function PUT(request: NextRequest) {
   try {
-    const authError = verifyAdminAuth(request);
+    const authError = await verifyAdminAuth(request);
     if (authError) return authError;
 
     const body = await request.json();

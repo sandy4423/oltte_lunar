@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { verifyAdminAuth } from '@/lib/adminAuth';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
 import type { OrderRow, OrderItemRow, ProductShipmentQuantityRow } from '@/types/database';
 
 // 캐싱 비활성화 - 항상 최신 데이터 조회
@@ -42,7 +42,7 @@ const PAID_STATUSES = [
 
 export async function GET(request: NextRequest) {
   try {
-    const authError = verifyAdminAuth(request);
+    const authError = await verifyAdminAuth(request);
     if (authError) return authError;
 
     const supabase = createServerSupabaseClient();

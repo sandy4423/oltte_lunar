@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
 
 /**
  * 순환 재고실사(Cycle Counting) 기반 오늘의 점검 항목 계산
@@ -19,7 +20,10 @@ function getTodayIndex(): number {
 }
 
 /** GET /api/admin/inventory — 전체 목록 + 오늘의 항목 목록 반환 */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authError = await verifyAdminAuth(req);
+  if (authError) return authError;
+
   const supabase = createServerSupabaseClient();
 
   const { data, error } = await supabase
@@ -49,6 +53,9 @@ export async function GET() {
 
 /** PATCH /api/admin/inventory — 수량+메모 업데이트 + 로그 기록 */
 export async function PATCH(req: NextRequest) {
+  const authError = await verifyAdminAuth(req);
+  if (authError) return authError;
+
   const body = await req.json();
   const { id, main_qty, detail_qty, memo, staff_name } = body;
 

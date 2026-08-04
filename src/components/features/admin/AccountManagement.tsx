@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Save, X, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getAdminPassword } from '@/lib/adminAuth';
 
 interface Account {
   id: string;
@@ -31,7 +32,9 @@ export function AccountManagement() {
   const fetchAccounts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/accounts');
+      const res = await fetch('/api/admin/accounts', {
+        headers: { 'x-admin-password': getAdminPassword() },
+      });
       if (res.ok) {
         const data = await res.json();
         setAccounts(data.accounts);
@@ -55,7 +58,10 @@ export function AccountManagement() {
     setError(null);
     const res = await fetch('/api/admin/accounts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': getAdminPassword(),
+      },
       body: JSON.stringify({ name: newName.trim(), password: newPassword, role: newRole }),
     });
     const data = await res.json();
@@ -78,7 +84,10 @@ export function AccountManagement() {
 
     const res = await fetch('/api/admin/accounts', {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': getAdminPassword(),
+      },
       body: JSON.stringify(updates),
     });
     if (res.ok) {
@@ -91,7 +100,10 @@ export function AccountManagement() {
     if (!confirm(`"${name}" 계정을 삭제하시겠습니까?`)) return;
     await fetch('/api/admin/accounts', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': getAdminPassword(),
+      },
       body: JSON.stringify({ id }),
     });
     fetchAccounts();

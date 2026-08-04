@@ -1,35 +1,18 @@
 /**
- * 관리자 인증 유틸리티
- * 
- * - 서버: verifyAdminAuth() - API 라우트에서 x-admin-password 헤더 검증
+ * 관리자 인증 유틸리티 (클라이언트 안전)
+ *
  * - 클라이언트: getAdminPassword() - sessionStorage에서 저장된 비밀번호 조회
+ * - 서버: verifyAdminAuth() 는 '@/lib/adminAuth.server' 로 분리되어 있다.
+ *   (node:crypto 의존 때문에 클라이언트 번들에 포함되면 빌드가 깨진다)
+ *
+ * 이 파일에는 서버 전용 코드나 비밀값을 절대 넣지 마라.
+ * 클라이언트 컴포넌트들이 직접 import 한다.
  */
-
-import { NextRequest, NextResponse } from 'next/server';
-
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '4423';
-
-/**
- * 관리자 인증 검증 (서버 API용)
- * 
- * @param request - NextRequest 객체
- * @returns null이면 인증 성공, NextResponse면 인증 실패 응답
- */
-export function verifyAdminAuth(request: NextRequest): NextResponse | null {
-  const password = request.headers.get('x-admin-password');
-  
-  if (!password || password !== ADMIN_PASSWORD) {
-    return NextResponse.json(
-      { error: '관리자 인증이 필요합니다.' },
-      { status: 401 }
-    );
-  }
-  
-  return null;
-}
 
 /**
  * sessionStorage에서 관리자 비밀번호를 가져옴 (클라이언트 전용)
+ *
+ * 관리자 API 호출 시 x-admin-password 헤더 값으로 사용된다.
  */
 export function getAdminPassword(): string {
   if (typeof window === 'undefined') return '';

@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { verifyAdminAuth } from '@/lib/adminAuth';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
 import { sendSMS, createDepositReminderSMS, type OrderItemForSMS } from '@/lib/sms';
 import { sendSlackMessage } from '@/lib/slack';
 import { format } from 'date-fns';
@@ -27,7 +27,7 @@ interface RemindDepositRequest {
 export async function POST(request: NextRequest) {
   try {
     // 관리자 인증 확인
-    const authError = verifyAdminAuth(request);
+    const authError = await verifyAdminAuth(request);
     if (authError) return authError;
 
     // 요청 바디 파싱
