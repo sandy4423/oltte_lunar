@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { verifyAdminAuth } from '@/lib/adminAuth.server';
 import type { OrderRow, OrderItemRow, ProductShipmentQuantityRow } from '@/types/database';
+import { MANDU_STORE_ID } from '@/lib/stores';
+import { ORDER_ITEMS_SELECT, getOrderItemEmoji, getOrderItemKey, getOrderItemName } from '@/lib/orderItemName';
 
 // 캐싱 비활성화 - 항상 최신 데이터 조회
 export const dynamic = 'force-dynamic';
@@ -53,9 +55,12 @@ export async function GET(request: NextRequest) {
     // ============================================
     // 1. 주문 + 주문상품 데이터 조회
     // ============================================
+    // 만두 매장(1호점) 주문만 — 같은 DB 의 빙수 매장 과일 캠페인 매출이
+    // 만두 매출로 합산되면 안 된다. 떡국만두 캠페인은 만두 매장이라 포함된다.
     let query = supabase
       .from('orders')
-      .select('*, order_items(*)')
+      .select(`*, ${ORDER_ITEMS_SELECT}`)
+      .eq('store_id', MANDU_STORE_ID)
       .eq('is_hidden', false);
 
     if (startDate) {
@@ -239,19 +244,24 @@ export async function GET(request: NextRequest) {
         }
 
         // 상품별 수량 집계
+        // 캠페인 상품은 sku 가 비어 있어 sku 로 묶으면 서로 다른 상품이 한 덩어리가 된다.
         for (const item of (order.order_items || [])) {
-          const currentQty = calendar[deliveryDate].items[item.sku] || 0;
-          calendar[deliveryDate].items[item.sku] = currentQty + item.qty;
+          const key = getOrderItemKey(item);
+          const currentQty = calendar[deliveryDate].items[key] || 0;
+          calendar[deliveryDate].items[key] = currentQty + item.qty;
         }
       }
 
       // 상품별 집계 (결제완료 건만)
       if (isPaid) {
         for (const item of (order.order_items || [])) {
-          const sku = item.sku;
+          const sku = getOrderItemKey(item);
 
           if (!products[sku]) {
-            const info = PRODUCT_INFO[sku] || { name: sku, emoji: '📦' };
+            const info = (item.sku ? PRODUCT_INFO[item.sku] : undefined) || {
+              name: getOrderItemName(item),
+              emoji: getOrderItemEmoji(item, '📦'),
+            };
             products[sku] = {
               name: info.name,
               emoji: info.emoji,

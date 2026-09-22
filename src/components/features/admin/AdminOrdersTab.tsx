@@ -6,7 +6,7 @@ import { ko } from 'date-fns/locale';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { getProductBySku } from '@/lib/constants';
+import { getOrderItemKey, getOrderItemLabel } from '@/lib/orderItemName';
 import { formatKST } from '@/lib/utils';
 import { OrderFiltersAndActions } from './OrderFiltersAndActions';
 import { OrderMobileCards } from './OrderMobileCards';
@@ -23,7 +23,7 @@ interface AdminOrdersTabProps {
   setShowPageStats: (v: boolean) => void;
   showSourceAnalysis: boolean;
   setShowSourceAnalysis: (v: boolean) => void;
-  pendingDeliveryItems: Record<string, number>;
+  pendingDeliveryItems: Record<string, { label: string; qty: number }>;
   pendingDeliveryOrderCount: number;
   filterApt: string;
   setFilterApt: (v: string) => void;
@@ -94,30 +94,53 @@ export function AdminOrdersTab(props: AdminOrdersTabProps) {
   };
 
   // 예약 주문 통계
+  //
+  // 모수는 '지금 화면에 보이는 목록'(filteredOrders) 과 똑같이 맞춘다.
+  // 예전에는 날짜·단지·상태 필터를 타지 않고 전체 주문을 세는 바람에,
+  // 목록에는 2건만 떠 있는데 위 카드에는 243건이 찍혀서 어느 숫자를 믿어야
+  // 할지 알 수 없었다. 화면의 두 숫자는 언제나 같은 모수여야 한다.
   const stats = useMemo(() => {
-    const paid = visibleOrders.filter((o) => o.status === 'PAID' || o.status === 'LATE_DEPOSIT');
-    const created = visibleOrders.filter((o) => o.status === 'CREATED' || o.status === 'WAITING_FOR_DEPOSIT');
+    const listed = props.filteredOrders;
+    const paid = listed.filter((o) => o.status === 'PAID' || o.status === 'LATE_DEPOSIT');
+    const created = listed.filter((o) => o.status === 'CREATED' || o.status === 'WAITING_FOR_DEPOSIT');
     const totalRevenue = paid.reduce((sum, o) => sum + o.total_amount, 0);
 
     // 상품별 수량 집계 (결제완료 기준)
-    const productQty: Record<string, number> = {};
+    // 캠페인 상품(떡국만두)은 sku 가 비어 있어서 sku 로 묶으면 서로 다른 상품이
+    // "null" 한 줄로 합쳐진다. 그래서 상품을 가리는 키와 이름을 공통 함수로 구한다.
+    const productQty: Record<string, { label: string; qty: number }> = {};
     paid.forEach((order) => {
-      order.order_items.forEach((item) => {
-        productQty[item.sku] = (productQty[item.sku] || 0) + item.qty;
+      (order.order_items || []).forEach((item) => {
+        const key = getOrderItemKey(item);
+        if (!productQty[key]) {
+          productQty[key] = { label: getOrderItemLabel(item), qty: 0 };
+        }
+        productQty[key].qty += item.qty;
       });
     });
 
-    // 날짜별 주문 수
+    return { paid: paid.length, created: created.length, total: listed.length, totalRevenue, productQty };
+  }, [props.filteredOrders]);
+
+  // 날짜별 예약 현황 — 여기만 날짜 필터를 타지 않는다.
+  //
+  // 이 표는 '앞으로 어느 날 몇 건을 준비해야 하나'를 보는 표다. 기본 날짜 필터가
+  // 「오늘」이라 위 카드와 같은 모수를 쓰면 오늘 한 줄만 남아 표가 쓸모없어진다.
+  // 그래서 날짜 필터만 예외로 두고, 매장 필터(만두 매장만)와 숨김 제외는 그대로
+  // 적용된 전체 기간 결제완료 주문을 센다. 기준이 다르다는 것은 표 제목에 적었다.
+  const upcomingByDate = useMemo(() => {
     const byDate: Record<string, number> = {};
-    paid.forEach((order) => {
-      const date = order.pickup_date || order.delivery_date;
-      byDate[date] = (byDate[date] || 0) + 1;
-    });
-
+    visibleOrders
+      .filter((o) => o.status === 'PAID' || o.status === 'LATE_DEPOSIT')
+      .forEach((order) => {
+        const date = order.pickup_date || order.delivery_date;
+        if (date) byDate[date] = (byDate[date] || 0) + 1;
+      });
     // 접었을 때 한 줄에 남길 "오늘" 건수 (한국 시간 기준, 결제완료 기준)
+    // 필터를 「전체 기간」으로 바꿔도 '오늘 나갈 건수'는 그대로여야 하므로
+    // 이 숫자도 날짜 필터를 타지 않는다.
     const today = byDate[formatKST(new Date(), 'yyyy-MM-dd')] || 0;
-
-    return { paid: paid.length, created: created.length, totalRevenue, productQty, byDate, today };
+    return { byDate, today };
   }, [visibleOrders]);
 
   return (
@@ -137,7 +160,7 @@ export function AdminOrdersTab(props: AdminOrdersTabProps) {
             <span className="text-gray-300">·</span>
             <span className="text-yellow-700 font-bold">결제대기 {stats.created}</span>
             <span className="text-gray-300">·</span>
-            <span className="text-blue-700 font-bold">오늘 {stats.today}건</span>
+            <span className="text-blue-700 font-bold">오늘 {upcomingByDate.today}건</span>
           </span>
           <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-gray-600">
             {summaryOpen ? '접기' : '펼치기'}
@@ -146,6 +169,8 @@ export function AdminOrdersTab(props: AdminOrdersTabProps) {
         </Button>
 
         <div id="admin-orders-summary" hidden={!summaryOpen} className="mt-3 space-y-3">
+          {/* 아래 네 칸과 '상품별 준비 수량'은 지금 목록에 떠 있는 주문만 센다 */}
+          <p className="text-xs text-gray-500">아래 숫자는 지금 목록에 보이는 주문 기준입니다</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Card className="bg-green-50 border-green-200">
               <CardContent className="pt-4 pb-3">
@@ -162,7 +187,7 @@ export function AdminOrdersTab(props: AdminOrdersTabProps) {
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="pt-4 pb-3">
                 <p className="text-xs text-blue-700">전체 주문</p>
-                <p className="text-3xl font-bold text-blue-700">{visibleOrders.length}</p>
+                <p className="text-3xl font-bold text-blue-700">{stats.total}</p>
               </CardContent>
             </Card>
             <Card className="bg-orange-50 border-orange-200">
@@ -173,30 +198,33 @@ export function AdminOrdersTab(props: AdminOrdersTabProps) {
             </Card>
           </div>
 
-          {/* 상품별 수량 + 날짜별 주문 (결제완료 기준) */}
-          {stats.paid > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* 상품별 수량(목록 기준) + 날짜별 주문(전체 기간 기준) — 기준이 달라서 각각 적어 둔다 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {stats.paid > 0 && (
               <Card>
                 <CardContent className="pt-4 pb-3">
-                  <p className="text-sm font-bold text-gray-700 mb-2">상품별 준비 수량</p>
+                  <p className="text-sm font-bold text-gray-700">상품별 준비 수량</p>
+                  <p className="text-xs text-gray-500 mb-2">지금 목록 · 결제완료 기준</p>
                   <div className="space-y-1">
-                    {Object.entries(stats.productQty).map(([sku, qty]) => {
-                      const product = getProductBySku(sku);
-                      return (
-                        <div key={sku} className="flex justify-between text-sm">
-                          <span>{product ? `${product.emoji} ${product.name}` : sku}</span>
-                          <span className="font-bold">{qty}개</span>
-                        </div>
-                      );
-                    })}
+                    {Object.entries(stats.productQty).map(([key, entry]) => (
+                      <div key={key} className="flex justify-between text-sm">
+                        <span>{entry.label}</span>
+                        <span className="font-bold">{entry.qty}개</span>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
+            )}
+            {Object.keys(upcomingByDate.byDate).length > 0 && (
               <Card>
                 <CardContent className="pt-4 pb-3">
-                  <p className="text-sm font-bold text-gray-700 mb-2">날짜별 예약 현황</p>
+                  <p className="text-sm font-bold text-gray-700">날짜별 예약 현황</p>
+                  <p className="text-xs text-gray-500 mb-2">
+                    날짜 필터와 무관 · 전체 기간 결제완료 기준
+                  </p>
                   <div className="space-y-1">
-                    {Object.entries(stats.byDate)
+                    {Object.entries(upcomingByDate.byDate)
                       .sort(([a], [b]) => a.localeCompare(b))
                       .map(([date, count]) => (
                         <div key={date} className="flex justify-between text-sm">
@@ -207,8 +235,8 @@ export function AdminOrdersTab(props: AdminOrdersTabProps) {
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

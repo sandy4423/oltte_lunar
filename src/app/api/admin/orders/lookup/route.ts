@@ -7,6 +7,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { verifyAdminAuth } from '@/lib/adminAuth.server';
+import { MANDU_STORE_ID } from '@/lib/stores';
+import { ORDER_ITEMS_SELECT } from '@/lib/orderItemName';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +47,8 @@ export async function GET(request: NextRequest) {
   const customerIds = customers.map((c) => c.id);
   const { data: orders, error: orderError } = await supabase
     .from('orders')
-    .select('*, order_items(*)')
+    .select(`*, ${ORDER_ITEMS_SELECT}`)
+    .eq('store_id', MANDU_STORE_ID)
     .in('customer_id', customerIds)
     .in('status', ['PAID', 'LATE_DEPOSIT'])
     .eq('is_hidden', false)
