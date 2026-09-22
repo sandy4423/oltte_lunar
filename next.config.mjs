@@ -43,6 +43,25 @@ const nextConfig = {
         destination: 'https://fresh.olttefood.com/tteokguk26',
         permanent: false,
       },
+      /*
+        사장님용 화면 두 개 (2026-09-22). 사장님이 처음 말한 주소가
+        olttefood.com/operation 이었다.
+
+        ⛔ `/admin` 은 **절대 여기 넣지 않는다.** 이 앱에 이미 전골 주문 관리화면이
+           `src/app/admin/` 로 있어서, 넣으면 그 화면이 통째로 막힌다.
+           그래서 카운터는 `/counter` 라는 다른 이름으로 연다.
+        ※ 이동만 시키는 것이고 로그인은 그대로다 — 저쪽은 직원 PIN 세션을 받는다.
+      */
+      {
+        source: '/operation',
+        destination: 'https://fresh.olttefood.com/operation',
+        permanent: false,
+      },
+      {
+        source: '/counter',
+        destination: 'https://fresh.olttefood.com/admin',
+        permanent: false,
+      },
     ]
   },
 
