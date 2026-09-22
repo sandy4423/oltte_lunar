@@ -7,6 +7,7 @@ import { useOrderSelection } from '@/hooks/useOrderSelection';
 import { useOrderStatusChange } from '@/hooks/useOrderStatusChange';
 import { useAdminStats } from '@/hooks/useAdminStats';
 import { getAdminPassword } from '@/lib/adminAuth';
+import { getOrderItemKey, getOrderItemLabel } from '@/lib/orderItemName';
 
 interface AdminUser {
   id: string;
@@ -348,13 +349,17 @@ export function useAdminPage() {
   // ============================================
   const selectedOrdersData = orders.filter((o) => selectedOrders.has(o.id));
 
+  // 전달 필요 수량 — 캠페인 상품은 sku 가 비어 있어서 sku 로 묶으면 서로 다른
+  // 상품이 "null" 한 덩어리로 합쳐진다. 공통 함수로 키와 이름을 구한다.
   const pendingDeliveryItems = useMemo(() => {
-    const items: Record<string, number> = {};
+    const items: Record<string, { label: string; qty: number }> = {};
     orders
       .filter(o => !o.is_hidden && ['PAID', 'OUT_FOR_DELIVERY', 'LATE_DEPOSIT'].includes(o.status))
       .forEach(order => {
-        order.order_items.forEach(item => {
-          items[item.sku] = (items[item.sku] || 0) + item.qty;
+        (order.order_items || []).forEach(item => {
+          const key = getOrderItemKey(item);
+          if (!items[key]) items[key] = { label: getOrderItemLabel(item), qty: 0 };
+          items[key].qty += item.qty;
         });
       });
     return items;

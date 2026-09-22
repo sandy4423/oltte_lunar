@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { normalizePhone } from '@/lib/utils';
+import { ORDER_ITEM_COLUMNS_SELECT } from '@/lib/orderItemName';
 
 export const dynamic = 'force-dynamic';
 
@@ -127,7 +128,7 @@ export async function GET(request: NextRequest) {
     const orderIds = orders.map((o) => o.id);
     const { data: orderItems } = await supabase
       .from('order_items')
-      .select('*')
+      .select(ORDER_ITEM_COLUMNS_SELECT)
       .in('order_id', orderIds);
 
     const orderItemsMap = new Map<string, typeof orderItems>();

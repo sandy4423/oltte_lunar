@@ -8,13 +8,17 @@
  * - SLACK_WEBHOOK_URL: Slack Incoming Webhook URL
  */
 
-import { getProductBySku } from '@/lib/constants';
+import { getOrderItemName, type NameableOrderItem } from '@/lib/orderItemName';
 
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL || '';
 
-/** 주문 상품 아이템 (슬랙 알림용) */
-export interface SlackOrderItem {
-  sku: string;
+/**
+ * 주문 상품 아이템 (슬랙 알림용)
+ *
+ * 캠페인 상품(떡국만두)은 sku 가 비어 있고 이름이 campaign_products 에 있다.
+ * 그래서 sku 만 받지 않고 이름을 구할 수 있는 필드를 통째로 받는다.
+ */
+export interface SlackOrderItem extends NameableOrderItem {
   qty: number;
 }
 
@@ -24,11 +28,7 @@ export interface SlackOrderItem {
 function formatOrderItems(items: SlackOrderItem[]): string {
   if (!items || items.length === 0) return '';
   
-  const lines = items.map(item => {
-    const product = getProductBySku(item.sku);
-    const name = product ? product.name : item.sku;
-    return `- ${name} x ${item.qty}`;
-  });
+  const lines = items.map(item => `- ${getOrderItemName(item)} x ${item.qty}`);
   
   return `\n\n[주문상품]\n${lines.join('\n')}`;
 }
@@ -165,11 +165,7 @@ function formatPickupTimeKorean(time: string): string {
  */
 function formatOrderItemsMinimal(items: SlackOrderItem[]): string {
   if (!items || items.length === 0) return '';
-  return items.map(item => {
-    const product = getProductBySku(item.sku);
-    const name = product ? product.name : item.sku;
-    return `- ${name} x ${item.qty}`;
-  }).join('\n');
+  return items.map(item => `- ${getOrderItemName(item)} x ${item.qty}`).join('\n');
 }
 
 const PAYMENT_METHOD_LABEL: Record<string, string> = {

@@ -14,6 +14,7 @@ import { sendSMS, createPickupTimeRequestSMS } from '@/lib/sms';
 import type { OrderItemForSMS } from '@/lib/sms';
 import { sendSlackMessage, createPickupTimeLinkSentAlert } from '@/lib/slack';
 import { getProductBySku } from '@/lib/constants';
+import { ORDER_ITEMS_SELECT, getOrderItemEmoji, getOrderItemName } from '@/lib/orderItemName';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,10 +43,7 @@ export async function POST(request: NextRequest) {
           phone,
           name
         ),
-        order_items (
-          sku,
-          qty
-        )
+        ${ORDER_ITEMS_SELECT}
       `)
       .eq('id', orderId)
       .single();
@@ -114,17 +112,14 @@ export async function POST(request: NextRequest) {
     const deliveryDate = format(new Date(order.delivery_date), 'M월 d일 (EEE)', { locale: ko });
 
     // 주문 상품 정보 변환
-    const orderItems: OrderItemForSMS[] = (order.order_items || [])
-      .map((item: { sku: string; qty: number }) => {
-        const product = getProductBySku(item.sku);
-        return product ? {
-          sku: item.sku,
-          qty: item.qty,
-          productName: product.name,
-          emoji: product.emoji,
-        } : null;
-      })
-      .filter(Boolean) as OrderItemForSMS[];
+    // 상품 이름은 공통 함수로 구한다. 예전에는 PRODUCTS 목록에 없는 상품
+    // (캠페인 상품 등)을 통째로 버려서 문자에 주문 내역이 비어 나갔다.
+    const orderItems: OrderItemForSMS[] = (order.order_items || []).map((item: any) => ({
+      sku: item.sku,
+      qty: item.qty,
+      productName: getOrderItemName(item),
+      emoji: getOrderItemEmoji(item, '📦'),
+    }));
 
     // SMS 발송
     try {

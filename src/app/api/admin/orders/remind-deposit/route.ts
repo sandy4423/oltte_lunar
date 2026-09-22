@@ -17,6 +17,7 @@ import { sendSlackMessage } from '@/lib/slack';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { getApartmentFullName, getProductBySku, APARTMENTS, PICKUP_APT_CODE } from '@/lib/constants';
+import { ORDER_ITEMS_SELECT, getOrderItemEmoji, getOrderItemName } from '@/lib/orderItemName';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     // 선택된 주문 조회 (입금 대기 상태만, order_items 포함)
     const { data: orders, error: fetchError } = await supabase
       .from('orders')
-      .select('*, customer:customers(*), order_items(*)')
+      .select(`*, customer:customers(*), ${ORDER_ITEMS_SELECT}`)
       .in('id', orderIds)
       .eq('status', 'WAITING_FOR_DEPOSIT');
 
@@ -103,15 +104,14 @@ export async function POST(request: NextRequest) {
           : null;
 
         // 주문 내역 변환 (order_items → SMS용 포맷)
-        const orderItems: OrderItemForSMS[] = (order.order_items || []).map((item: any) => {
-          const product = getProductBySku(item.sku);
-          return {
-            sku: item.sku,
-            qty: item.qty,
-            productName: product?.name || item.sku,
-            emoji: product?.emoji || '📦',
-          };
-        });
+        // 상품 이름은 공통 함수로 구한다. 캠페인 상품(떡국만두)은 sku 가 비어
+        // 있어서 예전에는 문자에 상품명이 빈칸으로 나갔다.
+        const orderItems: OrderItemForSMS[] = (order.order_items || []).map((item: any) => ({
+          sku: item.sku,
+          qty: item.qty,
+          productName: getOrderItemName(item),
+          emoji: getOrderItemEmoji(item, '📦'),
+        }));
 
         // SMS 메시지 생성
         const isPickup = order.is_pickup || order.apt_code === PICKUP_APT_CODE;

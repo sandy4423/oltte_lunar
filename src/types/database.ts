@@ -96,14 +96,28 @@ export interface OrderRow {
   updated_at: string;              // timestamptz, DEFAULT now()
 }
 
-/** order_items 테이블 Row - schema.sql line 41-48 */
+/**
+ * order_items 테이블 Row
+ *
+ * 실제 운영 DB 기준 (2026-09-22 확인). 한 줄의 상품은 둘 중 하나다.
+ *  - 만두앱 자체 상품: `sku` 가 채워지고 `campaign_product_id` 가 비어 있다
+ *  - 캠페인 상품: `sku` 가 NULL 이고 `campaign_product_id` 가 채워진다
+ * 예전에는 여기 `sku` 가 NOT NULL 로 적혀 있었지만 사실과 달랐다.
+ * 상품 이름은 `@/lib/orderItemName` 의 공통 함수로 구한다.
+ */
 export interface OrderItemRow {
   id: string;                      // uuid, PK
   order_id: string;                // uuid, FK → orders(id) ON DELETE CASCADE, NOT NULL
-  sku: ProductSku;                 // product_sku, NOT NULL
+  sku: ProductSku | null;          // product_sku, NULLABLE - 캠페인 상품이면 NULL
   qty: number;                     // int, NOT NULL, DEFAULT 1
   unit_price: number;              // int, NOT NULL
   line_amount: number;             // int, NOT NULL (qty * unit_price)
+  campaign_product_id?: string | null;        // uuid, NULLABLE - FK → campaign_products(id)
+  campaign_product_option_id?: string | null; // uuid, NULLABLE - FK → campaign_product_options(id)
+  /** 조회 시 함께 읽은 캠페인 상품 (ORDER_ITEMS_SELECT 를 쓴 쿼리에서만 채워진다) */
+  campaign_product?: { id?: string | null; name?: string | null } | null;
+  /** 조회 시 함께 읽은 캠페인 상품 옵션 */
+  campaign_product_option?: { id?: string | null; label?: string | null } | null;
 }
 
 /** refund_tokens 테이블 Row */

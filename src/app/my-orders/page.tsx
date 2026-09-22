@@ -18,6 +18,7 @@ import { ORDER_STATUS_LABEL, getProductBySku, getAvailablePickupDates, getAvaila
 import { trackPageView } from '@/lib/trackPageView';
 import { PickupDateTimeSelector } from '@/components/features/PickupDateTimeSelector';
 import { CashReceiptForm } from '@/components/features/CashReceiptForm';
+import { getOrderItemLabel } from '@/lib/orderItemName';
 
 // ============================================
 // 주문내역 조회 페이지
@@ -643,14 +644,14 @@ export default function MyOrdersPage() {
                       {/* 상품 목록 */}
                       <div className="border-t pt-3 space-y-1.5">
                         {order.order_items?.map((item: any) => {
-                          const product = getProductBySku(item.sku);
+                          const itemLabel = getOrderItemLabel(item);
                           return (
                             <div
                               key={item.id}
                               className="flex justify-between text-sm"
                             >
                               <span>
-                                {product?.emoji} {product?.name || item.sku} x
+                                {itemLabel} x
                                 {item.qty}
                               </span>
                               <span className="font-medium">

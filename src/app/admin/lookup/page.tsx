@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { getAdminPassword } from '@/lib/adminAuth';
 import { getProductBySku } from '@/lib/constants';
 import Link from 'next/link';
+import { getOrderItemLabel } from '@/lib/orderItemName';
 
 interface LookupCustomer {
   id: string;
@@ -98,10 +99,7 @@ export default function LookupPage() {
   const formatPhone = (phone: string) =>
     phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
 
-  const getSkuLabel = (sku: string) => {
-    const product = getProductBySku(sku);
-    return product ? `${product.emoji} ${product.name}` : sku;
-  };
+  // 상품 이름은 공통 함수로 구한다 (캠페인 상품은 sku 가 비어 있다)
 
   if (!isAuthenticated) {
     return (
@@ -209,7 +207,7 @@ export default function LookupPage() {
                   {order.order_items.map((item, i) => (
                     <div key={i} className="flex justify-between items-center">
                       <span className="text-base">
-                        {getSkuLabel(item.sku)} <span className="text-gray-500">x{item.qty}</span>
+                        {getOrderItemLabel(item)} <span className="text-gray-500">x{item.qty}</span>
                       </span>
                       <span className="text-sm text-gray-600">
                         {item.line_amount.toLocaleString()}원
