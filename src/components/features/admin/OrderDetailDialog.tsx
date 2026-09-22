@@ -10,6 +10,7 @@ import { ORDER_STATUS_LABEL, PICKUP_APT_CODE } from '@/lib/constants';
 import { getOrderItemLabel } from '@/lib/orderItemName';
 import { calculateDiscountBreakdown } from '@/lib/pricing';
 import { formatDongHo } from '@/lib/utils';
+import { PickedUpBadge } from './PickedUpBadge';
 
 interface OrderDetailDialogProps {
   open: boolean;
@@ -34,10 +35,24 @@ export function OrderDetailDialog({
   };
 
   const isPickup = order.apt_code === PICKUP_APT_CODE;
-  const canDeliver = ['PAID', 'OUT_FOR_DELIVERY', 'LATE_DEPOSIT'].includes(order.status);
+
+  /*
+    캠페인 주문(떡국만두 등)은 전골 주문과 처리가 다릅니다 (2026-09-22).
+    누르면 `status` 가 아니라 `picked_up_at` 에 시각이 찍히고, 장부앱 카운터와
+    같은 수령완료 문자가 나갑니다. 이미 수령한 건은 버튼이 나오지 않습니다
+    (문자가 두 번 나가지 않게).
+  */
+  const isCampaign = !!order.campaign_id;
+  const pickedUp = !!order.picked_up_at;
+  const canDeliver = isCampaign
+    ? ['PAID', 'LATE_DEPOSIT'].includes(order.status) && !pickedUp
+    : ['PAID', 'OUT_FOR_DELIVERY', 'LATE_DEPOSIT'].includes(order.status);
+  const actionLabel = isCampaign ? '수령완료' : '전달완료';
 
   const handleDelivered = () => {
-    const confirmMsg = `${order.customer.name}님에게 전달완료 처리하시겠습니까?\n\n전달완료 SMS가 발송됩니다.`;
+    const confirmMsg = isCampaign
+      ? `${order.customer.name}님 주문을 수령완료 처리하시겠습니까?\n\n수령완료 SMS가 발송됩니다.`
+      : `${order.customer.name}님에게 전달완료 처리하시겠습니까?\n\n전달완료 SMS가 발송됩니다.`;
 
     if (confirm(confirmMsg)) {
       onDelivered(order.id);
@@ -66,6 +81,7 @@ export function OrderDetailDialog({
               <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
                 {statusInfo.label}
               </span>
+              <PickedUpBadge pickedUpAt={order.picked_up_at} />
               {isPickup ? (
                 <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-purple-500 text-white border border-purple-600">
                   🏪 픽업
@@ -220,7 +236,7 @@ export function OrderDetailDialog({
               className="w-full h-12 text-base bg-green-600 hover:bg-green-700"
             >
               <CheckCircle className="mr-2 h-5 w-5" />
-              {actionLoading ? '처리 중...' : '전달완료'}
+              {actionLoading ? '처리 중...' : actionLabel}
             </Button>
           )}
         </div>

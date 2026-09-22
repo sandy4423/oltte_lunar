@@ -123,6 +123,12 @@ export function OrderFiltersAndActions({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">전체 상태</SelectItem>
+              {/*
+                캠페인 주문(떡국만두)은 수령해도 상태가 「결제완료」 그대로입니다.
+                수령 여부로 거르려면 아래 두 항목을 쓰세요 (2026-09-22).
+              */}
+              <SelectItem value="NOT_PICKED_UP">✅ 미수령 (결제완료)</SelectItem>
+              <SelectItem value="PICKED_UP">✅ 수령완료</SelectItem>
               {Object.entries(ORDER_STATUS_LABEL).map(([key, { label }]) => (
                 <SelectItem key={key} value={key}>
                   {label}

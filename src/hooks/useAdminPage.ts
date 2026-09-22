@@ -4,7 +4,11 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAdminOrders } from '@/hooks/useAdminOrders';
 import { useOrderFilters } from '@/hooks/useOrderFilters';
 import { useOrderSelection } from '@/hooks/useOrderSelection';
-import { useOrderStatusChange } from '@/hooks/useOrderStatusChange';
+import {
+  useOrderStatusChange,
+  describeDeliveredResult,
+  hasCampaignOutcome,
+} from '@/hooks/useOrderStatusChange';
 import { useAdminStats } from '@/hooks/useAdminStats';
 import { getAdminPassword } from '@/lib/adminAuth';
 import { getOrderItemKey, getOrderItemLabel } from '@/lib/orderItemName';
@@ -173,14 +177,19 @@ export function useAdminPage() {
         },
         body: JSON.stringify({ orderIds: [orderId], status: 'DELIVERED' }),
       });
+      const data = await response.json();
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || '전달완료 처리에 실패했습니다.');
       }
       await fetchOrders();
       setDetailDialogOpen(false);
       setSelectedOrderForDetail(null);
-      alert('전달완료 처리되었습니다. 고객에게 SMS가 발송되었습니다.');
+      // 캠페인 주문은 수령완료로 처리되고, 건너뛴 건이 있으면 그대로 알려줍니다
+      alert(
+        hasCampaignOutcome(data)
+          ? describeDeliveredResult(data, 1)
+          : '전달완료 처리되었습니다. 고객에게 SMS가 발송되었습니다.'
+      );
     } catch (error: any) {
       console.error('[DetailDelivered] Error:', error);
       alert(error.message || '전달완료 처리 중 오류가 발생했습니다.');
@@ -245,12 +254,14 @@ export function useAdminPage() {
         },
         body: JSON.stringify({ orderIds: [orderId], status: 'DELIVERED' }),
       });
+      const data = await response.json();
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || '전달완료 처리에 실패했습니다.');
       }
       await fetchOrders();
-      alert('전달완료 처리되었습니다.');
+      alert(
+        hasCampaignOutcome(data) ? describeDeliveredResult(data, 1) : '전달완료 처리되었습니다.'
+      );
     } catch (error: any) {
       console.error('[SingleDelivered] Error:', error);
       alert(error.message || '전달완료 처리 중 오류가 발생했습니다.');

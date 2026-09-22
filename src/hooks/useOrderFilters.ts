@@ -48,8 +48,20 @@ export function useOrderFilters(orders: OrderFull[]) {
       // showHidden이 true면 숨긴 주문만 표시
       if (showHidden && !order.is_hidden) return false;
 
-      // 일반 필터
-      if (filterStatus !== 'all' && order.status !== filterStatus) return false;
+      /*
+        상태 필터.
+        캠페인 주문(떡국만두 등)은 손님이 가져가도 status 가 「결제완료」 그대로라
+        상태만으로는 수령 여부를 못 가립니다. 그래서 수령 여부로 거르는
+        두 항목(PICKED_UP · NOT_PICKED_UP)을 상태 목록에 함께 둡니다 (2026-09-22).
+      */
+      if (filterStatus === 'PICKED_UP') {
+        if (!order.picked_up_at) return false;
+      } else if (filterStatus === 'NOT_PICKED_UP') {
+        if (order.picked_up_at) return false;
+        if (!['PAID', 'LATE_DEPOSIT'].includes(order.status)) return false;
+      } else if (filterStatus !== 'all' && order.status !== filterStatus) {
+        return false;
+      }
       if (filterApt !== 'all') {
         if (filterApt === PICKUP_APT_CODE) {
           // 픽업주문 필터: is_pickup 기준으로 판별

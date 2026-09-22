@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ORDER_STATUS_LABEL } from '@/lib/constants';
+import { PickedUpBadge } from './PickedUpBadge';
 import { getOrderItemLabel } from '@/lib/orderItemName';
 import type { OrderFull } from '@/types/database';
 import { formatAptName, formatDongHo } from '@/lib/utils';
@@ -45,9 +46,13 @@ export function OrderMobileCards({
                     onSelectOrder(order.id, e.target.checked)
                   }
                 />
-                <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
-                  {statusInfo.label}
-                </span>
+                <div className="flex items-center gap-1">
+                  {/* 캠페인 주문은 수령해도 status 가 안 바뀝니다 — picked_up_at 으로 구분 */}
+                  <PickedUpBadge pickedUpAt={order.picked_up_at} />
+                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
+                    {statusInfo.label}
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-2 text-sm">

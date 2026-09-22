@@ -8,6 +8,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { ORDER_STATUS_LABEL } from '@/lib/constants';
+import { PickedUpBadge } from './PickedUpBadge';
 import { getOrderItemLabel } from '@/lib/orderItemName';
 import type { OrderFull } from '@/types/database';
 import { formatAptName, formatDongHo } from '@/lib/utils';
@@ -103,9 +104,13 @@ export function OrderDesktopTable({
                         />
                       </TableCell>
                       <TableCell>
-                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
-                          {statusInfo.label}
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
+                            {statusInfo.label}
+                          </span>
+                          {/* 캠페인 주문은 수령해도 status 가 안 바뀝니다 — picked_up_at 으로 구분 */}
+                          <PickedUpBadge pickedUpAt={order.picked_up_at} />
+                        </div>
                       </TableCell>
                       <TableCell className="max-w-[150px] truncate" title={order.apt_name ?? ''}>
                         {order.is_pickup ? '🏪 픽업주문' : formatAptName(order.apt_name)}

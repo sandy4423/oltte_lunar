@@ -94,6 +94,19 @@ export interface OrderRow {
   is_hidden: boolean;              // boolean, DEFAULT false - 테스트 주문 등 숨김 처리 여부
   created_at: string;              // timestamptz, DEFAULT now()
   updated_at: string;              // timestamptz, DEFAULT now()
+  /**
+   * 캠페인(떡국만두 등) 주문이면 `sale_campaigns.id`. 전골 주문은 null.
+   * 장부앱과 함께 쓰는 칸입니다 (2026-09-22 추가 — DB 에는 예전부터 있었습니다).
+   */
+  campaign_id?: string | null;     // uuid, NULLABLE
+  /**
+   * 손님이 물건을 가져간 시각. **캠페인 주문의 수령 여부는 이 칸이 정합니다.**
+   *
+   * ⛔ 캠페인 주문은 수령해도 `status` 가 PAID 그대로입니다 — 장부앱 카운터가
+   *    `['PAID','LATE_DEPOSIT']` 만 「입금완료」로 보기 때문입니다.
+   *    수령했는지는 `status` 가 아니라 이 칸으로 판단하세요.
+   */
+  picked_up_at?: string | null;    // timestamptz, NULLABLE
 }
 
 /**
@@ -298,6 +311,10 @@ export interface OrderUpdate {
   is_hidden?: boolean;
   created_at?: string;
   updated_at?: string;
+  /** 캠페인 주문의 `sale_campaigns.id` (2026-09-22 추가) */
+  campaign_id?: string | null;
+  /** 손님이 물건을 가져간 시각. 캠페인 주문의 수령 여부는 이 칸이 정합니다 */
+  picked_up_at?: string | null;
 }
 
 /** order_items UPDATE 타입 */
