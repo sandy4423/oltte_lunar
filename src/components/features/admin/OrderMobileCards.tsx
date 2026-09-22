@@ -5,8 +5,10 @@ import { ko } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ORDER_STATUS_LABEL, getProductBySku } from '@/lib/constants';
+import { ORDER_STATUS_LABEL } from '@/lib/constants';
+import { getOrderItemLabel } from '@/lib/orderItemName';
 import type { OrderFull } from '@/types/database';
+import { formatAptName, formatDongHo } from '@/lib/utils';
 
 interface OrderMobileCardsProps {
   filteredOrders: OrderFull[];
@@ -56,7 +58,7 @@ export function OrderMobileCards({
                     </>
                   ) : (
                     <>
-                      {order.apt_name.replace(/^[68]공구 /, '')} / {order.dong}동 {order.ho}호
+                      {formatAptName(order.apt_name)} / {formatDongHo(order.dong, order.ho)}
                     </>
                   )}
                 </div>
@@ -79,10 +81,9 @@ export function OrderMobileCards({
                 </div>
                 <div className="space-y-1">
                   {order.order_items.map((item) => {
-                    const product = getProductBySku(item.sku);
                     return (
                       <div key={item.id}>
-                        {product?.emoji} {product?.name || item.sku} x{item.qty}
+                        {getOrderItemLabel(item)} x{item.qty}
                       </div>
                     );
                   })}

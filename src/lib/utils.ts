@@ -58,3 +58,23 @@ export function formatAccountNumber(accountNumber: string): string {
 export function formatKST(date: Date | string, formatStr: string): string {
   return formatInTimeZone(date, 'Asia/Seoul', formatStr, { locale: ko });
 }
+
+/**
+ * 단지 이름 표시 — 캠페인 주문(떡국만두 등)은 단지가 없다.
+ *
+ * 예전에는 `order.apt_name.replace(...)` 를 그냥 불러서, 단지가 없는 주문이
+ * 목록에 한 건이라도 있으면 관리화면 전체가 하얗게 됐다.
+ */
+export function formatAptName(aptName: string | null | undefined): string {
+  if (!aptName) return '—';
+  return aptName.replace(/^[68]공구 /, '');
+}
+
+/** 동·호수 표시 — 둘 다 없으면 '—' (캠페인 주문은 동호수가 없다) */
+export function formatDongHo(
+  dong: string | null | undefined,
+  ho: string | null | undefined
+): string {
+  const parts = [dong ? `${dong}동` : '', ho ? `${ho}호` : ''].filter(Boolean);
+  return parts.length ? parts.join(' ') : '—';
+}

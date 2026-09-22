@@ -8,9 +8,14 @@ import { useState, useMemo } from 'react';
 import type { OrderFull } from '@/types/database';
 import { PICKUP_APT_CODE } from '@/lib/constants';
 
+/** 검색어 비교 - 값이 없거나 문자열이 아니면 조용히 '해당 없음' 처리 */
+function includesQuery(value: unknown, query: string): boolean {
+  return typeof value === 'string' && value.toLowerCase().includes(query);
+}
+
 /** 주문의 수령날짜(픽업은 pickup_date, 배달은 delivery_date) */
 function getReceiveDate(order: Pick<OrderFull, 'is_pickup' | 'pickup_date' | 'delivery_date'>): string {
-  return order.is_pickup && order.pickup_date ? order.pickup_date : order.delivery_date;
+  return order.is_pickup && order.pickup_date ? order.pickup_date : (order.delivery_date ?? '');
 }
 
 /** KST 기준 오늘 날짜 (YYYY-MM-DD) */
@@ -67,11 +72,16 @@ export function useOrderFilters(orders: OrderFull[]) {
       
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        const matchName = order.customer.name.toLowerCase().includes(query);
-        const matchPhone = order.customer.phone.includes(query);
-        const matchDong = order.dong.includes(query);
-        const matchHo = order.ho.includes(query);
-        if (!matchName && !matchPhone && !matchDong && !matchHo) return false;
+        // 캠페인 주문(떡국만두 등)은 dong·ho·apt_name·apt_code 가 비어 있다.
+        // 타입에는 NOT NULL 로 적혀 있지만 실제 DB 는 NULL 을 허용한다.
+        // 이 블록은 useMemo(렌더 중)라서 여기서 예외가 나면 화면 전체가 하얗게 된다.
+        // 그래서 어떤 필드가 없더라도 절대 터지지 않게 전부 걸러서 비교한다.
+        const hit =
+          includesQuery(order.customer?.name, query) ||
+          includesQuery(order.customer?.phone, query) ||
+          includesQuery(order.dong, query) ||
+          includesQuery(order.ho, query);
+        if (!hit) return false;
       }
       return true;
     });
@@ -94,7 +104,7 @@ export function useOrderFilters(orders: OrderFull[]) {
           compareValue = a.total_amount - b.total_amount;
           break;
         case 'status':
-          compareValue = a.status.localeCompare(b.status);
+          compareValue = (a.status ?? '').localeCompare(b.status ?? '');
           break;
         default:
           compareValue = 0;

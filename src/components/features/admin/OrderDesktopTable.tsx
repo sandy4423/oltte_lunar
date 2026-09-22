@@ -7,8 +7,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { ORDER_STATUS_LABEL, getProductBySku } from '@/lib/constants';
+import { ORDER_STATUS_LABEL } from '@/lib/constants';
+import { getOrderItemLabel } from '@/lib/orderItemName';
 import type { OrderFull } from '@/types/database';
+import { formatAptName, formatDongHo } from '@/lib/utils';
 
 interface OrderDesktopTableProps {
   filteredOrders: OrderFull[];
@@ -105,14 +107,14 @@ export function OrderDesktopTable({
                           {statusInfo.label}
                         </span>
                       </TableCell>
-                      <TableCell className="max-w-[150px] truncate" title={order.apt_name}>
-                        {order.is_pickup ? '🏪 픽업주문' : order.apt_name.replace(/^[68]공구 /, '')}
+                      <TableCell className="max-w-[150px] truncate" title={order.apt_name ?? ''}>
+                        {order.is_pickup ? '🏪 픽업주문' : formatAptName(order.apt_name)}
                       </TableCell>
                       <TableCell className="font-medium">
                         {order.is_pickup ? (
                           <span className="text-sm text-purple-600">- (픽업주문)</span>
                         ) : (
-                          <>{order.dong}동 {order.ho}호</>
+                          <>{formatDongHo(order.dong, order.ho)}</>
                         )}
                       </TableCell>
                       <TableCell>{order.customer.name}</TableCell>
@@ -133,10 +135,9 @@ export function OrderDesktopTable({
                       <TableCell>
                         <div className="text-sm space-y-1">
                           {order.order_items.map((item) => {
-                            const product = getProductBySku(item.sku);
                             return (
                               <div key={item.id} className="whitespace-nowrap">
-                                {product?.emoji} {product?.name || item.sku} x{item.qty}
+                                {getOrderItemLabel(item)} x{item.qty}
                               </div>
                             );
                           })}

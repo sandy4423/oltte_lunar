@@ -5,6 +5,7 @@ import { getAdminPassword } from '@/lib/adminAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatAptName, formatDongHo } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -146,7 +147,7 @@ export function CancelRequestDialog({
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">배송지</span>
-              <span>{order.apt_name} {order.dong}동 {order.ho}호</span>
+              <span>{formatAptName(order.apt_name)} {formatDongHo(order.dong, order.ho)}</span>
             </div>
             <div className="flex justify-between pt-2 border-t border-gray-200">
               <span className="font-semibold text-gray-900">주문금액</span>

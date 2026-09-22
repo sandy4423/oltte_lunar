@@ -3,6 +3,8 @@
 import { format } from 'date-fns';
 import { getProductBySku } from '@/lib/constants';
 import type { OrderFull } from '@/types/database';
+import { getOrderItemName } from '@/lib/orderItemName';
+import { formatDongHo } from '@/lib/utils';
 
 interface LabelPrintViewProps {
   orders: OrderFull[];
@@ -59,20 +61,17 @@ export function LabelPrintView({ orders, onClose }: LabelPrintViewProps) {
       {orders.map((order) => (
         <div key={order.id} className="label-item">
           <div style={{ fontWeight: 'bold', fontSize: '11px', marginBottom: '2px' }}>
-            {order.dong}동 {order.ho}호
+            {formatDongHo(order.dong, order.ho)}
           </div>
           <div style={{ fontSize: '10px', marginBottom: '4px' }}>
             {order.customer.name} ({order.customer.phone.slice(-4)})
           </div>
           <div style={{ fontSize: '8px', borderTop: '1px solid #ccc', paddingTop: '2px' }}>
-            {order.order_items.map((item) => {
-              const product = getProductBySku(item.sku);
-              return (
-                <div key={item.id}>
-                  {product?.name || item.sku} x {item.qty}
-                </div>
-              );
-            })}
+            {order.order_items.map((item) => (
+              <div key={item.id}>
+                {getOrderItemName(item)} x {item.qty}
+              </div>
+            ))}
           </div>
           <div style={{ fontSize: '7px', color: '#666', marginTop: '2px' }}>
             {format(new Date(order.delivery_date), 'M/d')} 배송

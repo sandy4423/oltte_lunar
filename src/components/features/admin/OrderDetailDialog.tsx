@@ -6,8 +6,10 @@ import { AlertTriangle, CheckCircle, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ORDER_STATUS_LABEL, getProductBySku, PICKUP_APT_CODE } from '@/lib/constants';
+import { ORDER_STATUS_LABEL, PICKUP_APT_CODE } from '@/lib/constants';
+import { getOrderItemLabel } from '@/lib/orderItemName';
 import { calculateDiscountBreakdown } from '@/lib/pricing';
+import { formatDongHo } from '@/lib/utils';
 
 interface OrderDetailDialogProps {
   open: boolean;
@@ -118,7 +120,7 @@ export function OrderDetailDialog({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500 text-xs">동/호</span>
-                    <span className="font-medium">{order.dong}동 {order.ho}호</span>
+                    <span className="font-medium">{formatDongHo(order.dong, order.ho)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500 text-xs">배송일</span>
@@ -136,12 +138,11 @@ export function OrderDetailDialog({
             <h3 className="font-semibold text-xs text-gray-500">주문 상품</h3>
             <div className="space-y-1.5">
               {order.order_items.map((item: any) => {
-                const product = getProductBySku(item.sku);
                 const itemAmount = item.line_amount ?? (item.unit_price ?? 0) * item.qty;
                 return (
                   <div key={item.id} className="flex justify-between items-center">
                     <span>
-                      {product?.emoji} {product?.name || item.sku} x{item.qty}
+                      {getOrderItemLabel(item)} x{item.qty}
                     </span>
                     <span className="font-medium">
                       {itemAmount.toLocaleString()}원
