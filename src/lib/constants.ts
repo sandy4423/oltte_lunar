@@ -350,3 +350,21 @@ export function getAvailablePickupDates(): string[] {
 
 export const TEST_PHONE_NUMBER = '01012341234'; // 정규화된 형태
 export const TEST_VERIFICATION_CODE = '0000';
+
+// ============================================
+// 명절 떡국용 만두 기획판매 (2026-09-22 하루)
+// ============================================
+
+/**
+ * 떡국용 만두 예약 주문 마감 시각.
+ *
+ * 첫 화면(page.tsx)의 예약 카드를 "이 시각이 지나면 자동으로 안 보이게" 하려고 둔 값이다.
+ * 마감 다음 날 사장님이 코드를 손대지 않아도 카드가 저절로 사라진다.
+ *
+ * 판매 페이지 자체는 사정상 다른 앱에 있고, /tteokguk26 으로 들어오면
+ * next.config.mjs 의 redirects 가 그쪽으로 보내준다.
+ */
+export const TTEOKGUK_RESERVATION_CUTOFF_AT = '2026-09-22T23:59:59+09:00';
+
+/** 떡국용 만두 예약 페이지 경로 (실제 판매 페이지로 자동 이동됨) */
+export const TTEOKGUK_RESERVATION_PATH = '/tteokguk26';

@@ -21,6 +21,8 @@ import {
   NOODLE_DISCOUNT_SKU,
   getOrderCutoffForDate,
   getAvailableEventDates,
+  TTEOKGUK_RESERVATION_CUTOFF_AT,
+  TTEOKGUK_RESERVATION_PATH,
 } from '@/lib/constants';
 
 export default function HomePage() {
@@ -33,6 +35,10 @@ export default function HomePage() {
   const [timeRemaining, setTimeRemaining] = useState('');
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [loginError, setLoginError] = useState(false);
+  // 떡국용 만두 예약 카드를 보여줄지 여부.
+  // 'use client' 페이지라 서버가 그린 HTML 과 클라이언트 첫 렌더가 같아야 한다(hydration).
+  // 그래서 첫 렌더는 '열림' 으로 고정하고, 실제 시각 판단은 아래 useEffect 에서만 한다.
+  const [tteokgukOpen, setTteokgukOpen] = useState(true);
 
   // 유입 경로 캡처 + 로그인 오류 감지
   useEffect(() => {
@@ -94,6 +100,19 @@ export default function HomePage() {
 
     update();
     const timer = setInterval(update, 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 떡국용 만두 예약 마감 확인 — 마감 시각이 지나면 카드를 아예 렌더하지 않는다.
+  // (마감 다음 날 사장님이 코드를 손대지 않아도 저절로 사라지게 하려는 장치)
+  useEffect(() => {
+    const check = () => {
+      const cutoff = new Date(TTEOKGUK_RESERVATION_CUTOFF_AT).getTime();
+      setTteokgukOpen(Date.now() < cutoff);
+    };
+
+    check();
+    const timer = setInterval(check, 30000);
     return () => clearInterval(timer);
   }, []);
 
@@ -189,6 +208,47 @@ export default function HomePage() {
           주문내역 확인
         </Link>
       </div>
+
+      {/* 명절 떡국용 만두 예약 카드 — 오늘(2026-09-22) 마감. 마감 후에는 위 useEffect 가 숨긴다 */}
+      {tteokgukOpen && (
+        <div className="max-w-2xl mx-auto px-4 mt-4">
+          <div className="bg-white rounded-xl shadow-xl border-0 p-6">
+            <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
+              🥟 명절 떡국용 만두 예약
+            </h2>
+            <p className="text-center text-sm text-gray-500 mb-4">
+              9개들이 1팩 · 고기 / 김치 / 반반
+            </p>
+
+            {/* 기획가 */}
+            <div className="text-center mb-4">
+              <p className="text-sm text-gray-400 line-through">10,000원</p>
+              <p className="font-bold text-red-600 text-2xl">8,900원</p>
+              <p className="font-bold text-brand text-base mt-1">
+                3팩 25,000원{' '}
+                <span className="font-normal text-sm text-gray-500">(종류 자유 조합)</span>
+              </p>
+            </div>
+
+            {/* 마감 안내 */}
+            <p className="text-center text-sm text-red-500 font-semibold mb-2">
+              ⏰ 오늘 밤 11시 59분 마감!
+            </p>
+
+            {/* 수령 안내 */}
+            <p className="text-center text-sm text-gray-700 mb-4">
+              📅 9/22~9/23 오전 9시 ~ 밤 9시 · <strong>올때만두 매장</strong> 수령
+            </p>
+
+            {/* 예약 페이지로 이동 — 이 판매는 카카오 로그인이 필요 없다 */}
+            <Link href={TTEOKGUK_RESERVATION_PATH}>
+              <button className="w-full bg-brand hover:bg-brand-dark text-white font-bold text-lg py-4 rounded-xl transition-colors shadow-md">
+                예약하기 →
+              </button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* 이벤트 정보 카드 */}
       <div className="max-w-2xl mx-auto px-4 mt-4">
