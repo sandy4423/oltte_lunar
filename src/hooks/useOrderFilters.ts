@@ -28,6 +28,17 @@ function getTodayKST(): string {
   return `${y}-${m}-${d}`;
 }
 
+/** 시각(timestamptz)을 화면과 같은 기준(로컬=KST)의 날짜 문자열로 */
+function toLocalDate(ts: string | null | undefined): string {
+  if (!ts) return '';
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export function useOrderFilters(orders: OrderFull[]) {
   const [filterApt, setFilterApt] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('PAID');
@@ -93,7 +104,16 @@ export function useOrderFilters(orders: OrderFull[]) {
             ['PAID', 'LATE_DEPOSIT'].includes(order.status) &&
             receiveDate !== '' &&
             receiveDate < today;
-          if (!waitingPickup) return false;
+
+          /*
+            오늘 손님에게 건넨 주문도 「오늘」 목록에 남깁니다 (2026-09-23).
+            이것이 없으면 직원이 「전달완료」를 누르는 순간 그 주문이 화면에서 사라져
+            (수령일이 어제라 날짜 필터에 걸린다) 방금 무엇을 처리했는지 확인할 수 없습니다.
+          */
+          const handedOverToday =
+            filterDeliveryDate === 'today' && toLocalDate(order.picked_up_at) === today;
+
+          if (!waitingPickup && !handedOverToday) return false;
         }
       }
 
