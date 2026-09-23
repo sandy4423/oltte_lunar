@@ -75,7 +75,26 @@ export function useOrderFilters(orders: OrderFull[]) {
       if (filterDeliveryDate !== 'all') {
         const receiveDate = getReceiveDate(order);
         const target = filterDeliveryDate === 'today' ? today : filterDeliveryDate;
-        if (receiveDate !== target) return false;
+        if (receiveDate !== target) {
+          /*
+            「오늘」을 볼 때는 *아직 안 찾아간 지난 픽업 주문*도 함께 보여줍니다 (2026-09-23).
+
+            떡국만두처럼 이틀에 걸쳐 찾아가는 캠페인은 주문의 수령일이 첫날(9/22)로만 찍힙니다.
+            그래서 둘째 날 손님이 매장에 와도 화면에 아무것도 없어 응대를 못 했습니다.
+            돈을 받고 아직 안 드린 물건은 날짜가 지나도 보여야 합니다.
+
+            ⛔ 픽업 주문만 대상입니다. 배달 주문은 picked_up_at 을 쓰지 않아 영영 미수령으로
+               남으므로, 여기에 포함하면 과거 배달 주문이 전부 오늘 목록에 딸려 옵니다.
+          */
+          const waitingPickup =
+            filterDeliveryDate === 'today' &&
+            order.is_pickup &&
+            !order.picked_up_at &&
+            ['PAID', 'LATE_DEPOSIT'].includes(order.status) &&
+            receiveDate !== '' &&
+            receiveDate < today;
+          if (!waitingPickup) return false;
+        }
       }
 
       // 배달방법 필터
