@@ -10,6 +10,8 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
+// ⛔ Next 가 supabase 의 fetch 결과를 저장해 두면, 파일을 새로 올려도 예전 내용이 계속 나온다 (2026-09-28 실측)
+export const fetchCache = 'force-no-store';
 
 const BUCKET = 'shared-docs';
 const TOKEN_RE = /^[a-z0-9-]{16,64}$/;
@@ -47,6 +49,7 @@ export async function GET(
 
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { autoRefreshToken: false, persistSession: false },
+    global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) },
   });
   const { data, error } = await supabase.storage.from(BUCKET).download(`${token}/${file}`);
   if (error || !data) return notFound();
