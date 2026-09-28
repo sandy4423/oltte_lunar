@@ -30,17 +30,15 @@ function notFound() {
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { token: string; path?: string[] } }
 ) {
   const { token } = params;
   const parts = params.path ?? [];
   if (!TOKEN_RE.test(token) || parts.some((p) => !PART_RE.test(p) || p.startsWith('.'))) return notFound();
 
-  // /doc/<토큰> 으로 들어오면 끝에 / 를 붙여 준다 (페이지 안의 상대 경로가 맞게)
-  if (parts.length === 0 && !request.nextUrl.pathname.endsWith('/')) {
-    return Response.redirect(new URL(`/doc/${token}/`, request.url), 308);
-  }
+  // ⛔ 끝에 / 를 붙이는 redirect 금지: Next 가 끝 / 를 떼는 308 을 먼저 보내서 무한 반복된다
+  //    (2026-09-28 실측). 페이지 안 상대 경로는 HTML 의 <base href="/doc/<토큰>/"> 로 맞춘다.
 
   const file = parts.length ? parts.join('/') : 'index.html';
   const ext = file.split('.').pop()!.toLowerCase();
