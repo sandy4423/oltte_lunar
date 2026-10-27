@@ -13,11 +13,23 @@ import { verifyWebhookSecret, issueCashReceipt } from '@/lib/tosspayments';
 import { sendSMS, createPaymentConfirmSMS } from '@/lib/sms';
 import { sendSlackMessage, createPaymentConfirmation, createErrorAlert } from '@/lib/slack';
 import { formatKST } from '@/lib/utils';
+import { ORDERING_OPEN } from '@/lib/ordering';
 
 export async function POST(request: NextRequest) {
   let body: any = null;
   try {
     body = await request.json();
+    // 2026-10-28 만두 주문 닫힘: 받기만 하고 주문은 바꾸지 않는다 (src/lib/ordering.ts).
+    // body 는 로그·슬랙에 남기지 않는다 (secret 이 들어 있음).
+    if (!ORDERING_OPEN) {
+      await sendSlackMessage(createErrorAlert({
+        errorType: '웹훅 - 만두 주문 닫힘 중 수신 (처리 안 함)',
+        errorMessage: `status=${body?.status ?? '?'} — 실제 입금이면 토스 관리자에서 확인 필요`,
+        orderId: String(body?.orderId ?? '').replace('ORDER_', ''),
+        timestamp: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
+      })).catch(e => console.error('[Error Alert]', e));
+      return NextResponse.json({ success: true, ignored: true });
+    }
     console.log('[Webhook] Toss Payments webhook received:', body);
 
     const { createdAt, secret, status, orderId, transactionKey } = body;
