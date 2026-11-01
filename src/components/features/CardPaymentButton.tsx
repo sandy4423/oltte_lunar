@@ -52,8 +52,9 @@ export function CardPaymentButton({
         orderId: `CARD_${orderId}_${Date.now()}`,
         orderName,
         customerName,
-        successUrl: `${window.location.origin}/order/success?orderId=${orderId}${token ? `&t=${encodeURIComponent(token)}` : ''}`,
-        failUrl: `${window.location.origin}/order/fail?orderId=${orderId}${token ? `&t=${encodeURIComponent(token)}` : ''}`,
+        // 토스가 돌려줄 때 자기 orderId(CARD_<번호>_<시각>)를 붙이므로 우리 쪽에서는 orderId 를 싣지 않는다 (같은 이름 중복 방지)
+        successUrl: `${window.location.origin}/order/success?oid=${encodeURIComponent(String(orderId))}${token ? `&t=${encodeURIComponent(token)}` : ''}`,
+        failUrl: `${window.location.origin}/order/fail?oid=${encodeURIComponent(String(orderId))}${token ? `&t=${encodeURIComponent(token)}` : ''}`,
       });
 
     } catch (err: any) {

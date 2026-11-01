@@ -34,7 +34,7 @@ export default function PaymentSuccessPage() {
           throw new Error('결제 정보가 올바르지 않습니다.');
         }
 
-        console.log('[Success] Confirming payment:', { paymentKey, orderId, amount });
+        console.log('[Success] Confirming payment');
 
         // 결제 승인 API 호출
         const response = await fetch('/api/payments/confirm', {
@@ -90,10 +90,19 @@ export default function PaymentSuccessPage() {
             <h1 className="text-2xl font-bold mb-4">결제 승인 실패</h1>
             <p className="text-gray-600 mb-6">{error}</p>
             <Button
-              onClick={() => router.push('/')}
+              onClick={() => {
+                // 우리 주문 번호는 주소의 oid (숫자). 있으면 주문 화면(결제 방법 선택)으로 돌아간다
+                const oid = searchParams.get('oid');
+                if (oid && /^\d+$/.test(oid)) {
+                  const tk = getOrderToken(oid);
+                  router.push(`/order/payment-method?orderId=${oid}${tk ? `&t=${encodeURIComponent(tk)}` : ''}`);
+                } else {
+                  router.push('/');
+                }
+              }}
               className="w-full"
             >
-              홈으로 돌아가기
+              {searchParams.get('oid') ? '주문으로 돌아가기' : '홈으로 돌아가기'}
             </Button>
           </CardContent>
         </Card>

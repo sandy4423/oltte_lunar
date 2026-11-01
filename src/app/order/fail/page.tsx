@@ -19,10 +19,15 @@ export default function PaymentFailPage() {
 
   const code = searchParams.get('code');
   const message = searchParams.get('message');
-  const orderId = searchParams.get('orderId');
-
-  // orderId에서 실제 주문 ID 추출 (CARD_123_timestamp 형식)
-  const actualOrderId = orderId ? orderId.split('_')[1] : null;
+  // 우리 주문 번호는 oid (숫자). 토스가 붙이는 orderId(CARD_<번호>_<시각>)는 oid 가 없을 때만 쓴다.
+  const oid = searchParams.get('oid');
+  const tossOrderId = searchParams.get('orderId');
+  const actualOrderId =
+    oid && /^\d+$/.test(oid)
+      ? oid
+      : tossOrderId && /^CARD_(\d+)_\d+$/.test(tossOrderId)
+        ? tossOrderId.split('_')[1]
+        : null;
 
   const getErrorMessage = () => {
     if (code === 'USER_CANCEL') {

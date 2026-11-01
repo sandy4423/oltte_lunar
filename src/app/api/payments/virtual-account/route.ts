@@ -121,6 +121,7 @@ export async function POST(request: NextRequest) {
         toss_payment_key: payment.paymentKey,
         toss_secret: payment.secret,
         status: 'WAITING_FOR_DEPOSIT',
+        payment_method: 'vbank', // DB 에 쓰는 값: card / vbank / pos_card (화면이 가상계좌 안내를 보여 주는 기준)
         vbank_bank: getBankName(payment.virtualAccount.bankCode),
         vbank_num: payment.virtualAccount.accountNumber,
         vbank_expires_at: payment.virtualAccount.dueDate,

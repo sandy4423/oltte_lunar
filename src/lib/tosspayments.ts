@@ -4,6 +4,8 @@
  * 서버에서 토스페이먼츠 API를 호출하기 위한 유틸리티 함수들
  */
 
+import { timingSafeEqual } from 'node:crypto';
+
 const TOSS_API_BASE = 'https://api.tosspayments.com/v1';
 
 /**
@@ -206,7 +208,11 @@ export async function cancelPayment(
  * @returns 검증 성공 여부
  */
 export function verifyWebhookSecret(webhookSecret: string, savedSecret: string): boolean {
-  return webhookSecret === savedSecret;
+  if (typeof webhookSecret !== 'string' || typeof savedSecret !== 'string' || !savedSecret) return false;
+  const a = Buffer.from(webhookSecret, 'utf8');
+  const b = Buffer.from(savedSecret, 'utf8');
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }
 
 /**

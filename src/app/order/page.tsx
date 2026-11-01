@@ -200,8 +200,8 @@ export default function OrderPage() {
         orderId: `CARD_${orderId}_${Date.now()}`,
         orderName: '올때만두 만두전골',
         customerName: name,
-        successUrl: `${window.location.origin}/order/success${token ? `?t=${encodeURIComponent(token)}` : ''}`,
-        failUrl: `${window.location.origin}/order/fail?orderId=${orderId}${token ? `&t=${encodeURIComponent(token)}` : ''}`,
+        successUrl: `${window.location.origin}/order/success?oid=${orderId}${token ? `&t=${encodeURIComponent(token)}` : ''}`,
+        failUrl: `${window.location.origin}/order/fail?oid=${orderId}${token ? `&t=${encodeURIComponent(token)}` : ''}`,
       });
     } catch (err: unknown) {
       const tossErr = err as { code?: string; message?: string };
