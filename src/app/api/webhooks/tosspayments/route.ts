@@ -146,6 +146,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, status: order.status, skipped: true });
       }
 
+      // 취소·환불 중인 주문에 입금이 들어오면 「결제 완료」로 바꾸지 않는다 — 사장님이 환불 처리해야 함
+      if (order.status !== 'WAITING_FOR_DEPOSIT' && order.status !== 'CREATED') {
+        await sendSlackMessage(createErrorAlert({
+          errorType: '취소된 주문에 입금됨 — 환불 필요',
+          errorMessage: `주문 상태 ${order.status} 인데 토스에서 입금(DONE)이 확인됨. 주문은 바꾸지 않았음 — 입금자에게 환불해 주세요.`,
+          orderId: actualOrderId,
+          customerName: order.customer?.name,
+          customerPhone: order.customer?.phone,
+          timestamp: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
+        })).catch(e => console.error('[Error Alert]', e));
+        return NextResponse.json({ success: true, status: order.status, ignored: true });
+      }
+
       const now = new Date().toISOString();
       const cutoffAt = new Date(order.cutoff_at);
       const isPaid = new Date() <= cutoffAt;
@@ -160,7 +173,8 @@ export async function POST(request: NextRequest) {
           paid_at: now,
           updated_at: now,
         })
-        .eq('id', actualOrderId);
+        .eq('id', actualOrderId)
+        .in('status', ['WAITING_FOR_DEPOSIT', 'CREATED']);
 
       if (updateError) {
         console.error('[Webhook] Order update error:', updateError);

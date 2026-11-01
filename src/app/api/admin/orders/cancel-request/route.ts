@@ -79,11 +79,28 @@ export async function POST(request: NextRequest) {
     }
 
     // 이미 환불 처리된 주문인지 확인
-    if (['CANCEL_REQUESTED', 'REFUND_PROCESSING', 'REFUNDED'].includes(order.status)) {
+    if (['REFUND_PROCESSING', 'REFUNDED'].includes(order.status)) {
       return NextResponse.json(
         { error: '이미 취소/환불 처리 중이거나 완료된 주문입니다.' },
         { status: 400 }
       );
+    }
+    // CANCEL_REQUESTED 인데 환불 안내(유효한 토큰)를 아직 안 보낸 주문은 허용한다
+    // (손님이 가상계좌 입금 후 직접 취소를 요청한 경우: 사장님이 이 화면에서 환불 계좌 안내를 보낸다)
+    if ((order as any).status === 'CANCEL_REQUESTED') {
+      const { data: liveTokens } = await supabase
+        .from('refund_tokens')
+        .select('id')
+        .eq('order_id', orderId)
+        .eq('used', false)
+        .gt('expires_at', new Date().toISOString())
+        .limit(1);
+      if (liveTokens && liveTokens.length > 0) {
+        return NextResponse.json(
+          { error: '이미 취소/환불 처리 중이거나 완료된 주문입니다.' },
+          { status: 400 }
+        );
+      }
     }
 
     // 2. 일회용 토큰 생성 (UUID)
