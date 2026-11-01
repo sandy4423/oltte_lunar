@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { SKIP_PHONE_VERIFICATION } from '@/lib/constants';
+import { SKIP_PHONE_VERIFICATION, TEST_VERIFICATION_CODE } from '@/lib/constants';
 
 export function usePhoneVerification() {
   const [phone, setPhone] = useState('');
@@ -79,9 +79,9 @@ export function usePhoneVerification() {
       setVerificationSent(true);
 
       if (result.isTestPhone) {
-        setVerificationCode('0000');
+        setVerificationCode(TEST_VERIFICATION_CODE);
         setTimeout(async () => {
-          await handleVerifyCode('0000');
+          await handleVerifyCode(TEST_VERIFICATION_CODE);
         }, 500);
       }
     } catch (err) {
@@ -96,8 +96,8 @@ export function usePhoneVerification() {
   const handleVerifyCode = async (autoCode?: string) => {
     const codeToVerify = autoCode || verificationCode;
     
-    if (codeToVerify.length !== 4) {
-      setError('인증번호 4자리를 입력해주세요.');
+    if (codeToVerify.length !== 6) {
+      setError('인증번호 6자리를 입력해주세요.');
       return;
     }
 

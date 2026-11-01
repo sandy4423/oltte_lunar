@@ -162,10 +162,10 @@ export function PhoneVerification({
                 <Input
                   type="text"
                   inputMode="numeric"
-                  placeholder="인증번호 4자리"
+                  placeholder="인증번호 6자리"
                   value={verificationCode}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVerificationCode(e.target.value)}
-                  maxLength={4}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVerificationCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))}
+                  maxLength={6}
                   className="flex-1 text-lg tracking-widest"
                 />
                 <Button onClick={() => handleVerifyCode()} disabled={isVerifying}>

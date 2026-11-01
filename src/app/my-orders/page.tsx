@@ -441,21 +441,21 @@ export default function MyOrdersPage() {
                           id="code"
                           type="text"
                           inputMode="numeric"
-                          placeholder="4자리 입력"
+                          placeholder="6자리 입력"
                           value={verification.verificationCode}
                           onChange={(e) =>
                             verification.setVerificationCode(
-                              e.target.value.replace(/[^0-9]/g, '').slice(0, 4)
+                              e.target.value.replace(/[^0-9]/g, '').slice(0, 6)
                             )
                           }
                           className="h-11 flex-1"
-                          maxLength={4}
+                          maxLength={6}
                         />
                         <Button
                           onClick={() => verification.handleVerifyCode()}
                           disabled={
                             verification.isVerifying ||
-                            verification.verificationCode.length !== 4
+                            verification.verificationCode.length !== 6
                           }
                           className="h-11 px-4 whitespace-nowrap"
                         >
@@ -463,7 +463,7 @@ export default function MyOrdersPage() {
                         </Button>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">
-                        SMS로 발송된 4자리 인증번호를 입력해주세요
+                        SMS로 발송된 6자리 인증번호를 입력해주세요
                       </p>
                     </div>
                   )}

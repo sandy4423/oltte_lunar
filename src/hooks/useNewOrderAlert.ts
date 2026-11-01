@@ -3,7 +3,7 @@
 /**
  * 신규 주문 소리 알림 훅
  *
- * 인증된 관리자 API(/api/admin/orders)를 12초마다 조회해 새 주문 번호를 감지하고
+ * 인증된 관리자 API(/api/admin/orders)를 12초마다 조회해 새로 결제(PAID)·입금대기(WAITING_FOR_DEPOSIT)가 된 주문을 감지하고
  * ElevenLabs TTS로 날짜, 시간, 메뉴를 포함한 알림을 재생합니다.
  * (2026-11-02 R5: 공개 키 실시간 구독·order_items 직접 읽기 제거 — 브라우저는 DB 를 직접 만지지 않는다)
  * 첫 조회는 기준선만 잡고 알리지 않는다. TTS 재생은 `@/lib/clientTts`의 공유 싱글톤 사용.
@@ -83,8 +83,10 @@ export function useNewOrderAlert(enabled: boolean, options: UseNewOrderAlertOpti
 
     let cancelled = false;
     let inFlight = false;
-    // null = 아직 첫 조회 전 (기준선 잡는 중이라 알리지 않음)
-    let knownIds: Set<string> | null = null;
+    // 이미 알린(또는 기준선으로 잡은) 주문 번호. null = 아직 첫 조회 전
+    // 결제 전(CREATED) 주문은 알리지 않고, 나중에 PAID/WAITING_FOR_DEPOSIT 가 되면 그때 한 번만 알린다.
+    let alertedIds: Set<string> | null = null;
+    const ALERT_STATUSES = ['PAID', 'WAITING_FOR_DEPOSIT'];
     let lastSignature = '';
 
     const poll = async () => {
@@ -102,14 +104,18 @@ export function useNewOrderAlert(enabled: boolean, options: UseNewOrderAlertOpti
         const orders: Array<Record<string, any>> = json.data;
         const signature = orders.map(o => `${o.id}:${o.status}:${o.updated_at}`).join('|');
 
-        if (knownIds === null) {
-          knownIds = new Set(orders.map(o => String(o.id)));
+        if (alertedIds === null) {
+          alertedIds = new Set(
+            orders.filter(o => ALERT_STATUSES.includes(o.status)).map(o => String(o.id))
+          );
           lastSignature = signature;
           return;
         }
 
-        const fresh = orders.filter(o => !knownIds!.has(String(o.id)));
-        fresh.forEach(o => knownIds!.add(String(o.id)));
+        const fresh = orders.filter(
+          o => ALERT_STATUSES.includes(o.status) && !alertedIds!.has(String(o.id))
+        );
+        fresh.forEach(o => alertedIds!.add(String(o.id)));
 
         if (fresh.length > 0) {
           // 여러 건이 한꺼번에 들어와도 가장 오래된 것부터 차례로 안내

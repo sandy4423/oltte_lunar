@@ -351,7 +351,7 @@ export function getAvailablePickupDates(): string[] {
 // ============================================
 
 export const TEST_PHONE_NUMBER = '01012341234'; // 정규화된 형태
-export const TEST_VERIFICATION_CODE = '0000';
+export const TEST_VERIFICATION_CODE = '000000'; // 개발 환경(NODE_ENV!=='production')에서만 쓰임
 
 // ============================================
 // 명절 떡국용 만두 기획판매 (2026-09-22 하루)

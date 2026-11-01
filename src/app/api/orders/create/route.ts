@@ -15,6 +15,7 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 import { EVENT_APT_CODE, getOrderCutoffForDate } from '@/lib/constants';
 import { computeOrder, sanitizeSource, validatePickup } from '@/lib/orderCreate';
 import { makeOrderToken } from '@/lib/orderAccess.server';
+import { getClientIp, rateLimitHit, failClosed503, TRY_LATER_MESSAGE } from '@/lib/rateLimit.server';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +56,17 @@ export async function POST(request: NextRequest) {
         items: c.lines,
         dangolDiscount: c.dangolDiscount,
       });
+    }
+
+    // 주문 만들기 횟수 제한: IP당 1시간 20건, 전화번호당 1시간 10건 (DB 함수 오류면 막음 — fail closed)
+    try {
+      const okIp = await rateLimitHit(`order-ip:${getClientIp(request)}`, 20, 3600);
+      const okPhone = okIp && (await rateLimitHit(`order-phone:${phone}`, 10, 3600));
+      if (!okPhone) {
+        return NextResponse.json({ success: false, error: TRY_LATER_MESSAGE }, { status: 429, headers: { 'Cache-Control': 'no-store' } });
+      }
+    } catch (e) {
+      return failClosed503('주문 만들기', e instanceof Error ? e.message : String(e));
     }
 
     // Database 제네릭이 supabase-js 버전 차이로 never 로 추론되므로(기존 라우트 동일) 느슨한 타입 사용

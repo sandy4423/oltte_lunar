@@ -1,23 +1,23 @@
 /**
  * 인증번호 검증 API
  * POST /api/verification/verify
+ *
+ * 무차별 대입 방지: IP당 10분 30번(rate_limit_hit) + 가장 최근 인증번호 한 줄당 5번 틀리면 잠김(verify_phone_code).
+ * 둘 다 DB 함수이며, 함수가 없거나 오류면 막는다(503, fail closed).
+ * 성공하면 번호 인증 쿠키(30분)를 준다.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { normalizePhone } from '@/lib/utils';
 import { setPhoneSession } from '@/lib/orderAccess.server';
-
-const FAIL_MARK = '__fail__'; // 틀린 시도 표시 줄 (새 열 없이 횟수 제한)
-const MAX_FAILS = 5;
-const FAIL_WINDOW_MS = 10 * 60 * 1000;
+import { getClientIp, rateLimitHit, failClosed503, TRY_LATER_MESSAGE } from '@/lib/rateLimit.server';
 
 // Node.js 런타임 사용
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase: any = createServerSupabaseClient();
     const { phone, code } = await request.json();
 
     const normalizedPhone = normalizePhone(String(phone ?? ''));
@@ -30,82 +30,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 인증번호 검증 (숫자 4자리만 — '__fail__' 표시 줄과 절대 겹치지 않게)
-    if (typeof code !== 'string' || !/^[0-9]{4}$/.test(code)) {
+    // 인증번호 검증 (숫자 6자리만)
+    if (typeof code !== 'string' || !/^[0-9]{6}$/.test(code)) {
       return NextResponse.json(
-        { error: '인증번호 4자리를 입력해주세요.' },
+        { error: '인증번호 6자리를 입력해주세요.' },
         { status: 400 }
       );
     }
 
-    // 무차별 대입 방지: 번호당 10분에 5번 틀리면 잠시 막는다 (막힌 동안은 번호를 확인하지 않음)
-    const since = new Date(Date.now() - FAIL_WINDOW_MS).toISOString();
-    const { count: failCount } = await supabase
-      .from('verification_codes')
-      .select('id', { count: 'exact', head: true })
-      .eq('phone', normalizedPhone)
-      .eq('code', FAIL_MARK)
-      .gte('created_at', since);
+    const supabase: any = createServerSupabaseClient();
 
-    if ((failCount ?? 0) >= MAX_FAILS) {
-      return NextResponse.json(
-        { error: '잠시 후 다시 시도해 주세요.' },
-        { status: 429 }
-      );
-    }
-
-    const recordFail = async () => {
-      await supabase.from('verification_codes').insert({
-        phone: normalizedPhone,
-        code: FAIL_MARK,
-        verified: false,
-        expires_at: new Date().toISOString(),
+    let result: unknown;
+    try {
+      const allowed = await rateLimitHit(`verify-ip:${getClientIp(request)}`, 30, 600);
+      if (!allowed) {
+        return NextResponse.json({ error: TRY_LATER_MESSAGE }, { status: 429 });
+      }
+      const { data, error } = await supabase.rpc('verify_phone_code', {
+        p_phone: normalizedPhone,
+        p_code: code,
       });
-    };
-
-    // DB에서 가장 최근 인증번호 조회
-    const { data: rows, error } = await supabase
-      .from('verification_codes')
-      .select('id, expires_at')
-      .eq('phone', normalizedPhone)
-      .eq('code', code)
-      .eq('verified', false)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    const data = rows && rows.length > 0 ? rows[0] : null;
-
-    if (error || !data) {
-      await recordFail();
-      return NextResponse.json(
-        { error: '인증번호가 일치하지 않습니다.' },
-        { status: 400 }
-      );
+      if (error) throw new Error(error.message);
+      result = data;
+    } catch (e) {
+      return failClosed503('인증번호 확인', e instanceof Error ? e.message : String(e));
     }
 
-    // 만료 시간 확인
-    const expiresAt = new Date(data.expires_at);
-    if (new Date() > expiresAt) {
-      await recordFail();
-      return NextResponse.json(
-        { error: '인증번호가 만료되었습니다.' },
-        { status: 400 }
-      );
+    if (result === 'ok') {
+      // 인증한 브라우저에 번호 인증 쿠키(30분)를 준다 — 내 주문·취소·수령시간·손님 정보는 이 쿠키만 믿는다
+      const res = NextResponse.json({
+        success: true,
+        message: '인증이 완료되었습니다.',
+      });
+      setPhoneSession(res, normalizedPhone);
+      return res;
     }
-
-    // 인증 완료 처리 (이 줄만)
-    await supabase
-      .from('verification_codes')
-      .update({ verified: true })
-      .eq('id', data.id);
-
-    // 인증한 브라우저에 번호 인증 쿠키(30분)를 준다 — 이후 내 주문·취소·수령시간·손님 정보는 이 쿠키만 믿는다
-    const res = NextResponse.json({
-      success: true,
-      message: '인증이 완료되었습니다.',
-    });
-    setPhoneSession(res, normalizedPhone);
-    return res;
+    if (result === 'locked') {
+      return NextResponse.json({ error: TRY_LATER_MESSAGE }, { status: 429 });
+    }
+    if (result === 'expired') {
+      return NextResponse.json({ error: '인증번호를 다시 받아 주세요' }, { status: 400 });
+    }
+    if (result === 'wrong') {
+      return NextResponse.json({ error: '인증번호가 맞지 않아요' }, { status: 400 });
+    }
+    return failClosed503('인증번호 확인', `예상 밖 응답: ${String(result)}`);
   } catch (error) {
     console.error('인증번호 검증 오류:', error instanceof Error ? error.message : error);
     return NextResponse.json(
