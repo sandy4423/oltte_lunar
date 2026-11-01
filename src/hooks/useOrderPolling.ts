@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getOrderToken } from '@/lib/orderToken';
 import type { OrderWithCustomer } from '@/types/database';
 
 export function useOrderPolling(orderId: string | null) {
@@ -26,17 +26,20 @@ export function useOrderPolling(orderId: string | null) {
       }
 
       try {
-        const { data, error: fetchError } = await supabase
-          .from('orders')
-          .select('*, customer:customers(*)')
-          .eq('id', orderId)
-          .single();
+        // 서버 경로로 조회 (주문 열쇠 필요) — 브라우저는 DB 를 직접 읽지 않는다
+        const token = getOrderToken(orderId);
+        const response = await fetch(
+          `/api/orders/detail?orderId=${encodeURIComponent(orderId)}&t=${encodeURIComponent(token ?? '')}`,
+          { cache: 'no-store' }
+        );
+        const result = await response.json().catch(() => null);
 
         if (cancelled) return;
 
-        if (fetchError || !data) {
+        if (!response.ok || !result?.success || !result.data) {
           throw new Error('주문 정보 조회 실패');
         }
+        const data = result.data;
 
         setOrder(data as OrderWithCustomer);
 

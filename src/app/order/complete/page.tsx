@@ -15,6 +15,7 @@ import { CardPaymentButton } from '@/components/features/CardPaymentButton';
 import { CashReceiptForm } from '@/components/features/CashReceiptForm';
 import { STORE_INFO } from '@/lib/constants';
 import { trackPageView } from '@/lib/trackPageView';
+import { getOrderToken } from '@/lib/orderToken';
 
 // ============================================
 // Page Component
@@ -108,6 +109,7 @@ export default function OrderCompletePage() {
                 amount={order.total_amount}
                 orderName={`올때만두 - ${order.apt_name}`}
                 customerName={order.customer.name}
+                token={getOrderToken(order.id)}
               />
             )}
           </>

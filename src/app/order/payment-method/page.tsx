@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/Footer';
 import { STORE_INFO } from '@/lib/constants';
 import { trackPageView } from '@/lib/trackPageView';
+import { getOrderToken } from '@/lib/orderToken';
 
 export default function PaymentMethodPage() {
   const searchParams = useSearchParams();
@@ -35,7 +36,10 @@ export default function PaymentMethodPage() {
 
   const fetchOrder = async () => {
     try {
-      const response = await fetch(`/api/orders/detail?orderId=${orderId}`);
+      const response = await fetch(
+        `/api/orders/detail?orderId=${encodeURIComponent(orderId ?? '')}&t=${encodeURIComponent(getOrderToken(orderId) ?? '')}`,
+        { cache: 'no-store' }
+      );
       const result = await response.json();
 
       if (!response.ok || !result.success) {
@@ -76,7 +80,10 @@ export default function PaymentMethodPage() {
       const data = await response.json();
       if (!data.success) throw new Error(data.error || '가상계좌 발급 실패');
 
-      router.push(`/order/complete?orderId=${order.id}`);
+      {
+        const tk = getOrderToken(order.id);
+        router.push(`/order/complete?orderId=${order.id}${tk ? `&t=${encodeURIComponent(tk)}` : ''}`);
+      }
     } catch (err: any) {
       setError(err.message || '가상계좌 발급 중 오류가 발생했습니다.');
       setIsProcessingVbank(false);
@@ -101,8 +108,8 @@ export default function PaymentMethodPage() {
         orderId: `CARD_${order.id}_${Date.now()}`,
         orderName: `올때만두 - ${order.apt_name || '픽업주문'}`,
         customerName: order.customer?.name || '고객',
-        successUrl: `${window.location.origin}/order/success`,
-        failUrl: `${window.location.origin}/order/fail?orderId=${order.id}`,
+        successUrl: `${window.location.origin}/order/success${getOrderToken(order.id) ? `?t=${encodeURIComponent(getOrderToken(order.id) as string)}` : ''}`,
+        failUrl: `${window.location.origin}/order/fail?orderId=${order.id}${getOrderToken(order.id) ? `&t=${encodeURIComponent(getOrderToken(order.id) as string)}` : ''}`,
       });
     } catch (err: any) {
       if (err.code === 'USER_CANCEL') {
