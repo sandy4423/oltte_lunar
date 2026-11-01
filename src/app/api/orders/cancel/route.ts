@@ -2,51 +2,40 @@
  * 주문 취소 API
  * POST /api/orders/cancel
  * 
- * Body: { orderId: string, phone: string, cancelReason: string }
+ * Body: { orderId: string, cancelReason: string }
+ * 전화번호는 번호 인증 쿠키에서만 가져온다 (body 의 phone 은 무시).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { cancelPayment } from '@/lib/tosspayments';
-import { normalizePhone } from '@/lib/utils';
+import { getSessionPhone, isManduOrder } from '@/lib/orderAccess.server';
 import { sendSMS, createCancellationSMS } from '@/lib/sms';
 import { sendSlackAlert, createCancellationNotification } from '@/lib/slack';
-import { SKIP_PHONE_VERIFICATION } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { orderId, phone, cancelReason } = body;
+    const { orderId, cancelReason } = body;
 
-    if (!orderId || !phone || !cancelReason) {
+    const normalizedPhone = getSessionPhone(request);
+    if (!normalizedPhone) {
       return NextResponse.json(
-        { error: '주문번호, 전화번호, 취소 사유를 입력해주세요.' },
+        { error: '전화번호 인증이 필요합니다.' },
+        { status: 401 }
+      );
+    }
+
+    if (!orderId || typeof cancelReason !== 'string' || !cancelReason.trim() || cancelReason.length > 200) {
+      return NextResponse.json(
+        { error: '주문번호와 취소 사유를 입력해주세요.' },
         { status: 400 }
       );
     }
 
-    const normalizedPhone = normalizePhone(phone);
-    const supabase = createServerSupabaseClient();
-
-    if (!SKIP_PHONE_VERIFICATION) {
-      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const { data: verificationData } = await supabase
-        .from('verification_codes')
-        .select('id')
-        .eq('phone', normalizedPhone)
-        .eq('verified', true)
-        .gte('created_at', oneDayAgo)
-        .limit(1);
-
-      if (!verificationData || verificationData.length === 0) {
-        return NextResponse.json(
-          { error: '전화번호 인증이 필요합니다.' },
-          { status: 401 }
-        );
-      }
-    }
+    const supabase: any = createServerSupabaseClient();
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -54,7 +43,7 @@ export async function POST(request: NextRequest) {
       .eq('id', orderId)
       .single();
 
-    if (orderError || !order) {
+    if (orderError || !order || !isManduOrder(order)) {
       return NextResponse.json(
         { error: '주문을 찾을 수 없습니다.' },
         { status: 404 }

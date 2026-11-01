@@ -275,7 +275,9 @@ export const STORE_INFO = {
  * 
  * 카드사 심사 통과 후 반드시 false로 변경해야 합니다.
  */
-export const SKIP_PHONE_VERIFICATION = true;
+// 2026-11-02 R6: false 로 변경. 내 주문·취소·수령시간·손님 정보 API 가 번호 인증 쿠키(oltte_phone_session)만 믿기 때문에
+// 문자 인증을 건너뛰면 쿠키가 없어 이 API 들이 401 이 된다. (되돌리면 /my-orders 가 열리지 않음)
+export const SKIP_PHONE_VERIFICATION = false;
 
 // ============================================
 // 픽업 주문 설정

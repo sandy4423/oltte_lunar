@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { setPhoneSession } from '@/lib/orderAccess.server';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = createServerSupabaseClient();
+    const supabase: any = createServerSupabaseClient();
 
     // 토큰 조회 (고객 정보 포함)
     const { data: tokenData, error: tokenError } = await supabase
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (tokenError || !tokenData) {
-      console.error('[VerifyToken] Token not found:', token, tokenError);
+      console.error('[VerifyToken] Token not found');
       return NextResponse.json(
         { success: false, error: '유효하지 않은 링크입니다.' },
         { status: 404 }
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     const expiresAt = new Date(tokenData.expires_at);
 
     if (now > expiresAt) {
-      console.error('[VerifyToken] Token expired:', token);
+      console.error('[VerifyToken] Token expired');
       return NextResponse.json(
         { success: false, error: '링크가 만료되었습니다.' },
         { status: 410 }
@@ -61,7 +62,10 @@ export async function GET(request: NextRequest) {
     }
 
     // 사용 여부 확인 (일회용 - 선택사항)
-    // NOTE: 현재는 여러 번 사용 가능하도록 주석 처리
+    // NOTE: 일부러 일회용으로 만들지 않는다. 문자 링크는 카카오톡·메신저의 링크 미리보기가 먼저 한 번 열 수 있어서
+    //       「한 번 쓰면 끝」으로 하면 손님이 진짜로 눌렀을 때 이미 사용된 링크가 된다. 첫 사용 시각을 담는 열이 없어
+    //       「10분 안 재사용」 허용도 만들 수 없으므로 만료(30일)까지 재사용을 허용하고, 대신 이 링크로는
+    //       그 손님 번호의 30분짜리 번호 인증 쿠키만 발급한다(주문 열람·취소·수령시간 변경 범위).
     // if (tokenData.used) {
     //   console.error('[VerifyToken] Token already used:', token);
     //   return NextResponse.json(
@@ -76,27 +80,20 @@ export async function GET(request: NextRequest) {
     //   .update({ used: true })
     //   .eq('id', tokenData.id);
 
-    // verification_codes 테이블에 인증 완료 레코드 생성
-    // 이렇게 해야 /api/orders/my에서 24시간 이내 인증 체크를 통과할 수 있음
-    const { error: verificationError } = await supabase
-      .from('verification_codes')
-      .insert({
-        phone: tokenData.customer.phone,
-        code: '0000', // 토큰 인증이므로 더미 코드
-        verified: true,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24시간 후 만료
-      });
-
-    if (verificationError) {
-      console.error('[VerifyToken] Failed to create verification record:', verificationError);
+    const customerPhone: string = tokenData.customer?.phone ?? '';
+    if (!/^01[0-9]{8,9}$/.test(customerPhone)) {
+      return NextResponse.json(
+        { success: false, error: '유효하지 않은 링크입니다.' },
+        { status: 404 }
+      );
     }
 
-    console.log(`[VerifyToken] Token verified for customer ${tokenData.customer.phone}`);
+    console.log('[VerifyToken] Token verified');
 
-    return NextResponse.json(
+    const res = NextResponse.json(
       {
         success: true,
-        phone: tokenData.customer.phone,
+        phone: customerPhone,
         customerName: tokenData.customer.name,
       },
       {
@@ -107,6 +104,8 @@ export async function GET(request: NextRequest) {
         },
       }
     );
+    setPhoneSession(res, customerPhone);
+    return res;
   } catch (error: any) {
     console.error('[VerifyToken] Unexpected error:', error);
     return NextResponse.json(

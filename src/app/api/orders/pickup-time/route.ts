@@ -11,32 +11,34 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendSMS, createPickupTimeChangeSMS } from '@/lib/sms';
 import { sendSlackMessage, createPickupTimeChangeAlert } from '@/lib/slack';
 import { getAvailableTimeSlots, getAvailablePickupDates } from '@/lib/constants';
-import { formatKST, normalizePhone } from '@/lib/utils';
+import { formatKST } from '@/lib/utils';
+import { getSessionPhone, isManduOrder } from '@/lib/orderAccess.server';
 
 export const dynamic = 'force-dynamic';
 
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { orderId, phone, pickupDate, pickupTime } = body;
+    const { orderId, pickupDate, pickupTime } = body;
+
+    // 전화번호는 번호 인증 쿠키에서만 (body 의 phone 은 무시)
+    const normalizedPhone = getSessionPhone(request);
+    if (!normalizedPhone) {
+      return NextResponse.json(
+        { success: false, error: '전화번호 인증이 필요합니다.' },
+        { status: 401 }
+      );
+    }
 
     // 필수 필드 확인
-    if (!orderId || !phone || !pickupDate || !pickupTime) {
+    if (!orderId || !pickupDate || !pickupTime) {
       return NextResponse.json(
         { success: false, error: '필수 정보가 누락되었습니다.' },
         { status: 400 }
       );
     }
 
-    const normalizedPhone = normalizePhone(phone);
-    if (!/^01[0-9]{8,9}$/.test(normalizedPhone)) {
-      return NextResponse.json(
-        { success: false, error: '올바른 전화번호 형식이 아닙니다.' },
-        { status: 400 }
-      );
-    }
-
-    const supabase = createServerSupabaseClient();
+    const supabase: any = createServerSupabaseClient();
 
     // 1. 주문 조회 (고객 정보 포함)
     const { data: order, error: orderError } = await supabase
@@ -52,8 +54,8 @@ export async function PATCH(request: NextRequest) {
       .eq('id', orderId)
       .single();
 
-    if (orderError || !order) {
-      console.error('[PickupTime API] Order not found:', orderId, orderError);
+    if (orderError || !order || !isManduOrder(order)) {
+      console.error('[PickupTime API] Order not found:', orderId);
       return NextResponse.json(
         { success: false, error: '주문을 찾을 수 없습니다.' },
         { status: 404 }
@@ -62,10 +64,7 @@ export async function PATCH(request: NextRequest) {
 
     // 2. 전화번호로 소유권 확인
     if (order.customer?.phone !== normalizedPhone) {
-      console.error('[PickupTime API] Phone mismatch:', { 
-        orderPhone: order.customer?.phone, 
-        requestPhone: normalizedPhone 
-      });
+      console.error('[PickupTime API] Phone mismatch for order', orderId);
       return NextResponse.json(
         { success: false, error: '주문 정보가 일치하지 않습니다.' },
         { status: 403 }

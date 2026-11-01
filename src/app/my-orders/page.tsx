@@ -152,9 +152,8 @@ export default function MyOrdersPage() {
     setFetchError(null);
 
     try {
-      const response = await fetch(
-        `/api/orders/my?phone=${encodeURIComponent(verification.phone)}`
-      );
+      // 전화번호는 주소에 싣지 않는다 — 서버가 번호 인증 쿠키로 확인
+      const response = await fetch('/api/orders/my', { credentials: 'same-origin', cache: 'no-store' });
       const result = await response.json();
 
       // 401 에러이고 첫 시도인 경우 재시도
@@ -217,7 +216,6 @@ export default function MyOrdersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: cancelTargetOrder.id,
-          phone: verification.phone,
           cancelReason: cancelReason.trim(),
         }),
       });
@@ -296,7 +294,6 @@ export default function MyOrdersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId: selectedOrder.id,
-          phone: verification.phone,
           pickupDate: newPickupDate,
           pickupTime: newPickupTime,
         }),

@@ -14,10 +14,10 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerSupabaseClient();
+    const supabase: any = createServerSupabaseClient();
     const { phone } = await request.json();
 
-    const normalizedPhone = normalizePhone(phone);
+    const normalizedPhone = normalizePhone(String(phone ?? ''));
 
     // 전화번호 형식 검증
     if (!/^01[0-9]{8,9}$/.test(normalizedPhone)) {
@@ -27,8 +27,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 테스트 전화번호 체크
+    // 테스트 전화번호 체크 (정확히 이 번호일 때만 — 문자를 보내지 않고 코드 0000 고정)
     const isTestPhone = normalizedPhone === TEST_PHONE_NUMBER;
+
+    // 문자 폭탄·문자비 방지: 번호당 1시간에 5번까지 ('__fail__' 표시 줄은 세지 않음). 테스트 번호는 문자를 안 보내므로 제외
+    if (!isTestPhone) {
+      const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { count: sentCount } = await supabase
+        .from('verification_codes')
+        .select('id', { count: 'exact', head: true })
+        .eq('phone', normalizedPhone)
+        .neq('code', '__fail__')
+        .gte('created_at', hourAgo);
+      if ((sentCount ?? 0) >= 5) {
+        return NextResponse.json(
+          { error: '잠시 후 다시 시도해 주세요.' },
+          { status: 429 }
+        );
+      }
+    }
     
     // 4자리 인증번호 생성 (테스트 번호는 0000 고정)
     const code = isTestPhone ? TEST_VERIFICATION_CODE : Math.floor(1000 + Math.random() * 9000).toString();
@@ -37,11 +54,13 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 
-    // 기존 인증번호 삭제 (같은 번호)
+    // 이전 인증번호는 지우지 않고 만료 처리한다 (지우면 횟수 제한이 초기화되고, 틀린 시도 기록도 사라짐)
     await supabase
       .from('verification_codes')
-      .delete()
-      .eq('phone', normalizedPhone);
+      .update({ expires_at: new Date().toISOString() })
+      .eq('phone', normalizedPhone)
+      .eq('verified', false)
+      .neq('code', '__fail__');
 
     // 새 인증번호 저장
     const { error: dbError } = await supabase

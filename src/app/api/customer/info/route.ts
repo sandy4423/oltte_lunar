@@ -1,25 +1,28 @@
 /**
  * 고객 정보 조회 API
  * 
- * 전화번호로 기존 고객의 이름과 최근 배송지(동호수)를 조회합니다.
+ * 번호 인증 쿠키의 전화번호로 기존 고객의 이름과 최근 배송지(동호수)를 조회합니다.
+ * 인증이 없으면 401 (주소의 phone 은 무시 — 번호만 알면 이름·동호수를 돌려주던 구멍).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { getSessionPhone } from '@/lib/orderAccess.server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const phone = searchParams.get('phone');
+    const phone = getSessionPhone(request);
 
     if (!phone) {
       return NextResponse.json(
-        { error: '전화번호가 필요합니다.' },
-        { status: 400 }
+        { error: '전화번호 인증이 필요합니다.' },
+        { status: 401, headers: { 'Cache-Control': 'no-store' } }
       );
     }
 
-    const supabase = createServerSupabaseClient();
+    const supabase: any = createServerSupabaseClient();
 
     // 고객 정보 조회
     const { data: customer, error: customerError } = await supabase
@@ -36,7 +39,7 @@ export async function GET(request: NextRequest) {
         name: '',
         dong: '',
         ho: '',
-      });
+      }, { headers: { 'Cache-Control': 'no-store' } });
     }
 
     // 가장 최근 주문의 동호수 조회
@@ -44,6 +47,7 @@ export async function GET(request: NextRequest) {
       .from('orders')
       .select('dong, ho')
       .eq('customer_id', customer.id)
+      .not('apt_code', 'is', null)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
@@ -52,7 +56,7 @@ export async function GET(request: NextRequest) {
       name: customer.name || '',
       dong: lastOrder?.dong || '',
       ho: lastOrder?.ho || '',
-    });
+    }, { headers: { 'Cache-Control': 'no-store' } });
 
   } catch (error: any) {
     console.error('[API] Customer info error:', error);

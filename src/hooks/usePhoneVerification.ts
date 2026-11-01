@@ -34,7 +34,11 @@ export function usePhoneVerification() {
     setError(null);
 
     try {
-      const infoResponse = await fetch(`/api/customer/info?phone=${encodeURIComponent(cleanPhone)}`);
+      // 번호 인증 쿠키가 없으면 401 — 이름 자동 채움만 건너뛴다(신규 고객과 같게 취급)
+      const infoResponse = await fetch('/api/customer/info', { credentials: 'same-origin', cache: 'no-store' });
+      if (infoResponse.status === 401) {
+        return;
+      }
       if (infoResponse.ok) {
         const info = await infoResponse.json();
         if (info.name || info.dong || info.ho) {
@@ -119,7 +123,8 @@ export function usePhoneVerification() {
       setError(null);
 
       try {
-        const infoResponse = await fetch(`/api/customer/info?phone=${encodeURIComponent(phone)}`);
+        // 방금 인증으로 받은 쿠키가 같이 간다
+        const infoResponse = await fetch('/api/customer/info', { credentials: 'same-origin', cache: 'no-store' });
         if (infoResponse.ok) {
           const info = await infoResponse.json();
           if (info.name || info.dong || info.ho) {
