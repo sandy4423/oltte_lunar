@@ -3,6 +3,7 @@
  * POST /api/auth/send-link
  * 
  * 관리자가 픽업시간 미선택 주문 고객에게 일회용 인증 링크를 SMS로 전송
+ * 관리자 인증 필수(x-admin-password) — 인증 없이 열려 있으면 주문번호를 바꿔 가며 손님들에게 문자를 무한정 보낼 수 있다.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -10,6 +11,8 @@ import crypto from 'crypto';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
+import { isManduOrder } from '@/lib/orderAccess.server';
 import { sendSMS, createPickupTimeRequestSMS } from '@/lib/sms';
 import type { OrderItemForSMS } from '@/lib/sms';
 import { sendSlackMessage, createPickupTimeLinkSentAlert } from '@/lib/slack';
@@ -20,6 +23,9 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    const authError = await verifyAdminAuth(request);
+    if (authError) return authError;
+
     const body = await request.json();
     const { orderId } = body;
 
@@ -50,6 +56,14 @@ export async function POST(request: NextRequest) {
 
     if (orderError || !order) {
       console.error('[SendLink] Order not found:', orderId, orderError);
+      return NextResponse.json(
+        { success: false, error: '주문을 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    // 만두 주문만 (과일 주문은 다른 앱 몫)
+    if (!isManduOrder(order as any)) {
       return NextResponse.json(
         { success: false, error: '주문을 찾을 수 없습니다.' },
         { status: 404 }

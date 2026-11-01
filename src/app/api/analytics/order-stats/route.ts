@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { verifyAdminAuth } from '@/lib/adminAuth.server';
 
 /**
  * GET /api/analytics/order-stats
@@ -7,6 +8,10 @@ import { createServerSupabaseClient } from '@/lib/supabase';
  */
 export async function GET(req: NextRequest) {
   try {
+    // 관리자만 (x-admin-password)
+    const authError = await verifyAdminAuth(req);
+    if (authError) return authError;
+
     const supabase = createServerSupabaseClient();
     const searchParams = req.nextUrl.searchParams;
     const days = parseInt(searchParams.get('days') || '30');

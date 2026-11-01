@@ -119,7 +119,7 @@ export function useAdminPage() {
   const fetchPageStats = async () => {
     setStatsLoading(true);
     try {
-      const res = await fetch('/api/analytics/page-stats?days=30');
+      const res = await fetch('/api/analytics/page-stats?days=30', { headers: { 'x-admin-password': getAdminPassword() } });
       const data = await res.json();
       setPageStats(data);
     } catch (error) {
@@ -131,7 +131,7 @@ export function useAdminPage() {
 
   const fetchOrderStats = async () => {
     try {
-      const res = await fetch('/api/analytics/order-stats?days=30');
+      const res = await fetch('/api/analytics/order-stats?days=30', { headers: { 'x-admin-password': getAdminPassword() } });
       const data = await res.json();
       setOrderStats(data);
     } catch (error) {
@@ -337,7 +337,10 @@ export function useAdminPage() {
         try {
           const response = await fetch('/api/auth/send-link', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'x-admin-password': getAdminPassword(),
+            },
             body: JSON.stringify({ orderId: (order as any).id }),
           });
           const result = await response.json();

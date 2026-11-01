@@ -35,7 +35,7 @@ export default function AdminPage() {
     }, 500);
   }, [admin.fetchOrders]);
 
-  // 신규 주문 소리 알림 + 화면 자동 갱신 (Supabase Realtime, 로그인 상태에서만)
+  // 신규 주문 소리 알림 + 화면 자동 갱신 (관리자 API 12초 주기 조회, 로그인 상태에서만)
   useNewOrderAlert(admin.isAuthenticated, {
     onNewOrder: admin.fetchOrders,
     onOrderUpdate: handleOrderUpdate,

@@ -3,13 +3,14 @@
 /**
  * 신규 주문 소리 알림 훅
  *
- * Supabase Realtime으로 orders 테이블 INSERT를 감지하여
+ * 인증된 관리자 API(/api/admin/orders)를 12초마다 조회해 새 주문 번호를 감지하고
  * ElevenLabs TTS로 날짜, 시간, 메뉴를 포함한 알림을 재생합니다.
- * TTS 재생은 `@/lib/clientTts`의 공유 싱글톤 사용.
+ * (2026-11-02 R5: 공개 키 실시간 구독·order_items 직접 읽기 제거 — 브라우저는 DB 를 직접 만지지 않는다)
+ * 첫 조회는 기준선만 잡고 알리지 않는다. TTS 재생은 `@/lib/clientTts`의 공유 싱글톤 사용.
  */
 
 import { useEffect, useRef, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getAdminPassword } from '@/lib/adminAuth';
 import { speakText, stopSpeaking } from '@/lib/clientTts';
 import type { ProductSku } from '@/types/database';
 
@@ -38,19 +39,20 @@ interface UseNewOrderAlertOptions {
   onOrderUpdate?: () => void;
 }
 
+const POLL_INTERVAL_MS = 12_000;
+
 export function useNewOrderAlert(enabled: boolean, options: UseNewOrderAlertOptions = {}) {
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const { onNewOrder, onOrderUpdate } = options;
   const onNewOrderRef = useRef(onNewOrder);
   const onOrderUpdateRef = useRef(onOrderUpdate);
 
-  // 최신 콜백 참조 유지 (구독 재생성 없이)
+  // 최신 콜백 참조 유지 (타이머 재생성 없이)
   useEffect(() => {
     onNewOrderRef.current = onNewOrder;
     onOrderUpdateRef.current = onOrderUpdate;
   }, [onNewOrder, onOrderUpdate]);
 
-  const announceOrder = useCallback(async (orderId: string, order: Record<string, any>) => {
+  const announceOrder = useCallback((order: Record<string, any>) => {
     // 날짜: 픽업 주문이면 pickup_date, 아니면 delivery_date
     const dateStr = order.is_pickup && order.pickup_date
       ? order.pickup_date
@@ -61,14 +63,10 @@ export function useNewOrderAlert(enabled: boolean, options: UseNewOrderAlertOpti
     const timePart = order.is_pickup && order.pickup_time
       ? ` ${order.pickup_time}` : '';
 
-    // 메뉴: order_items 조회
+    // 메뉴: 관리자 API 응답에 들어 있는 order_items 사용
     let menuPart = '';
-    const { data: items } = await supabase
-      .from('order_items')
-      .select('sku, qty')
-      .eq('order_id', orderId);
-
-    if (items && items.length > 0) {
+    const items: Array<{ sku: string; qty: number }> = order.order_items || [];
+    if (items.length > 0) {
       menuPart = ', ' + items
         .map(item => {
           const label = SKU_LABELS[item.sku as ProductSku] || item.sku;
@@ -77,52 +75,64 @@ export function useNewOrderAlert(enabled: boolean, options: UseNewOrderAlertOpti
         .join(', ');
     }
 
-    const message = `전골 예약 주문! ${datePart}${timePart}${menuPart}`;
-    speakText(message);
+    speakText(`전골 예약 주문! ${datePart}${timePart}${menuPart}`);
   }, []);
 
   useEffect(() => {
     if (!enabled) return;
 
-    const channel = supabase
-      .channel('new-order-alert')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'orders',
-        },
-        (payload) => {
-          const order = payload.new;
-          if (order?.id) {
-            announceOrder(order.id, order);
-            // 화면 자동 갱신 콜백
-            onNewOrderRef.current?.();
-          }
+    let cancelled = false;
+    let inFlight = false;
+    // null = 아직 첫 조회 전 (기준선 잡는 중이라 알리지 않음)
+    let knownIds: Set<string> | null = null;
+    let lastSignature = '';
+
+    const poll = async () => {
+      if (inFlight || cancelled) return;
+      inFlight = true;
+      try {
+        const res = await fetch('/api/admin/orders', {
+          headers: { 'x-admin-password': getAdminPassword() },
+          cache: 'no-store',
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (cancelled || !json?.success || !Array.isArray(json.data)) return;
+
+        const orders: Array<Record<string, any>> = json.data;
+        const signature = orders.map(o => `${o.id}:${o.status}:${o.updated_at}`).join('|');
+
+        if (knownIds === null) {
+          knownIds = new Set(orders.map(o => String(o.id)));
+          lastSignature = signature;
+          return;
         }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-        },
-        () => {
-          // 다른 관리자/시스템에서 주문 상태가 변경된 경우 갱신
+
+        const fresh = orders.filter(o => !knownIds!.has(String(o.id)));
+        fresh.forEach(o => knownIds!.add(String(o.id)));
+
+        if (fresh.length > 0) {
+          // 여러 건이 한꺼번에 들어와도 가장 오래된 것부터 차례로 안내
+          fresh.reverse().forEach(o => announceOrder(o));
+          onNewOrderRef.current?.();
+        } else if (signature !== lastSignature) {
+          // 다른 관리자/시스템에서 주문 상태가 바뀐 경우 갱신
           onOrderUpdateRef.current?.();
         }
-      )
-      .subscribe();
+        lastSignature = signature;
+      } catch {
+        // 네트워크 오류는 다음 주기에 다시 시도
+      } finally {
+        inFlight = false;
+      }
+    };
 
-    channelRef.current = channel;
+    poll();
+    const timer = setInterval(poll, POLL_INTERVAL_MS);
 
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      cancelled = true;
+      clearInterval(timer);
       stopSpeaking();
     };
   }, [enabled, announceOrder]);
