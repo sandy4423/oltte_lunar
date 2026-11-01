@@ -30,7 +30,8 @@ export function CashReceiptForm({
   receiptUrl = null,
 }: CashReceiptFormProps) {
   const [type, setType] = useState<'소득공제' | '지출증빙'>(initialType || '소득공제');
-  const [number, setNumber] = useState(initialNumber || '');
+  // 서버가 돌려주는 번호는 가려진 값(****1234)이라 입력칸에 채우지 않는다 — 고치려면 새로 입력
+  const [number, setNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(!!initialType);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +97,7 @@ export function CashReceiptForm({
             <div className="flex-1">
               <h3 className="font-bold text-green-900 mb-2">현금영수증 발급 완료</h3>
               <p className="text-sm text-green-700 mb-3">
-                {type} · {number.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')}
+                {type} · {initialNumber ? `이미 등록됨: ${initialNumber}` : '등록됨'}
               </p>
               <a
                 href={receiptUrl}
@@ -126,7 +127,7 @@ export function CashReceiptForm({
             <div className="flex-1">
               <h3 className="font-bold text-blue-900 mb-2">현금영수증 신청 완료</h3>
               <p className="text-sm text-blue-700 mb-1">
-                {initialType} · {initialNumber}
+                {initialType} · 이미 등록됨: {initialNumber}
               </p>
               <p className="text-xs text-blue-600">
                 입금 확인 시 자동으로 발급됩니다.

@@ -75,6 +75,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 이미 발급된 현금영수증은 바꿀 수 없다
+    if (order.cash_receipt_issued === true) {
+      return NextResponse.json(
+        { error: '이미 현금영수증이 발급된 주문입니다.' },
+        { status: 409 }
+      );
+    }
+
+    // 가상계좌(계좌이체) 주문만 — 카드 결제는 카드 전표로 갈음한다
+    const isVbankOrder =
+      order.payment_method === 'vbank' || order.payment_method === 'virtual_account' || !!order.vbank_num;
+    if (!isVbankOrder) {
+      return NextResponse.json(
+        { error: '가상계좌로 결제하는 주문만 현금영수증을 신청할 수 있어요.' },
+        { status: 409 }
+      );
+    }
+
+    // 취소·환불된 주문은 신청 불가 (입금 대기·결제 완료·마감 후 입금만)
+    if (!['WAITING_FOR_DEPOSIT', 'PAID', 'LATE_DEPOSIT'].includes(order.status)) {
+      return NextResponse.json(
+        { error: '현금영수증을 신청할 수 없는 주문 상태입니다.' },
+        { status: 409 }
+      );
+    }
+
     // 현금영수증 정보 저장
     const { error: updateError } = await supabase
       .from('orders')
