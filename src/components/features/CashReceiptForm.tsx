@@ -9,6 +9,8 @@ import { Receipt, CheckCircle } from 'lucide-react';
 
 interface CashReceiptFormProps {
   orderId: string;
+  /** 주문 열쇠 (결제 완료 화면). 내 주문 화면은 번호 인증 쿠키로 확인하므로 없어도 된다 */
+  token?: string | null;
   totalAmount: number;
   status: string;
   initialType?: '소득공제' | '지출증빙' | null;
@@ -19,6 +21,7 @@ interface CashReceiptFormProps {
 
 export function CashReceiptForm({
   orderId,
+  token = null,
   totalAmount,
   status,
   initialType = null,
@@ -63,6 +66,7 @@ export function CashReceiptForm({
         },
         body: JSON.stringify({
           orderId,
+          t: token ?? undefined,
           type,
           number: cleanNumber,
         }),

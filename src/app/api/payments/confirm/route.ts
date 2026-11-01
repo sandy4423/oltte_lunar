@@ -8,7 +8,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { confirmPayment } from '@/lib/tosspayments';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { sendOrderNotification } from '@/lib/sms';
+import { createPaymentConfirmSMS } from '@/lib/sms';
+import { sendSMSWithAlert } from '@/lib/smsAlert.server';
+import { isManduOrder } from '@/lib/orderAccess.server';
 import { sendSlackMessage, createPaymentConfirmation } from '@/lib/slack';
 import { formatKST } from '@/lib/utils';
 
@@ -25,10 +27,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // orderId는 'CARD_123_timestamp' 형식이므로 실제 orderId 추출
-    const actualOrderId = orderId.split('_')[1];
+    // orderId는 'CARD_123_timestamp' 형식 — 숫자 주문번호만 허용
+    const idMatch = typeof orderId === 'string' ? /^CARD_(\d+)_\d+$/.exec(orderId) : null;
+    if (!idMatch || typeof amount !== 'number' || !Number.isInteger(amount)) {
+      return NextResponse.json(
+        { error: '주문 정보가 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
+    const actualOrderId = idMatch[1];
 
-    const supabase = createServerSupabaseClient();
+    const supabase: any = createServerSupabaseClient(); // Database 제네릭이 never 로 추론되는 기존 문제 우회
 
     // 주문 조회
     const { data: order, error: orderError } = await supabase
@@ -52,6 +61,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: '주문을 찾을 수 없습니다.' },
         { status: 404 }
+      );
+    }
+
+    // 만두 주문만 (과일 주문은 다른 앱 몫)
+    if (!isManduOrder(order as any)) {
+      return NextResponse.json(
+        { error: '주문을 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
+
+    // 이미 결제 완료면 다시 승인하지 않고 성공으로 돌려준다 (새로고침·중복 호출 대응, 문자 재발송 없음)
+    if (order.status === 'PAID') {
+      return NextResponse.json({
+        success: true,
+        orderId: actualOrderId,
+        status: 'PAID',
+        alreadyPaid: true,
+      });
+    }
+    if (order.status !== 'CREATED' && order.status !== 'WAITING_FOR_DEPOSIT') {
+      return NextResponse.json(
+        { error: '결제할 수 없는 주문 상태입니다.' },
+        { status: 409 }
       );
     }
 
@@ -99,31 +132,38 @@ export async function POST(request: NextRequest) {
         vbank_num: null,
         vbank_expires_at: null,
       })
-      .eq('id', actualOrderId);
+      .eq('id', actualOrderId)
+      .in('status', ['CREATED', 'WAITING_FOR_DEPOSIT']);
 
     if (updateError) {
       console.error('[API] Order update error:', updateError);
       throw new Error('주문 정보 업데이트에 실패했습니다.');
     }
 
-    // SMS 발송 (고객)
-    try {
-      if (order.customer?.phone) {
-        await sendOrderNotification({
-          to: order.customer.phone,
+    // SMS 발송 (고객) — 실패하면 슬랙으로 알린다
+    if (order.customer?.phone) {
+      const deliveryDateFormatted = formatKST(order.delivery_date, 'M월 d일 (EEE)');
+      const pickupDateForSms = order.pickup_date ? formatKST(order.pickup_date, 'M월 d일 (EEE)') : undefined;
+      await sendSMSWithAlert(
+        order.customer.phone,
+        createPaymentConfirmSMS({
           customerName: order.customer.name || '고객',
-          orderNumber: actualOrderId,
-          status: '결제 완료',
-          deliveryDate: order.delivery_date,
+          deliveryDate: deliveryDateFormatted,
           aptName: order.apt_name,
-          totalAmount: order.total_amount,
-        });
-        
-        console.log(`[API] SMS sent to ${order.customer.phone}`);
-      }
-    } catch (smsError) {
-      // SMS 실패는 로그만 남기고 계속 진행
-      console.error('[API] SMS error:', smsError);
+          dong: order.dong,
+          ho: order.ho,
+          isPickup: order.is_pickup,
+          pickupDate: pickupDateForSms,
+          pickupTime: order.pickup_time || undefined,
+        }),
+        {
+          errorType: '결제 완료 문자 실패',
+          orderId: actualOrderId,
+          customerName: order.customer.name,
+          customerPhone: order.customer.phone,
+          aptName: order.apt_name,
+        }
+      );
     }
 
     // Slack 알림 (관리자)

@@ -7,30 +7,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { issueVirtualAccount, getBankName } from '@/lib/tosspayments';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { sendSMS, createVirtualAccountSMS } from '@/lib/sms';
+import { createVirtualAccountSMS } from '@/lib/sms';
+import { sendSMSWithAlert } from '@/lib/smsAlert.server';
+import { verifyOrderToken, isManduOrder } from '@/lib/orderAccess.server';
 import { sendSlackMessage, createOrderNotification, createErrorAlert } from '@/lib/slack';
 import { formatKST } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
+  // 오류 알림용 (본문은 한 번만 읽을 수 있어 미리 보관)
+  let alertOrderId: string | undefined;
   try {
     const body = await request.json();
-    const { orderId, amount, customerName, customerPhone, bank = '88' } = body;
+    // 금액·이름·전화는 받지 않는다 — 서버가 DB 에서 가져온다
+    const { orderId, t, bank = '88' } = body;
+    alertOrderId = orderId !== undefined ? String(orderId) : undefined;
 
     // 필수 파라미터 검증
-    if (!orderId || !amount || !customerName) {
+    if (!orderId) {
       return NextResponse.json(
         { error: '필수 파라미터가 누락되었습니다.' },
         { status: 400 }
       );
     }
 
-    const supabase = createServerSupabaseClient();
+    // 주문 열쇠 확인
+    if (!verifyOrderToken(orderId, typeof t === 'string' ? t : null)) {
+      return NextResponse.json(
+        { error: '이 주문에 대한 권한이 없습니다.' },
+        { status: 403 }
+      );
+    }
 
-    // 주문 정보 조회 (order_items 포함)
+    if (typeof bank !== 'string' || !/^[0-9]{2,3}$/.test(bank)) {
+      return NextResponse.json(
+        { error: '은행 코드가 올바르지 않습니다.' },
+        { status: 400 }
+      );
+    }
+
+    const supabase: any = createServerSupabaseClient(); // Database 제네릭이 never 로 추론되는 기존 문제 우회
+
+    // 주문 정보 조회 (고객·order_items 포함)
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select(`
-        id, cutoff_at, delivery_date, apt_name, dong, ho, is_pickup, pickup_date, pickup_time,
+        id, apt_code, status, total_amount, cutoff_at, delivery_date, apt_name, dong, ho, is_pickup, pickup_date, pickup_time,
+        customer:customers (
+          phone,
+          name
+        ),
         order_items (
           sku,
           qty
@@ -39,12 +64,24 @@ export async function POST(request: NextRequest) {
       .eq('id', orderId)
       .single();
 
-    if (orderError || !order) {
+    if (orderError || !order || !isManduOrder(order as any)) {
       return NextResponse.json(
         { error: '주문을 찾을 수 없습니다.' },
         { status: 404 }
       );
     }
+
+    // 가상계좌는 처음 한 번만 (이미 발급·결제된 주문에 다시 발급 금지)
+    if (order.status !== 'CREATED') {
+      return NextResponse.json(
+        { error: '가상계좌를 발급할 수 없는 주문 상태입니다.' },
+        { status: 409 }
+      );
+    }
+
+    const amount: number = order.total_amount;
+    const customerName: string = (order.customer as any)?.name || '고객';
+    const customerPhone: string = (order.customer as any)?.phone || '';
 
     // 입금 기한 계산
     const now = Date.now();
@@ -89,27 +126,25 @@ export async function POST(request: NextRequest) {
         vbank_expires_at: payment.virtualAccount.dueDate,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', orderId);
+      .eq('id', orderId)
+      .eq('status', 'CREATED');
 
     if (updateError) {
       console.error('[API] Order update error:', updateError);
       throw new Error('주문 정보 업데이트에 실패했습니다.');
     }
 
-    console.log(`[API] Virtual account issued for order ${orderId}:`, {
-      paymentKey: payment.paymentKey,
-      bank: payment.virtualAccount.bankCode,
-      accountNumber: payment.virtualAccount.accountNumber,
-    });
+    console.log(`[API] Virtual account issued for order ${orderId} (bank ${payment.virtualAccount.bankCode})`);
 
-    // SMS 발송 (고객)
+    // SMS 발송 (고객) — 실패하면 슬랙으로 알린다
     if (customerPhone) {
-      try {
-        const dueDateFormatted = formatKST(payment.virtualAccount.dueDate, 'M월 d일 (EEE) HH:mm');
-        const deliveryDateFormatted = formatKST(order.delivery_date, 'M월 d일 (EEE)');
-        const pickupDateFormatted = order.pickup_date ? formatKST(order.pickup_date, 'M월 d일 (EEE)') : undefined;
-        
-        await sendSMS(customerPhone, createVirtualAccountSMS({
+      const dueDateFormatted = formatKST(payment.virtualAccount.dueDate, 'M월 d일 (EEE) HH:mm');
+      const deliveryDateFormatted = formatKST(order.delivery_date, 'M월 d일 (EEE)');
+      const pickupDateFormatted = order.pickup_date ? formatKST(order.pickup_date, 'M월 d일 (EEE)') : undefined;
+
+      await sendSMSWithAlert(
+        customerPhone,
+        createVirtualAccountSMS({
           customerName,
           bankName: getBankName(payment.virtualAccount.bankCode),
           accountNumber: payment.virtualAccount.accountNumber,
@@ -122,13 +157,15 @@ export async function POST(request: NextRequest) {
           isPickup: order.is_pickup,
           pickupDate: pickupDateFormatted,
           pickupTime: order.pickup_time || undefined,
-        }));
-        
-        console.log(`[API] SMS sent to ${customerPhone}`);
-      } catch (smsError) {
-        // SMS 실패는 로그만 남기고 계속 진행
-        console.error('[API] SMS error:', smsError);
-      }
+        }),
+        {
+          errorType: '가상계좌 안내 문자 실패',
+          orderId,
+          customerName,
+          customerPhone,
+          aptName: order.apt_name,
+        }
+      );
     }
 
     // Slack 알림 (관리자)
@@ -173,15 +210,12 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[API] Virtual account error:', error);
     
-    // Slack 에러 알림
+    // Slack 에러 알림 (고객 입력값·비밀값 없이 주문번호만)
     try {
-      const body = await request.json().catch(() => ({}));
       await sendSlackMessage(createErrorAlert({
         errorType: '가상계좌 발급 오류',
         errorMessage: error.message || '가상계좌 발급 중 오류가 발생했습니다.',
-        orderId: body?.orderId?.toString(),
-        customerName: body?.customerName,
-        customerPhone: body?.customerPhone,
+        orderId: alertOrderId,
         timestamp: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
       }));
     } catch (alertError) {

@@ -57,7 +57,8 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const supabase = createServerSupabaseClient();
+    // Database 제네릭이 supabase-js 버전 차이로 never 로 추론되므로(기존 라우트 동일) 느슨한 타입 사용
+    const supabase: any = createServerSupabaseClient();
 
     // 고객 찾기/만들기 (있으면 id 재사용, 이름은 덮어쓰지 않음)
     let customerId: string;
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
       // 삭제하지 않고 취소 표시 (데이터 삭제 금지 원칙). DB enum 값은 CANCELLED (CANCELED 는 없음)
       await supabase
         .from('orders')
-        .update({ status: 'CANCELLED', updated_at: new Date().toISOString() } as any)
+        .update({ status: 'CANCELLED', updated_at: new Date().toISOString() })
         .eq('id', order.id);
       return bad('주문 상품 저장에 실패했습니다.', 500);
     }

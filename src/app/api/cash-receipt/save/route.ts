@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { issueCashReceipt } from '@/lib/tosspayments';
 import { sendSlackAlert } from '@/lib/slack';
+import { verifyOrderToken, isManduOrder, getSessionPhone } from '@/lib/orderAccess.server';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,16 +18,25 @@ const supabase = createClient(
  * - orderId: 주문 ID
  * - type: '소득공제' | '지출증빙'
  * - number: 등록번호 (휴대폰번호 또는 사업자번호)
+ * - t: 주문 열쇠 (또는 번호 인증 쿠키의 전화번호가 이 주문 고객과 같을 때 — 내 주문 화면)
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { orderId, type, number } = body;
+    const { orderId, type, number, t } = body;
 
     // 입력 검증
     if (!orderId || !type || !number) {
       return NextResponse.json(
         { error: '필수 정보가 누락되었습니다.' },
+        { status: 400 }
+      );
+    }
+
+    const digits = String(number).replace(/[^0-9]/g, '');
+    if (digits.length < 10 || digits.length > 11) {
+      return NextResponse.json(
+        { error: '등록번호 형식이 올바르지 않습니다.' },
         { status: 400 }
       );
     }
@@ -53,12 +63,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 만두 주문만, 그리고 주인만 (주문 열쇠 또는 번호 인증 쿠키)
+    const tokenOk = verifyOrderToken(orderId, typeof t === 'string' ? t : null);
+    const sessionPhone = getSessionPhone(request);
+    const sessionOk = !!sessionPhone && (order.customer as any)?.phone === sessionPhone;
+    if (!isManduOrder(order as any) || !(tokenOk || sessionOk)) {
+      // 존재 여부를 알려주지 않도록 같은 응답
+      return NextResponse.json(
+        { error: '주문을 찾을 수 없습니다.' },
+        { status: tokenOk || sessionOk ? 404 : 403 }
+      );
+    }
+
     // 현금영수증 정보 저장
     const { error: updateError } = await supabase
       .from('orders')
       .update({
         cash_receipt_type: type,
-        cash_receipt_number: number,
+        cash_receipt_number: digits,
         updated_at: new Date().toISOString(),
       })
       .eq('id', orderId);
@@ -82,7 +104,7 @@ export async function POST(request: NextRequest) {
           orderName: `올때만두 - ${order.apt_name}`,
           customerName: order.customer.name,
           type,
-          customerIdentityNumber: number,
+          customerIdentityNumber: digits,
         });
 
         // 발급 성공 시 정보 저장
@@ -96,7 +118,7 @@ export async function POST(request: NextRequest) {
           })
           .eq('id', orderId);
 
-        console.log('[CashReceipt] Issued successfully:', cashReceiptData);
+        console.log('[CashReceipt] Issued successfully for order', orderId);
 
         return NextResponse.json({
           success: true,

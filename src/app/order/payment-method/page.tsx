@@ -63,11 +63,10 @@ export default function PaymentMethodPage() {
       const response = await fetch('/api/payments/virtual-account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // 금액·이름·전화는 서버가 DB 에서 가져온다 (보내지 않음)
         body: JSON.stringify({
           orderId: order.id,
-          amount: order.total_amount,
-          customerName: order.customer?.name || '고객',
-          customerPhone: order.customer?.phone || '',
+          t: getOrderToken(order.id) ?? '',
           bank: '88',
         }),
       });

@@ -119,6 +119,7 @@ export default function OrderCompletePage() {
         {!isCardPayment && (
           <CashReceiptForm
             orderId={order.id}
+            token={getOrderToken(order.id)}
             totalAmount={order.total_amount}
             status={order.status}
             initialType={order.cash_receipt_type as '소득공제' | '지출증빙' | null}

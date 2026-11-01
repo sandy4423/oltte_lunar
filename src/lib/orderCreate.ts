@@ -49,7 +49,7 @@ export function computeOrder(
     merged.set(sku, (merged.get(sku) ?? 0) + qty);
   }
   const lines: ComputedOrder['lines'] = [];
-  for (const [sku, qty] of merged) {
+  for (const [sku, qty] of Array.from(merged.entries())) {
     if (qty > 99) return { ok: false, error: '수량이 올바르지 않습니다.' };
     const product = PRODUCTS.find((p) => p.sku === sku)!;
     lines.push({ sku: product.sku, qty, unit_price: product.price, line_amount: product.price * qty });
