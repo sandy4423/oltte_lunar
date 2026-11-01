@@ -17,6 +17,8 @@ interface CardPaymentButtonProps {
   amount: number;
   orderName: string;
   customerName: string;
+  /** 주문 열쇠 (결제 후 돌아오는 주소에 실어 보낸다) */
+  token?: string | null;
 }
 
 export function CardPaymentButton({
@@ -24,6 +26,7 @@ export function CardPaymentButton({
   amount,
   orderName,
   customerName,
+  token,
 }: CardPaymentButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,8 +52,8 @@ export function CardPaymentButton({
         orderId: `CARD_${orderId}_${Date.now()}`,
         orderName,
         customerName,
-        successUrl: `${window.location.origin}/order/success?orderId=${orderId}`,
-        failUrl: `${window.location.origin}/order/fail?orderId=${orderId}`,
+        successUrl: `${window.location.origin}/order/success?orderId=${orderId}${token ? `&t=${encodeURIComponent(token)}` : ''}`,
+        failUrl: `${window.location.origin}/order/fail?orderId=${orderId}${token ? `&t=${encodeURIComponent(token)}` : ''}`,
       });
 
     } catch (err: any) {

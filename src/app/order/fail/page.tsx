@@ -11,6 +11,7 @@ import { AlertCircle } from 'lucide-react';
 import { STORE_INFO } from '@/lib/constants';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { getOrderToken } from '@/lib/orderToken';
 
 export default function PaymentFailPage() {
   const searchParams = useSearchParams();
@@ -32,7 +33,8 @@ export default function PaymentFailPage() {
 
   const handleRetry = () => {
     if (actualOrderId) {
-      router.push(`/order/complete?orderId=${actualOrderId}`);
+      const token = getOrderToken(actualOrderId);
+      router.push(`/order/complete?orderId=${actualOrderId}${token ? `&t=${encodeURIComponent(token)}` : ''}`);
     } else {
       router.push('/');
     }

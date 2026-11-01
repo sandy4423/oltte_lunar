@@ -12,6 +12,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { getOrderToken, rememberOrderToken } from '@/lib/orderToken';
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
@@ -62,8 +63,11 @@ export default function PaymentSuccessPage() {
         console.log('[Success] Payment confirmed:', data);
 
         // 주문 완료 페이지로 리다이렉트
+        // 주문 열쇠: 주소의 t= (successUrl 에 실어 둠) → 없으면 sessionStorage
+        const token = getOrderToken(data.orderId);
+        if (token) rememberOrderToken(data.orderId, token);
         timer = setTimeout(() => {
-          router.push(`/order/complete?orderId=${data.orderId}`);
+          router.push(`/order/complete?orderId=${data.orderId}${token ? `&t=${encodeURIComponent(token)}` : ''}`);
         }, 1500);
 
       } catch (err: any) {

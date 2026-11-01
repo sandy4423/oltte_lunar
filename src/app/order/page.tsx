@@ -183,11 +183,11 @@ export default function OrderPage() {
   // 주문 생성 후 토스 결제 호출
   useEffect(() => {
     if (orderSubmit.createdOrderId && orderSubmit.finalAmount > 0) {
-      handleCardPayment(orderSubmit.createdOrderId, orderSubmit.finalAmount);
+      handleCardPayment(orderSubmit.createdOrderId, orderSubmit.finalAmount, orderSubmit.accessToken);
     }
   }, [orderSubmit.createdOrderId]);
 
-  const handleCardPayment = async (orderId: number, amount: number) => {
+  const handleCardPayment = async (orderId: number, amount: number, token: string | null) => {
     setIsPaymentProcessing(true);
     try {
       const { loadTossPayments } = await import('@tosspayments/payment-sdk');
@@ -200,8 +200,8 @@ export default function OrderPage() {
         orderId: `CARD_${orderId}_${Date.now()}`,
         orderName: '올때만두 만두전골',
         customerName: name,
-        successUrl: `${window.location.origin}/order/success`,
-        failUrl: `${window.location.origin}/order/fail?orderId=${orderId}`,
+        successUrl: `${window.location.origin}/order/success${token ? `?t=${encodeURIComponent(token)}` : ''}`,
+        failUrl: `${window.location.origin}/order/fail?orderId=${orderId}${token ? `&t=${encodeURIComponent(token)}` : ''}`,
       });
     } catch (err: unknown) {
       const tossErr = err as { code?: string; message?: string };
