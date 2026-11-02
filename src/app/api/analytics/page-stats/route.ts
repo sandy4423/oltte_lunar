@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { verifyAdminAuth } from '@/lib/adminAuth.server';
 
+// 관리자 헤더를 읽으므로 빌드 때 미리 만들지 않는다
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/analytics/page-stats
  * 페이지 방문 통계 조회
