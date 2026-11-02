@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -95,6 +96,18 @@ export default function PickupPage() {
     pickupDate !== '' &&
     pickupTime !== '' &&
     isMinOrderMet;
+
+  // 주문이 만들어지면 결제 방법 선택 화면(카드 / 가상계좌)으로 이동 — 주문 열쇠(t)를 주소에 실어 보낸다
+  const router = useRouter();
+  useEffect(() => {
+    if (orderSubmit.createdOrderId) {
+      const t = orderSubmit.accessToken;
+      router.push(
+        `/order/payment-method?orderId=${orderSubmit.createdOrderId}${t ? `&t=${encodeURIComponent(t)}` : ''}`
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderSubmit.createdOrderId]);
 
   // 에러 통합
   const error = verification.error || orderSubmit.error;

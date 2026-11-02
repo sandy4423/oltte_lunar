@@ -396,9 +396,8 @@ export function createPickupTimeLinkSentAlert(params: {
   customerPhone: string;
   orderDate: string;
   deliveryDate: string;
-  link: string;
 }): string {
-  const { orderId, customerName, customerPhone, orderDate, deliveryDate, link } = params;
+  const { orderId, customerName, customerPhone, orderDate, deliveryDate } = params;
   
   return `🔗 픽업시간 선택 링크 전송
 
@@ -408,10 +407,7 @@ export function createPickupTimeLinkSentAlert(params: {
 주문일: ${orderDate}
 수령예정일: ${deliveryDate}
 
-전송된 링크:
-${link}
-
-고객이 링크를 통해 픽업시간을 선택할 수 있습니다.`;
+픽업시간 선택 링크를 문자로 보냈습니다. (링크 주소는 보안상 여기에 남기지 않습니다)`;
 }
 
 const PART_LABEL: Record<string, string> = {

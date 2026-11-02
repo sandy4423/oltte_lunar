@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { verifyAdminAuth } from '@/lib/adminAuth.server';
-import { isManduOrder } from '@/lib/orderAccess.server';
+import { isManduOrder, maskPhone } from '@/lib/orderAccess.server';
 import { sendSMS, createPickupTimeRequestSMS } from '@/lib/sms';
 import type { OrderItemForSMS } from '@/lib/sms';
 import { sendSlackMessage, createPickupTimeLinkSentAlert } from '@/lib/slack';
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
         })
       );
       
-      console.log(`[SendLink] SMS sent to ${order.customer.phone}`);
+      console.log(`[SendLink] SMS sent to ${maskPhone(order.customer.phone)}`);
     } catch (smsError: any) {
       console.error('[SendLink] SMS error:', smsError);
       // SMS 실패 시에도 계속 진행 (토큰은 생성됨)
@@ -164,7 +164,6 @@ export async function POST(request: NextRequest) {
           customerPhone: order.customer.phone,
           orderDate,
           deliveryDate,
-          link,
         })
       );
       
@@ -178,7 +177,6 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         message: 'SMS가 전송되었습니다.',
-        link, // 관리자가 확인할 수 있도록
       },
       {
         headers: {

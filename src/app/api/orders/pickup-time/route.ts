@@ -12,7 +12,7 @@ import { sendSMS, createPickupTimeChangeSMS } from '@/lib/sms';
 import { sendSlackMessage, createPickupTimeChangeAlert } from '@/lib/slack';
 import { getAvailableTimeSlots, getAvailablePickupDates } from '@/lib/constants';
 import { formatKST } from '@/lib/utils';
-import { getSessionPhone, isManduOrder } from '@/lib/orderAccess.server';
+import { getSessionPhone, isManduOrder, maskPhone } from '@/lib/orderAccess.server';
 
 export const dynamic = 'force-dynamic';
 
@@ -181,7 +181,7 @@ export async function PATCH(request: NextRequest) {
           );
         }
         
-        console.log(`[PickupTime API] SMS sent to ${order.customer.phone}`);
+        console.log(`[PickupTime API] SMS sent to ${maskPhone(order.customer.phone)}`);
       }
     } catch (smsError) {
       // SMS 실패는 로그만 남기고 계속 진행
