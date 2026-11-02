@@ -41,16 +41,16 @@ export type ProductSku =
 // ============================================
 
 /** customers 테이블 Row - schema.sql line 9-15 */
-export interface CustomerRow {
+export type CustomerRow = {
   id: string;                      // uuid, PK
   phone: string;                   // text, NOT NULL, UNIQUE
   name: string;                    // text, NOT NULL
   marketing_opt_in: boolean;       // boolean, DEFAULT false
   created_at: string;              // timestamptz, DEFAULT now()
-}
+};
 
 /** orders 테이블 Row - schema.sql line 18-38 */
-export interface OrderRow {
+export type OrderRow = {
   id: string;                      // uuid, PK
   customer_id: string;             // uuid, FK → customers(id), NOT NULL
   apt_code: string;                // text, NOT NULL
@@ -107,7 +107,7 @@ export interface OrderRow {
    *    수령했는지는 `status` 가 아니라 이 칸으로 판단하세요.
    */
   picked_up_at?: string | null;    // timestamptz, NULLABLE
-}
+};
 
 /**
  * order_items 테이블 Row
@@ -118,7 +118,7 @@ export interface OrderRow {
  * 예전에는 여기 `sku` 가 NOT NULL 로 적혀 있었지만 사실과 달랐다.
  * 상품 이름은 `@/lib/orderItemName` 의 공통 함수로 구한다.
  */
-export interface OrderItemRow {
+export type OrderItemRow = {
   id: string;                      // uuid, PK
   order_id: string;                // uuid, FK → orders(id) ON DELETE CASCADE, NOT NULL
   sku: ProductSku | null;          // product_sku, NULLABLE - 캠페인 상품이면 NULL
@@ -131,10 +131,10 @@ export interface OrderItemRow {
   campaign_product?: { id?: string | null; name?: string | null } | null;
   /** 조회 시 함께 읽은 캠페인 상품 옵션 */
   campaign_product_option?: { id?: string | null; label?: string | null } | null;
-}
+};
 
 /** refund_tokens 테이블 Row */
-export interface RefundTokenRow {
+export type RefundTokenRow = {
   id: string;                      // uuid, PK
   order_id: string;                // uuid, FK → orders(id), NOT NULL
   token: string;                   // text, NOT NULL, UNIQUE
@@ -146,33 +146,33 @@ export interface RefundTokenRow {
   used: boolean;                   // boolean, DEFAULT false
   expires_at: string;              // timestamptz, NOT NULL
   created_at: string;              // timestamptz, DEFAULT now()
-}
+};
 
 /** one_time_auth_tokens 테이블 Row */
-export interface OneTimeAuthTokenRow {
+export type OneTimeAuthTokenRow = {
   id: string;                      // uuid, PK
   customer_id: string;             // uuid, FK → customers(id), NOT NULL
   token: string;                   // text, NOT NULL, UNIQUE
   expires_at: string;              // timestamptz, NOT NULL
   used: boolean;                   // boolean, DEFAULT false
   created_at: string;              // timestamptz, DEFAULT now()
-}
+};
 
 // ============================================
 // Table Insert Types (INSERT 시 사용)
 // ============================================
 
 /** customers INSERT 타입 */
-export interface CustomerInsert {
+export type CustomerInsert = {
   id?: string;                     // auto-generated
   phone: string;                   // required
   name: string;                    // required
   marketing_opt_in?: boolean;      // optional, default: false
   created_at?: string;             // optional, default: now()
-}
+};
 
 /** orders INSERT 타입 */
-export interface OrderInsert {
+export type OrderInsert = {
   id?: string;                     // auto-generated
   customer_id: string;             // required
   apt_code: string;                // required
@@ -216,20 +216,20 @@ export interface OrderInsert {
   is_hidden?: boolean;             // optional, default: false
   created_at?: string;             // optional, default: now()
   updated_at?: string;             // optional, default: now()
-}
+};
 
 /** order_items INSERT 타입 */
-export interface OrderItemInsert {
+export type OrderItemInsert = {
   id?: string;                     // auto-generated
   order_id: string;                // required
   sku: ProductSku;                 // required
   qty?: number;                    // optional, default: 1
   unit_price: number;              // required
   line_amount: number;             // required
-}
+};
 
 /** refund_tokens INSERT 타입 */
-export interface RefundTokenInsert {
+export type RefundTokenInsert = {
   id?: string;                     // auto-generated
   order_id: string;                // required
   token: string;                   // required
@@ -241,33 +241,33 @@ export interface RefundTokenInsert {
   used?: boolean;                  // optional, default: false
   expires_at: string;              // required
   created_at?: string;             // optional, default: now()
-}
+};
 
 /** one_time_auth_tokens INSERT 타입 */
-export interface OneTimeAuthTokenInsert {
+export type OneTimeAuthTokenInsert = {
   id?: string;                     // auto-generated
   customer_id: string;             // required
   token: string;                   // required
   expires_at: string;              // required
   used?: boolean;                  // optional, default: false
   created_at?: string;             // optional, default: now()
-}
+};
 
 // ============================================
 // Table Update Types (UPDATE 시 사용)
 // ============================================
 
 /** customers UPDATE 타입 */
-export interface CustomerUpdate {
+export type CustomerUpdate = {
   id?: string;
   phone?: string;
   name?: string;
   marketing_opt_in?: boolean;
   created_at?: string;
-}
+};
 
 /** orders UPDATE 타입 */
-export interface OrderUpdate {
+export type OrderUpdate = {
   id?: string;
   customer_id?: string;
   apt_code?: string;
@@ -315,20 +315,20 @@ export interface OrderUpdate {
   campaign_id?: string | null;
   /** 손님이 물건을 가져간 시각. 캠페인 주문의 수령 여부는 이 칸이 정합니다 */
   picked_up_at?: string | null;
-}
+};
 
 /** order_items UPDATE 타입 */
-export interface OrderItemUpdate {
+export type OrderItemUpdate = {
   id?: string;
   order_id?: string;
   sku?: ProductSku;
   qty?: number;
   unit_price?: number;
   line_amount?: number;
-}
+};
 
 /** refund_tokens UPDATE 타입 */
-export interface RefundTokenUpdate {
+export type RefundTokenUpdate = {
   id?: string;
   order_id?: string;
   token?: string;
@@ -340,7 +340,7 @@ export interface RefundTokenUpdate {
   used?: boolean;
   expires_at?: string;
   created_at?: string;
-}
+};
 
 // ============================================
 // Supabase Database Interface
@@ -353,41 +353,77 @@ export interface Database {
         Row: CustomerRow;
         Insert: CustomerInsert;
         Update: CustomerUpdate;
+        Relationships: [];
       };
       orders: {
         Row: OrderRow;
         Insert: OrderInsert;
         Update: OrderUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'orders_customer_id_fkey';
+            columns: ['customer_id'];
+            isOneToOne: false;
+            referencedRelation: 'customers';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       order_items: {
         Row: OrderItemRow;
         Insert: OrderItemInsert;
         Update: OrderItemUpdate;
+        Relationships: [
+          {
+            foreignKeyName: 'order_items_order_id_fkey';
+            columns: ['order_id'];
+            isOneToOne: false;
+            referencedRelation: 'orders';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       refund_tokens: {
         Row: RefundTokenRow;
         Insert: RefundTokenInsert;
         Update: RefundTokenUpdate;
+        Relationships: [];
       };
       product_shipment_quantities: {
         Row: ProductShipmentQuantityRow;
         Insert: ProductShipmentQuantityInsert;
         Update: ProductShipmentQuantityUpdate;
+        Relationships: [];
       };
       inventory_items: {
         Row: InventoryItemRow;
         Insert: Omit<InventoryItemRow, 'id' | 'created_at' | 'updated_at'>;
         Update: InventoryItemUpdate;
+        Relationships: [];
       };
       staff_accounts: {
         Row: StaffAccountRow;
         Insert: StaffAccountInsert;
         Update: StaffAccountUpdate;
+        Relationships: [];
       };
       inventory_logs: {
         Row: InventoryLogRow;
         Insert: Omit<InventoryLogRow, 'id' | 'created_at'>;
         Update: never;
+        Relationships: [];
+      };
+      page_views: {
+        Row: PageViewRow;
+        Insert: Omit<PageViewRow, 'id' | 'created_at'>;
+        Update: Partial<PageViewRow>;
+        Relationships: [];
+      };
+      hire_applications: {
+        Row: HireApplicationRow;
+        Insert: Omit<HireApplicationRow, 'id' | 'created_at'>;
+        Update: Partial<HireApplicationRow>;
+        Relationships: [];
       };
     };
     Views: {
@@ -408,41 +444,41 @@ export interface Database {
 // ============================================
 
 /** product_shipment_quantities 테이블 Row */
-export interface ProductShipmentQuantityRow {
+export type ProductShipmentQuantityRow = {
   id: string;                      // uuid, PK
   sku: ProductSku;                 // product_sku, NOT NULL
   shipment_date: string;           // date, NOT NULL
   quantity: number;                // integer, NOT NULL, DEFAULT 0
   created_at: string;              // timestamptz, DEFAULT now()
   updated_at: string;              // timestamptz, DEFAULT now()
-}
+};
 
 /** product_shipment_quantities INSERT 타입 */
-export interface ProductShipmentQuantityInsert {
+export type ProductShipmentQuantityInsert = {
   id?: string;
   sku: ProductSku;
   shipment_date: string;
   quantity?: number;
   created_at?: string;
   updated_at?: string;
-}
+};
 
 /** product_shipment_quantities UPDATE 타입 */
-export interface ProductShipmentQuantityUpdate {
+export type ProductShipmentQuantityUpdate = {
   id?: string;
   sku?: ProductSku;
   shipment_date?: string;
   quantity?: number;
   created_at?: string;
   updated_at?: string;
-}
+};
 
 // ============================================
 // inventory_items 테이블 (재고 관리)
 // ============================================
 
 /** inventory_items 테이블 Row */
-export interface InventoryItemRow {
+export type InventoryItemRow = {
   id: string;                        // uuid, PK
   category: string;                  // 전골 | 쫄면 | 기타 | 포장
   name: string;                      // 항목명
@@ -459,50 +495,50 @@ export interface InventoryItemRow {
   last_memo: string | null;          // 직전 점검 메모
   created_at: string;
   updated_at: string;
-}
+};
 
 /** inventory_items UPDATE 타입 */
-export interface InventoryItemUpdate {
+export type InventoryItemUpdate = {
   main_qty?: number | null;
   detail_qty?: number | null;
   min_qty?: number | null;
   last_checked_at?: string | null;
   last_memo?: string | null;
   updated_at?: string;
-}
+};
 
 // ============================================
 // staff_accounts 테이블 (직원 계정)
 // ============================================
 
-export interface StaffAccountRow {
+export type StaffAccountRow = {
   id: string;
   name: string;
   password: string;
   role: 'staff' | 'admin';
   is_active: boolean;
   created_at: string;
-}
+};
 
-export interface StaffAccountInsert {
+export type StaffAccountInsert = {
   name: string;
   password: string;
   role?: 'staff' | 'admin';
   is_active?: boolean;
-}
+};
 
-export interface StaffAccountUpdate {
+export type StaffAccountUpdate = {
   name?: string;
   password?: string;
   role?: 'staff' | 'admin';
   is_active?: boolean;
-}
+};
 
 // ============================================
 // inventory_logs 테이블 (재고 입력 이력)
 // ============================================
 
-export interface InventoryLogRow {
+export type InventoryLogRow = {
   id: string;
   item_id: string;
   item_name: string;
@@ -513,7 +549,7 @@ export interface InventoryLogRow {
   detail_unit: string | null;
   memo: string | null;
   created_at: string;
-}
+};
 
 // ============================================
 // Utility Types (편의용 별칭)
@@ -540,3 +576,27 @@ export interface OrderFull extends OrderRow {
   customer: CustomerRow;
   order_items: OrderItemRow[];
 }
+
+// page_views 테이블 (방문 기록)
+export type PageViewRow = {
+  id: string;
+  created_at: string;
+  page: string;
+  apt_code: string | null;
+  source: string | null;
+  event: string;
+  user_agent: string | null;
+};
+
+// hire_applications 테이블 (채용 지원)
+export type HireApplicationRow = {
+  id: string;
+  created_at: string;
+  name: string;
+  phone: string;
+  part: string;
+  start_date: string | null;
+  positions: string[];
+  intro: string | null;
+  photo_url: string | null;
+};
