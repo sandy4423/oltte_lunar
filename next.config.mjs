@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
-    // TODO: 프로덕션 안정화 후 false로 변경하여 타입 에러를 빌드 시 잡아야 합니다.
-    ignoreBuildErrors: true,
+    // 타입 오류가 있으면 빌드가 실패한다 (2026-11 tsc 0건 달성 후 활성화).
+    ignoreBuildErrors: false,
   },
   eslint: {
     // TODO: 프로덕션 안정화 후 false로 변경하여 린트 에러를 빌드 시 잡아야 합니다.
