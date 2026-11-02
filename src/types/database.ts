@@ -425,6 +425,25 @@ export interface Database {
         Update: Partial<HireApplicationRow>;
         Relationships: [];
       };
+      one_time_auth_tokens: {
+        Row: OneTimeAuthTokenRow;
+        Insert: OneTimeAuthTokenInsert;
+        Update: Partial<OneTimeAuthTokenRow>;
+        Relationships: [];
+      };
+      // 장부앱(oltte-bookkeeping) 소유 표 — 이 앱은 아래 열만 읽는다
+      campaign_order_details: {
+        Row: { order_id: string; depositor_name: string | null; ship_name: string | null };
+        Insert: { order_id: string; depositor_name?: string | null; ship_name?: string | null };
+        Update: { order_id?: string; depositor_name?: string | null; ship_name?: string | null };
+        Relationships: [];
+      };
+      sale_campaigns: {
+        Row: { id: string; slug: string };
+        Insert: { id?: string; slug: string };
+        Update: { id?: string; slug?: string };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

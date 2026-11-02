@@ -242,7 +242,7 @@ export function TodayChecklist({ items, onSave }: TodayChecklistProps) {
   const handleSave = useCallback(
     async (item: InventoryItemRow, mainQty: number | null, detailQty: number | null, memo: string | null) => {
       const ok = await onSave(item.id, mainQty, detailQty, memo);
-      if (ok) setDoneIds((prev) => new Set([...prev, item.id]));
+      if (ok) setDoneIds((prev) => new Set(Array.from(prev).concat(item.id)));
       return ok;
     },
     [onSave]

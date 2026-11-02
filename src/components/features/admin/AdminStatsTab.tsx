@@ -14,7 +14,7 @@ interface AdminStatsTabProps {
   dateRange: any;
   setDateRange: (v: any) => void;
   fetchStats: () => void;
-  updateShipmentQuantity: (...args: any[]) => void;
+  updateShipmentQuantity: (sku: string, date: string, quantity: number) => Promise<boolean>;
 }
 
 export function AdminStatsTab({

@@ -122,7 +122,7 @@ async function fetchRecipients() {
   }
 
   // 3) 고객 정보 조회
-  const customerIds = [...new Set(targetOrders.map(o => o.customer_id))];
+  const customerIds = Array.from(new Set(targetOrders.map(o => o.customer_id)));
   const { data: customers, error: customersError } = await supabase
     .from('customers')
     .select('id, name, phone')

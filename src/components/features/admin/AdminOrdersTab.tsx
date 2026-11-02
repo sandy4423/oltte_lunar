@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import type { OrderStatus } from '@/types/database';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -35,8 +36,8 @@ interface AdminOrdersTabProps {
   setFilterDeliveryMethod: (v: string) => void;
   sortBy: string;
   setSortBy: (v: string) => void;
-  sortOrder: string;
-  setSortOrder: (v: string) => void;
+  sortOrder: 'asc' | 'desc';
+  setSortOrder: (v: 'asc' | 'desc') => void;
   searchQuery: string;
   setSearchQuery: (v: string) => void;
   showHidden: boolean;
@@ -50,7 +51,7 @@ interface AdminOrdersTabProps {
   remindLoading: boolean;
   sendLinkLoading: boolean;
   canSendPickupLink: boolean;
-  handleStatusChange: (status: string) => void;
+  handleStatusChange: (status: OrderStatus) => void;
   handleRemindDeposit: () => void;
   handleSendPickupTimeLink: () => void;
   handleOpenCancelDialog: () => void;

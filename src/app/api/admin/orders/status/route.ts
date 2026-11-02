@@ -39,7 +39,7 @@ import type { OrderStatus, OrderUpdate } from '@/types/database';
 */
 
 /** 장부앱과 같은 「입금완료」 집합. 이 상태가 아니면 수령 처리하지 않습니다 */
-const PAID_STATUSES = ['PAID', 'LATE_DEPOSIT'];
+const PAID_STATUSES: OrderStatus[] = ['PAID', 'LATE_DEPOSIT'];
 
 /** 건너뛴 주문 한 건 */
 interface SkippedOrder {
@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        if (!PAID_STATUSES.includes(String(order.status))) {
+        if (!(PAID_STATUSES as string[]).includes(String(order.status))) {
           skipped.push({
             orderId: order.id,
             name: displayName,
@@ -297,7 +297,7 @@ export async function POST(request: NextRequest) {
             .maybeSingle();
           const cancelled =
             fresh && !(fresh as any).picked_up_at &&
-            !PAID_STATUSES.includes(String((fresh as any).status));
+            !(PAID_STATUSES as string[]).includes(String((fresh as any).status));
           skipped.push({
             orderId: order.id,
             name: displayName,

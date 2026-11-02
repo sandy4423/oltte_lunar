@@ -4,6 +4,7 @@ import {
   Filter, Search, Truck, CheckCircle, Printer, Download,
   EyeOff, Eye, Bell, Clock,
 } from 'lucide-react';
+import type { OrderStatus } from '@/types/database';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -23,8 +24,8 @@ interface OrderFiltersAndActionsProps {
   setFilterDeliveryMethod: (v: string) => void;
   sortBy: string;
   setSortBy: (v: string) => void;
-  sortOrder: string;
-  setSortOrder: (v: string) => void;
+  sortOrder: 'asc' | 'desc';
+  setSortOrder: (v: 'asc' | 'desc') => void;
   searchQuery: string;
   setSearchQuery: (v: string) => void;
   showHidden: boolean;
@@ -37,7 +38,7 @@ interface OrderFiltersAndActionsProps {
   canSendPickupLink: boolean;
   onRemindDeposit: () => void;
   onSendPickupTimeLink: () => void;
-  onStatusChange: (status: string) => void;
+  onStatusChange: (status: OrderStatus) => void;
   onOpenCancelDialog: () => void;
   onHideOrders: (hidden: boolean) => void;
   onPrintMode: () => void;
