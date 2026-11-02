@@ -180,7 +180,8 @@ export async function POST(request: NextRequest) {
         cancelReason,
         wasPaid,
       });
-      await sendSlackAlert(slackMessage);
+      // createCancellationNotification 은 문자열을 돌려준다 (sendSlackAlert 는 {title, fields} 전용)
+      await sendSlackMessage(slackMessage);
     } catch (slackError) {
       console.error('[Cancel] Slack failed:', slackError);
     }
