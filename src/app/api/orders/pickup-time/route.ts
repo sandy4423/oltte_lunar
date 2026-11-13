@@ -165,7 +165,7 @@ export async function PATCH(request: NextRequest) {
           // 최초 시간 선택 - 간단한 확인 SMS
           await sendSMS(
             order.customer.phone,
-            `[올때만두] ${order.customer.name}님 픽업 시간이 확정되었습니다!\n\n픽업일시: ${newDateFormatted} ${pickupTime}\n픽업장소: e편한세상송도 후문상가 안쪽. 컴포즈 옆 (랜드마크로 113)\n\n선택하신 시간에 맞춰 방문해주세요!`
+            `[올때만두] ${order.customer.name}님 픽업 시간이 확정되었습니다!\n\n픽업일시: ${newDateFormatted} ${pickupTime}\n픽업장소: e편한세상송도 후문상가, 송도달빛지구대(파출소) 대각선 맞은편 모서리 (랜드마크로 113)\n\n선택하신 시간에 맞춰 방문해주세요!`
           );
         } else {
           const oldDateFormatted = formatKST(oldPickupDate, 'M월 d일 (EEE)');

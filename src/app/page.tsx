@@ -415,7 +415,7 @@ export default function HomePage() {
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <p className="text-sm font-semibold text-orange-800 mb-1">📍 픽업 장소</p>
           <p className="text-sm text-orange-700">
-            e편한세상송도 후문상가 안쪽. 컴포즈 옆 (랜드마크로 113)
+            e편한세상송도 후문상가, 송도달빛지구대(파출소) 대각선 맞은편 모서리 (랜드마크로 113)
           </p>
         </div>
       </div>

@@ -73,7 +73,7 @@ SLACK_WEBHOOK_URL
 - `MIN_ORDER_QUANTITY = 3` - 최소 주문 수량
 - `FREE_SHIPPING_ELIGIBLE_SKUS` - 무료배송 대상 (만두, 떡만, 육수 제외)
 - `PICKUP_DISCOUNT = 3000` - 픽업 할인 금액
-- `STORE_INFO.address = "e편한세상송도 후문상가 안쪽. 컴포즈 옆 (랜드마크로 113)"`
+- `STORE_INFO.address = "e편한세상송도 후문상가, 송도달빛지구대(파출소) 대각선 맞은편 모서리 (랜드마크로 113)"`
 
 ## 단지별 일정
 

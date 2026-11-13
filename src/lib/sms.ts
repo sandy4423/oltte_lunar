@@ -193,7 +193,7 @@ export function createVirtualAccountSMS(params: {
   const deliveryInfo = isPickup 
     ? `[픽업 안내]
 - 픽업일시: ${pickupDate || deliveryDate} ${pickupTime || ''}
-- 픽업장소: e편한세상송도 후문상가 안쪽. 컴포즈 옆 (랜드마크로 113)
+- 픽업장소: e편한세상송도 후문상가, 송도달빛지구대(파출소) 대각선 맞은편 모서리 (랜드마크로 113)
 - 만두는 빚은 즉시 급속냉동하여
   신선하게 준비합니다
 - 수령 즉시 냉동 보관해주세요`
@@ -234,7 +234,7 @@ export function createPaymentConfirmSMS(params: {
   const deliveryInfo = isPickup 
     ? `[픽업 정보]
 - 픽업일시: ${pickupDate || deliveryDate} ${pickupTime || ''}
-- 픽업장소: e편한세상송도 후문상가 안쪽. 컴포즈 옆 (랜드마크로 113)
+- 픽업장소: e편한세상송도 후문상가, 송도달빛지구대(파출소) 대각선 맞은편 모서리 (랜드마크로 113)
 - 만두는 빚은 즉시 급속냉동하여
   최고의 신선도를 유지합니다`
     : `[배송 정보]
