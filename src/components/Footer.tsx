@@ -9,7 +9,7 @@ export function Footer() {
     <footer className="bg-gray-50 border-t border-gray-100 mt-8 py-6">
       <div className="max-w-lg mx-auto px-4 text-center text-xs text-gray-500 leading-relaxed space-y-1.5">
         <p className="font-medium text-gray-600">
-          {STORE_INFO.name} | 대표: {STORE_INFO.ceo}
+          상호: {STORE_INFO.legalName} | 대표: {STORE_INFO.ceo}
         </p>
         <p>
           사업자등록번호: {STORE_INFO.businessNumber} | 통신판매업신고: {STORE_INFO.onlineBusinessNumber}

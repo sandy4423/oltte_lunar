@@ -16,7 +16,7 @@ export default function EftTermsPage() {
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-3">제1조 (목적)</h2>
             <p>
-              이 약관은 {STORE_INFO.name}(이하 &quot;회사&quot;)가 제공하는 전자금융거래 서비스를
+              이 약관은 {STORE_INFO.legalName}(이하 &quot;회사&quot;)가 제공하는 전자금융거래 서비스를
               이용자가 이용함에 있어 회사와 이용자 간의 전자금융거래에 관한 기본적인 사항을
               정함을 목적으로 합니다.
             </p>
