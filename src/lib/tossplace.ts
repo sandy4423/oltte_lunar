@@ -195,11 +195,14 @@ export function buildPosOrderBody(input: PosOrderInput) {
     });
     const base = { diningOption: 'TOGO', itemPrice, quantity: l.qty, ...(appliedDiscounts.length ? { appliedDiscounts } : {}) };
     if (input.test) {
+      // 시험 주문은 실매장 포스 매출에 잡히지 않게 금액을 전부 0원으로 넣는다(2026-11-18 15,500원 시험 주문이 매출로 잡힌 사고)
       return {
-        ...base,
+        diningOption: 'TOGO',
+        itemPrice: { ...itemPrice, priceValue: 0 },
+        quantity: l.qty,
         targetType: 'AD_HOC',
-        item: { title: `[테스트] ${l.title}`, code: 'TEST', category: { title: '테스트' } },
-        optionChoices: l.choices.map((c) => ({ option: { title: c.optionTitle }, title: c.title, price: c.price, quantity: c.qty })),
+        item: { title: `[테스트] ${l.title} (${l.basePrice.toLocaleString('ko-KR')}원)`, code: 'TEST', category: { title: '테스트' } },
+        optionChoices: l.choices.map((c) => ({ option: { title: c.optionTitle }, title: c.title, price: 0, quantity: c.qty })),
       };
     }
     return {
@@ -209,6 +212,13 @@ export function buildPosOrderBody(input: PosOrderInput) {
       optionChoices: l.choices.map((c) => ({ optionId: c.optionId, optionChoiceId: c.choiceId, price: c.price, quantity: c.qty })),
     };
   });
+  if (input.test) {
+    const zero = { listPrice: 0, discountAmount: 0, tipAmount: 0, serviceChargeAmount: 0, taxAmount: 0, supplyAmount: 0, taxExemptAmount: 0, totalAmount: 0 };
+    return {
+      order: { orderKey: input.orderKey, orderNumber: input.orderNumber, lineItems, chargePrice: zero, memo: `${input.memo} (실제 금액 ${input.totalAmount.toLocaleString('ko-KR')}원)` },
+      payments: [{ approvedAt: isoNoMs(input.approvedAt), amount: 0, taxAmount: 0, supplyAmount: 0, taxExemptAmount: 0, tipAmount: 0 }],
+    };
+  }
   const { taxAmount, supplyAmount } = splitVat(input.totalAmount);
   return {
     order: {
