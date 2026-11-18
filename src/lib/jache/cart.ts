@@ -1,4 +1,5 @@
 import type { CartChoice, CartLine } from './types';
+import { unitDiscountFor } from './discounts';
 
 export const won = (n: number) => `${n.toLocaleString('ko-KR')}원`;
 
@@ -10,14 +11,26 @@ export function lineKey(itemId: string, choices: CartChoice[]): string {
   return `${itemId}|${sig}`;
 }
 
-/** 1개 값 = 기본가 + 선택지 합 */
+/** 1개 정가 = 기본가 + 선택지 합 (포스 표시가) */
 export function unitPrice(line: Pick<CartLine, 'basePrice' | 'choices'>): number {
   return line.basePrice + line.choices.reduce((s, c) => s + c.price * c.qty, 0);
 }
 
-export const lineTotal = (line: CartLine) => unitPrice(line) * line.qty;
+/** 1개당 할인 (정가를 넘지 않게) — 규칙은 discounts.ts */
+export function unitDiscount(line: Pick<CartLine, 'itemId' | 'title' | 'basePrice' | 'choices'>): number {
+  return Math.min(unitDiscountFor(line), unitPrice(line));
+}
+
+/** 손님이 내는 1개 값 */
+export const unitPay = (line: Pick<CartLine, 'itemId' | 'title' | 'basePrice' | 'choices'>) => unitPrice(line) - unitDiscount(line);
+
+export const lineListTotal = (line: CartLine) => unitPrice(line) * line.qty;
+export const lineTotal = (line: CartLine) => unitPay(line) * line.qty;
 export const cartTotal = (lines: CartLine[]) => lines.reduce((s, l) => s + lineTotal(l), 0);
 export const cartCount = (lines: CartLine[]) => lines.reduce((s, l) => s + l.qty, 0);
+
+/** 요청 칩 (서버도 이 목록만 받는다) */
+export const REQUESTS = ['단무지 빼기', '수저 빼기', '도착하면 전화'] as const;
 
 export function choiceSummary(choices: CartChoice[]): string {
   return choices.map((c) => (c.qty > 1 ? `${c.title} ${c.qty}` : c.title)).join(' · ');

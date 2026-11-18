@@ -3,7 +3,9 @@
  * 키는 환경변수에서만 읽고 어떤 응답에도 싣지 않는다.
  *   TOSSPLACE_OPENAPI_ACCESS_KEY / TOSSPLACE_OPENAPI_SECRET / TOSSPLACE_MERCHANT_ID
  */
-import type { MenuCategory, MenuChoice, MenuItem, MenuOptionGroup, CartLine } from '@/lib/jache/types';
+import type { MenuCategory, MenuChoice, MenuItem, MenuOptionGroup } from '@/lib/jache/types';
+import type { PricedLine } from '@/lib/jache/pricing';
+import { splitVat } from '@/lib/jache/pricing';
 
 const BASE = 'https://open-api.tossplace.com/api-public/openapi/v1';
 
@@ -36,7 +38,7 @@ interface RawItem {
   description: string | null;
   imageUrl: string | null;
   labels: string[] | null;
-  price: { priceValue: number } | null;
+  price: { title?: string; priceType?: string; priceUnit?: number; priceValue: number } | null;
   diningOptions: string[] | null;
   category: { id: string; title: string; enabled: boolean; order: number };
   options: RawOption[] | null;
@@ -129,23 +131,159 @@ export async function fetchMenu(): Promise<MenuCategory[]> {
   return sanitizeCatalog(raw);
 }
 
-/* ───────── 2단계 자리: 포스 주문 생성 (아직 구현 안 함) ───────── */
-
-export interface CreatePosOrderInput {
-  /** 우리 주문 표의 주문번호 (중복 생성 방지 키) */
-  orderRef: string;
-  lines: CartLine[];
-  /** 픽업 예정 시각 (ISO) */
-  pickupAt: string;
-  memo?: string;
-  /** 외부결제로 기록할 금액 */
-  paidAmount: number;
+/** 주문 확정용 — 캐시 없이 지금 메뉴판 (품절 즉시 반영). 포스 주문의 itemPrice 를 위해 원본 가격 칸도 돌려준다 */
+export async function fetchCatalogFresh(): Promise<{ menu: MenuCategory[]; priceMeta: Map<string, PosItemPrice> }> {
+  const raw = await tossplaceFetch<RawItem[]>('/catalog/items', { cache: 'no-store' });
+  const priceMeta = new Map<string, PosItemPrice>();
+  for (const it of raw) {
+    priceMeta.set(it.id, {
+      title: it.price?.title ?? '기본',
+      priceType: it.price?.priceType ?? 'FIXED',
+      priceUnit: it.price?.priceUnit ?? 1,
+      priceValue: it.price?.priceValue ?? 0,
+      isTaxFree: false,
+      taxInclusive: true,
+    });
+  }
+  return { menu: sanitizeCatalog(raw), priceMeta };
 }
 
-export interface CreatePosOrderResult {
-  posOrderId: string;
+/* ───────── 포스 주문 생성 ───────── */
+
+export interface PosItemPrice {
+  title: string;
+  priceType: string;
+  priceUnit: number;
+  priceValue: number;
+  isTaxFree: boolean;
+  taxInclusive: boolean;
 }
 
-export async function createPosOrder(_input: CreatePosOrderInput): Promise<CreatePosOrderResult> {
-  throw new Error('createPosOrder: 2단계에서 구현');
+export interface PosOrderInput {
+  /** 우리 주문 id — 토스 orderKey (같은 키 재전송은 토스가 거부 → 중복 주문 없음) */
+  orderKey: string;
+  orderNumber: string;
+  lines: PricedLine[];
+  listPrice: number;
+  discountAmount: number;
+  totalAmount: number;
+  memo: string;
+  /** 결제 승인 시각 ISO */
+  approvedAt: string;
+  /** 시험 모드: 메뉴판 상품 대신 「[테스트] 이름」 임의 상품으로 넣는다 */
+  test: boolean;
+  /** itemId → 메뉴판 가격 칸 (없으면 기본값) */
+  priceMeta?: Map<string, PosItemPrice>;
+}
+
+const isoNoMs = (iso: string) => new Date(iso).toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+export function buildPosOrderBody(input: PosOrderInput) {
+  const lineItems = input.lines.map((l) => {
+    const meta = input.priceMeta?.get(l.itemId);
+    const itemPrice: PosItemPrice = {
+      title: meta?.title ?? '기본',
+      priceType: meta?.priceType ?? 'FIXED',
+      priceUnit: meta?.priceUnit ?? 1,
+      priceValue: l.basePrice,
+      isTaxFree: false,
+      taxInclusive: true,
+    };
+    const appliedDiscounts = l.discounts.map((d) => {
+      const amount = d.amountPerUnit * l.qty;
+      return { title: d.title, type: 'FIXED_AMOUNT', amount, percentage: 0, fixedAmount: amount };
+    });
+    const base = { diningOption: 'TOGO', itemPrice, quantity: l.qty, ...(appliedDiscounts.length ? { appliedDiscounts } : {}) };
+    if (input.test) {
+      return {
+        ...base,
+        targetType: 'AD_HOC',
+        item: { title: `[테스트] ${l.title}`, code: 'TEST', category: { title: '테스트' } },
+        optionChoices: l.choices.map((c) => ({ option: { title: c.optionTitle }, title: c.title, price: c.price, quantity: c.qty })),
+      };
+    }
+    return {
+      ...base,
+      targetType: 'ITEM',
+      targetId: l.itemId,
+      optionChoices: l.choices.map((c) => ({ optionId: c.optionId, optionChoiceId: c.choiceId, price: c.price, quantity: c.qty })),
+    };
+  });
+  const { taxAmount, supplyAmount } = splitVat(input.totalAmount);
+  return {
+    order: {
+      orderKey: input.orderKey,
+      orderNumber: input.orderNumber,
+      lineItems,
+      chargePrice: {
+        listPrice: input.listPrice,
+        discountAmount: -input.discountAmount,
+        tipAmount: 0,
+        serviceChargeAmount: 0,
+        taxAmount,
+        supplyAmount,
+        taxExemptAmount: 0,
+        totalAmount: input.totalAmount,
+      },
+      memo: input.memo,
+    },
+    payments: [
+      {
+        approvedAt: isoNoMs(input.approvedAt),
+        amount: input.totalAmount,
+        taxAmount,
+        supplyAmount,
+        taxExemptAmount: 0,
+        tipAmount: 0,
+      },
+    ],
+  };
+}
+
+export type PosCreateResult =
+  | { ok: true; posOrderId: string; orderState: string | null }
+  | { ok: false; retryable: boolean; status: number; error: string };
+
+/** 한 번 보내기. 키는 로그·응답에 싣지 않는다 */
+export async function postPosOrder(body: unknown): Promise<PosCreateResult> {
+  const { accessKey, secret, merchantId } = credentials();
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/merchants/${merchantId}/order/orders?printOrderSheet=true`, {
+      method: 'POST',
+      headers: { 'x-access-key': accessKey, 'x-secret-key': secret, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch (e) {
+    return { ok: false, retryable: true, status: 0, error: `네트워크: ${e instanceof Error ? e.message : String(e)}` };
+  }
+  const text = await res.text();
+  let json: any = null;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    /* 본문이 JSON 이 아님 */
+  }
+  if (res.ok && json?.resultType === 'SUCCESS' && json?.success?.id) {
+    return { ok: true, posOrderId: String(json.success.id), orderState: json.success.orderState ?? null };
+  }
+  const reason = json?.error ? JSON.stringify(json.error).slice(0, 500) : text.slice(0, 500);
+  return { ok: false, retryable: res.status >= 500 || res.status === 429, status: res.status, error: `HTTP ${res.status} ${reason}` };
+}
+
+/** 네트워크·5xx 는 최대 3번(1초·3초 쉬고) 다시. 4xx 는 바로 실패 */
+export async function createPosOrderWithRetry(body: unknown, maxAttempts = 3): Promise<PosCreateResult & { attempts: number }> {
+  let last: PosCreateResult = { ok: false, retryable: false, status: 0, error: '시도 안 함' };
+  for (let i = 1; i <= maxAttempts; i++) {
+    last = await postPosOrder(body);
+    if (last.ok || !last.retryable) return { ...last, attempts: i };
+    if (i < maxAttempts) await new Promise((r) => setTimeout(r, i === 1 ? 1000 : 3000));
+  }
+  return { ...last, attempts: maxAttempts };
+}
+
+export async function getPosOrder(posOrderId: string): Promise<any> {
+  return tossplaceFetch<any>(`/order/orders/${encodeURIComponent(posOrderId)}`, { cache: 'no-store' });
 }

@@ -39,6 +39,7 @@ export const config = {
     // 주문을 만들거나 결제를 시작하거나 손님·주문 정보를 돌려주는 API
     '/menu/:path*',
     '/api/menu',
+    '/api/menu/:path*',
     '/api/payments/:path*',
     '/api/orders/:path*',
     '/api/customer/:path*',

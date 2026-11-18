@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { normalizePhone } from '@/lib/utils';
 import { setPhoneSession } from '@/lib/orderAccess.server';
+import { isJacheTestPhone, JACHE_TEST_CODE } from '@/lib/jache/testPhone.server';
 import { getClientIp, rateLimitHit, failClosed503, TRY_LATER_MESSAGE } from '@/lib/rateLimit.server';
 
 // Node.js 런타임 사용
@@ -36,6 +37,14 @@ export async function POST(request: NextRequest) {
         { error: '인증번호 6자리를 입력해주세요.' },
         { status: 400 }
       );
+    }
+
+    // 자체앱 시험 모드 전용 번호 (DB 안 씀)
+    if (isJacheTestPhone(normalizedPhone)) {
+      if (code !== JACHE_TEST_CODE) return NextResponse.json({ error: '인증번호가 맞지 않아요' }, { status: 400 });
+      const res = NextResponse.json({ success: true, message: '인증이 완료되었습니다.' });
+      setPhoneSession(res, normalizedPhone);
+      return res;
     }
 
     const supabase: any = createServerSupabaseClient();

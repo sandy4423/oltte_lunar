@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Check, Trash2 } from 'lucide-react';
 import { useJacheCart } from '@/hooks/useJacheCart';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
 import { Stepper } from '@/components/jache/ItemSheet';
-import { choiceSummary, hhmm, kstNow, lineTotal, pickupState, won, type OpenState } from '@/lib/jache/cart';
+import { REQUESTS, choiceSummary, hhmm, kstNow, lineListTotal, lineTotal, pickupState, won, type OpenState } from '@/lib/jache/cart';
+import { Price } from '@/components/jache/Price';
+import { useJacheFlags } from '@/components/jache/JacheFlags';
 
-const REQUESTS = ['단무지 빼기', '수저 빼기', '도착하면 전화'];
 const PHONE_KEY = 'jache-phone-v1';
 
 const fmtPhone = (d: string) => (d.length <= 3 ? d : d.length <= 7 ? `${d.slice(0, 3)}-${d.slice(3)}` : `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7, 11)}`);
@@ -20,6 +21,10 @@ export default function CheckoutPage() {
   const [pickup, setPickup] = useState<'now' | number | null>(null);
   const [reqs, setReqs] = useState<string[]>([]);
   const [agree, setAgree] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+  const flags = useJacheFlags();
+  const phoneRef = useRef<HTMLElement>(null);
 
   // 영업 상태는 30초마다 다시 계산
   useEffect(() => {
@@ -67,6 +72,51 @@ export default function CheckoutPage() {
 
   const empty = cart.hydrated && cart.lines.length === 0;
   const phoneOk = /^010\d{8}$/.test(v.phone);
+  const listTotal = cart.lines.reduce((s, l) => s + lineListTotal(l), 0);
+  const ready = open?.state === 'open' && pickup !== null && v.isPhoneVerified && agree;
+
+  const pay = async () => {
+    setPayError(null);
+    if (!ready) {
+      phoneRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setPayError(!v.isPhoneVerified ? '휴대폰 인증이 필요해요' : !agree ? '약관 동의가 필요해요' : '픽업 시간을 골라 주세요');
+      return;
+    }
+    setBusy(true);
+    try {
+      const r = await fetch('/api/menu/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          lines: cart.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, choices: l.choices.map((c) => ({ optionId: c.optionId, choiceId: c.choiceId, qty: c.qty })) })),
+          pickup: pickup === 'now' ? 'now' : hhmm(pickup as number),
+          requests: reqs,
+          agree: true,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.success) throw new Error(d.error || '주문을 만들지 못했어요');
+      const q = (o: Record<string, string>) => new URLSearchParams(o).toString();
+      if (d.simulate) {
+        // 시험 모드(시험 비밀 키 없음): 결제창 없이 승인 흉내
+        window.location.href = `/menu/pay/success?${q({ orderId: d.orderId, paymentKey: `SIM_${d.orderId}`, amount: String(d.amount), t: d.token })}`;
+        return;
+      }
+      const { loadTossPayments } = await import('@tosspayments/payment-sdk');
+      const toss = await loadTossPayments(d.clientKey);
+      await toss.requestPayment('카드', {
+        amount: d.amount,
+        orderId: d.orderId,
+        orderName: d.orderName,
+        successUrl: `${window.location.origin}/menu/pay/success?${q({ t: d.token })}`,
+        failUrl: `${window.location.origin}/menu/pay/fail`,
+      });
+    } catch (e: any) {
+      setPayError(e?.code === 'USER_CANCEL' ? null : e?.message || '결제를 시작하지 못했어요');
+      setBusy(false);
+    }
+  };
 
   return (
     <main
@@ -79,6 +129,7 @@ export default function CheckoutPage() {
             <ArrowLeft className="h-6 w-6" />
           </Link>
           <h1 className="text-xl font-extrabold tracking-tight">주문서</h1>
+          {flags.test && <span className="ml-auto rounded-md bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">시험</span>}
         </header>
 
         {empty ? (
@@ -106,7 +157,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="mt-2 flex items-center justify-between">
                       <Stepper small value={l.qty} min={1} max={99} onChange={(q) => cart.setQty(l.key, q)} />
-                      <span className="text-[15px] font-semibold tabular-nums">{won(lineTotal(l))}</span>
+                      <Price className="text-[15px] font-semibold" pay={lineTotal(l)} list={lineListTotal(l)} />
                     </div>
                   </li>
                 ))}
@@ -144,7 +195,7 @@ export default function CheckoutPage() {
                 </Card>
 
                 {/* 휴대폰 */}
-                <Card title="휴대폰 번호">
+                <Card title="휴대폰 번호" innerRef={phoneRef}>
                   {v.isPhoneVerified ? (
                     <p className="flex h-12 items-center gap-2 text-lg font-semibold tabular-nums">
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-white">
@@ -230,11 +281,18 @@ export default function CheckoutPage() {
                 <span>{pickupLabel} 픽업</span>
               </p>
             )}
-            <button disabled className="flex h-14 w-full items-center justify-between rounded-2xl bg-brand-dark px-5 text-base font-bold text-white opacity-40">
-              <span>결제하기</span>
-              <span className="tabular-nums">{won(cart.total)}</span>
+            {payError && <p className="mb-2 text-center text-sm font-semibold text-red-600">{payError}</p>}
+            <button
+              onClick={pay}
+              disabled={!flags.pay || busy || open?.state !== 'open'}
+              className={`flex h-14 w-full items-center justify-between rounded-2xl bg-brand-dark px-5 text-base font-bold text-white transition active:scale-[0.98] disabled:opacity-40 ${
+                ready ? '' : 'opacity-60'
+              }`}
+            >
+              <span>{busy ? '결제 여는 중' : '결제하기'}</span>
+              <Price pay={cart.total} list={listTotal} className="[&_s]:text-white/60" />
             </button>
-            <p className="mt-2 text-center text-xs text-zinc-500">결제는 준비 중</p>
+            {!flags.pay && <p className="mt-2 text-center text-xs text-zinc-500">결제는 준비 중</p>}
           </div>
         </div>
       )}
@@ -242,9 +300,9 @@ export default function CheckoutPage() {
   );
 }
 
-function Card({ title, hint, optional, children }: { title: string; hint?: string; optional?: boolean; children: React.ReactNode }) {
+function Card({ title, hint, optional, innerRef, children }: { title: string; hint?: string; optional?: boolean; innerRef?: React.Ref<HTMLElement>; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-zinc-200/80 bg-white p-4">
+    <section ref={innerRef} className="scroll-mt-24 rounded-2xl border border-zinc-200/80 bg-white p-4">
       <div className="mb-3 flex items-baseline gap-2">
         <h2 className="text-base font-bold">{title}</h2>
         {optional && <span className="text-xs text-zinc-400">선택</span>}

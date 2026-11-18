@@ -12,6 +12,7 @@ import { createServerSupabaseClient } from '@/lib/supabase';
 import { sendSMS, createVerificationSMS } from '@/lib/sms';
 import { normalizePhone } from '@/lib/utils';
 import { TEST_PHONE_NUMBER, TEST_VERIFICATION_CODE } from '@/lib/constants';
+import { isJacheTestPhone } from '@/lib/jache/testPhone.server';
 import { getClientIp, rateLimitHit, failClosed503, TRY_LATER_MESSAGE } from '@/lib/rateLimit.server';
 
 // Node.js 런타임 사용 (crypto 모듈 필요)
@@ -30,6 +31,11 @@ export async function POST(request: NextRequest) {
         { error: '올바른 휴대폰 번호를 입력해주세요.' },
         { status: 400 }
       );
+    }
+
+    // 자체앱 시험 모드 전용 번호: 문자도 DB 도 쓰지 않는다 (JACHE_PREVIEW=1 + JACHE_TEST_MODE=1 일 때만)
+    if (isJacheTestPhone(normalizedPhone)) {
+      return NextResponse.json({ success: true, message: '시험 번호', isTestPhone: true });
     }
 
     // 테스트 번호 우회는 개발 환경에서만 (운영에서는 이 번호도 일반 번호처럼 취급)

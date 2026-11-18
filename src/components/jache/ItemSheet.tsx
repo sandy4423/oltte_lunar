@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Minus, Plus, X } from 'lucide-react';
 import type { CartChoice, CartLine, MenuItem, MenuOptionGroup } from '@/lib/jache/types';
 import { lineKey, won } from '@/lib/jache/cart';
+import { unitDiscountFor } from '@/lib/jache/discounts';
+import { Price } from './Price';
 
 type Picked = Record<string, Record<string, number>>; // optionId -> choiceId -> qty
 
@@ -61,7 +63,9 @@ export function ItemSheet({ item, onClose, onAdd }: Props) {
     [item, picked]
   );
 
-  const unit = item.price + choices.reduce((s, c) => s + c.price * c.qty, 0);
+  const unitList = item.price + choices.reduce((s, c) => s + c.price * c.qty, 0);
+  const unit = unitList - Math.min(unitDiscountFor({ itemId: item.id, title: item.title }), unitList);
+  const baseDiscount = Math.min(unitDiscountFor({ itemId: item.id, title: item.title }), item.price);
 
   const submit = () => {
     const bad = item.optionGroups.find((g) => !groupMet(picked, g));
@@ -95,7 +99,9 @@ export function ItemSheet({ item, onClose, onAdd }: Props) {
           <div className="px-5 pb-4 pt-5">
             <h2 className="text-xl font-bold tracking-tight text-zinc-900">{item.title}</h2>
             {item.description && <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-zinc-500">{item.description}</p>}
-            <p className="mt-2 text-lg font-semibold text-zinc-900">{won(item.price)}</p>
+            <p className="mt-2 text-lg font-semibold text-zinc-900">
+              <Price pay={item.price - baseDiscount} list={item.price} />
+            </p>
           </div>
 
           {item.optionGroups.map((g) => {

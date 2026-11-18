@@ -4,3 +4,6 @@
 .vercel
 .env*.local
 *.tsbuildinfo
+
+# 자체앱 시험 모드 주문 (로컬 파일)
+.jache-test-orders/
