@@ -6,7 +6,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { clearPhoneSession, getSessionPhone, setPhoneSession } from '@/lib/orderAccess.server';
-import { getKakaoPending, kakaoEnabled } from '@/lib/jache/kakao.server';
+import { clearKakaoPending, getKakaoPending, kakaoEnabled, saveKakaoLink } from '@/lib/jache/kakao.server';
 import { clearRemember, getRemember, setRemember } from '@/lib/jache/remember.server';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,12 @@ export async function GET(req: NextRequest) {
   const session = getSessionPhone(req);
   const remembered = getRemember(req);
   const phone = session ?? remembered;
-  const res = NextResponse.json({ phone, kakao: kakaoEnabled(), kakaoLinked: !!getKakaoPending(req) }, { headers: H });
+  // 카카오 로그인 뒤 번호를 처음 인증한 순간 바로 묶는다 → 다음부터는 카카오만으로 번호가 채워짐 (사장님 11-19)
+  const pending = getKakaoPending(req);
+  let linkedNow = false;
+  if (pending && session) linkedNow = await saveKakaoLink(pending, session);
+  const res = NextResponse.json({ phone, kakao: kakaoEnabled(), kakaoLinked: !!pending && !linkedNow }, { headers: H });
+  if (linkedNow) clearKakaoPending(res);
   if (!session && remembered) setPhoneSession(res, remembered);
   if (session && session !== remembered) setRemember(res, session);
   return res;

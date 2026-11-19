@@ -34,6 +34,7 @@ export default function CheckoutPage() {
   const [kakao, setKakao] = useState(false);
   // 카카오는 됐는데 번호를 못 받은 상태 — 버튼 대신 「연결됨」을 보여 주고 번호 한 번만 받는다
   const [kakaoLinked, setKakaoLinked] = useState(false);
+  const [showPhone, setShowPhone] = useState(false);
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
@@ -82,6 +83,8 @@ export default function CheckoutPage() {
     } catch {
       /* 무시 */
     }
+    // 카카오로 들어온 손님이면 이 번호를 카카오 계정에 바로 묶는다(서버가 처리)
+    fetch('/api/menu/session', { credentials: 'same-origin', cache: 'no-store' }).catch(() => {});
   }, [v.isPhoneVerified, v.phone]);
 
   // 기본 선택: 바로 가능하면 지금 바로, 아니면 첫 시간
@@ -338,6 +341,13 @@ export default function CheckoutPage() {
                           카카오로 계속하기
                         </button>
                       )}
+                      {/* 카카오가 기본 (사장님 11-19 「카톡 로그인을 기본으로」). 번호 칸은 카카오 연결 직후(번호 한 번 묶기)나 「번호로 주문」을 눌렀을 때만 */}
+                      {kakao && !kakaoLinked && !showPhone && !v.verificationSent ? (
+                        <button onClick={() => setShowPhone(true)} className="h-11 w-full rounded-xl text-sm font-semibold text-zinc-500 active:bg-zinc-100">
+                          번호로 주문
+                        </button>
+                      ) : (
+                      <>
                       <div className="flex gap-2">
                         <input
                           type="tel"
@@ -386,6 +396,8 @@ export default function CheckoutPage() {
                         </div>
                       )}
                       {v.error && <p className="text-sm font-medium text-red-600">{v.error}</p>}
+                      </>
+                      )}
                     </div>
                   )}
                   {v.isPhoneVerified && (
