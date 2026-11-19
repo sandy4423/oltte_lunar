@@ -91,3 +91,8 @@ export function discountsFor(item: { itemId: string; title: string }, unitList?:
 export function unitDiscountFor(item: { itemId: string; title: string }, unitList?: number): number {
   return discountsFor(item, unitList).reduce((s, d) => s + d.amountPerUnit, 0);
 }
+
+/** 화면에 빨간 글씨로 보일 할인 이름들 */
+export function discountTitles(item: { itemId: string; title: string }, unitList?: number): string[] {
+  return discountsFor(item, unitList).map((d) => d.title);
+}

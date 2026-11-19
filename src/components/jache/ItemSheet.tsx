@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Minus, Plus, X } from 'lucide-react';
 import type { CartChoice, CartLine, MenuItem, MenuOptionGroup } from '@/lib/jache/types';
 import { lineKey, won } from '@/lib/jache/cart';
-import { unitDiscountFor } from '@/lib/jache/discounts';
+import { discountTitles, unitDiscountFor } from '@/lib/jache/discounts';
 import { Price } from './Price';
 
 type Picked = Record<string, Record<string, number>>; // optionId -> choiceId -> qty
@@ -100,7 +100,7 @@ export function ItemSheet({ item, onClose, onAdd }: Props) {
             <h2 className="text-xl font-bold tracking-tight text-zinc-900">{item.title}</h2>
             {item.description && <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-zinc-500">{item.description}</p>}
             <p className="mt-2 text-lg font-semibold text-zinc-900">
-              <Price pay={item.price - baseDiscount} list={item.price} />
+              <Price pay={item.price - baseDiscount} list={item.price} labels={discountTitles({ itemId: item.id, title: item.title }, item.price)} />
             </p>
           </div>
 

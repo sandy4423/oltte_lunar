@@ -11,6 +11,7 @@ import { REQUESTS, choiceSummary, hhmm, kstNow, lineListTotal, lineTotal, pickup
 import { Price } from '@/components/jache/Price';
 import { useJacheFlags } from '@/components/jache/JacheFlags';
 import { getClientPromo } from '@/lib/jache/promo';
+import { discountTitles } from '@/lib/jache/discounts';
 
 const PHONE_KEY = 'jache-phone-v1';
 
@@ -218,7 +219,7 @@ export default function CheckoutPage() {
                     </div>
                     <div className="mt-2 flex items-center justify-between">
                       <Stepper small value={l.qty} min={1} max={99} onChange={(q) => cart.setQty(l.key, q)} />
-                      <Price className="text-base font-bold text-zinc-900" pay={lineTotal(l)} list={lineListTotal(l)} />
+                      <Price className="text-base font-bold text-zinc-900" align="end" pay={lineTotal(l)} list={lineListTotal(l)} labels={discountTitles(l, lineListTotal(l) / l.qty)} />
                     </div>
                   </li>
                 ))}
