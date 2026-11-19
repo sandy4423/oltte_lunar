@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import BehaviorTracker from '@/components/behavior/BehaviorTracker';
 import { JacheFlagsProvider } from '@/components/jache/JacheFlags';
 import { isTestMode, paymentsEnabled } from '@/lib/jache/config.server';
 
@@ -17,5 +18,5 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1 };
 export const dynamic = 'force-dynamic';
 
 export default function MenuLayout({ children }: { children: React.ReactNode }) {
-  return <JacheFlagsProvider value={{ pay: paymentsEnabled(), test: isTestMode() }}>{children}</JacheFlagsProvider>;
+  return <JacheFlagsProvider value={{ pay: paymentsEnabled(), test: isTestMode() }}><BehaviorTracker />{children}</JacheFlagsProvider>;
 }
