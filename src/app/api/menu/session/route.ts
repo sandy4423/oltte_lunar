@@ -1,12 +1,29 @@
 /**
- * 자체앱: 이미 번호 인증을 마친 손님인지 (인증 쿠키 30분) — 결제 실패·취소로 주문서에 돌아왔을 때 인증을 다시 시키지 않으려고 (사장님 11-19 「결제 실패해서 돌아오면 번호인증 유지해」)
- * GET → { phone: '010…' } 또는 { phone: null }
+ * 자체앱: 이미 번호 인증을 마친 손님인지.
+ *  - 인증 쿠키(30분)가 살아 있으면 그 번호 (결제 실패·취소로 돌아와도 다시 인증 안 함 — 사장님 11-19)
+ *  - 없어도 「번호 기억」(180일, remember.server.ts)이 있으면 인증 쿠키를 새로 주고 그 번호 (「번호 저장해서 쉽게 주문하게」)
+ * GET → { phone } / DELETE → 이 폰의 번호 기억·인증 지우기 (「번호 바꾸기」)
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionPhone } from '@/lib/orderAccess.server';
+import { clearPhoneSession, getSessionPhone, setPhoneSession } from '@/lib/orderAccess.server';
+import { clearRemember, getRemember, setRemember } from '@/lib/jache/remember.server';
 
 export const dynamic = 'force-dynamic';
+const H = { 'Cache-Control': 'no-store' };
 
 export async function GET(req: NextRequest) {
-  return NextResponse.json({ phone: getSessionPhone(req) }, { headers: { 'Cache-Control': 'no-store' } });
+  const session = getSessionPhone(req);
+  const remembered = getRemember(req);
+  const phone = session ?? remembered;
+  const res = NextResponse.json({ phone }, { headers: H });
+  if (!session && remembered) setPhoneSession(res, remembered);
+  if (session && session !== remembered) setRemember(res, session);
+  return res;
+}
+
+export async function DELETE() {
+  const res = NextResponse.json({ ok: true }, { headers: H });
+  clearRemember(res);
+  clearPhoneSession(res);
+  return res;
 }

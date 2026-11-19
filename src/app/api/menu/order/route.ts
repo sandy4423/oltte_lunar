@@ -6,6 +6,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionPhone } from '@/lib/orderAccess.server';
+import { setRemember } from '@/lib/jache/remember.server';
 import { getClientIp, rateLimitHit, failClosed503, TRY_LATER_MESSAGE } from '@/lib/rateLimit.server';
 import { fetchCatalogFresh } from '@/lib/tossplace';
 import { priceCart, orderName } from '@/lib/jache/pricing';
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
     requests: Array.from(new Set(requests)),
   });
 
-  return NextResponse.json(
+  const okRes = NextResponse.json(
     {
       success: true,
       orderId: order.id,
@@ -97,4 +98,7 @@ export async function POST(req: NextRequest) {
     },
     { headers: { 'Cache-Control': 'no-store' } }
   );
+  // 인증된 번호로 주문을 만들면 이 폰에 번호를 기억 (180일, 다음 주문엔 인증 없이)
+  setRemember(okRes, phone);
+  return okRes;
 }

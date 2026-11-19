@@ -260,6 +260,20 @@ export default function CheckoutPage() {
                         <Check className="h-4 w-4" strokeWidth={3} />
                       </span>
                       {fmtPhone(v.phone)}
+                      <button
+                        onClick={async () => {
+                          await fetch('/api/menu/session', { method: 'DELETE', credentials: 'same-origin' }).catch(() => {});
+                          try {
+                            window.localStorage.removeItem(PHONE_KEY);
+                          } catch {
+                            /* 무시 */
+                          }
+                          v.resetVerification();
+                        }}
+                        className="ml-auto h-10 rounded-xl px-3 text-sm font-semibold text-brand-dark active:bg-orange-50"
+                      >
+                        번호 바꾸기
+                      </button>
                     </p>
                   ) : (
                     <div className="space-y-3">

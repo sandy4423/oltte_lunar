@@ -142,7 +142,17 @@ export function usePhoneVerification() {
     }
   };
 
+  /** 처음 상태로 (자체앱 「번호 바꾸기」) */
+  const resetVerification = () => {
+    setPhone('');
+    setVerificationCode('');
+    setIsPhoneVerified(false);
+    setVerificationSent(false);
+    setError(null);
+  };
+
   return {
+    resetVerification,
     phone,
     setPhone,
     verificationCode,
