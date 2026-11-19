@@ -43,7 +43,7 @@ const MAX_TOTAL = 500_000;
 
 type Result = { ok: true; value: PricedCart } | { ok: false; error: string };
 
-export function priceCart(rawLines: unknown, menu: MenuCategory[]): Result {
+export function priceCart(rawLines: unknown, menu: MenuCategory[], promo: string | null = null): Result {
   if (!Array.isArray(rawLines) || rawLines.length === 0) return { ok: false, error: '담은 메뉴가 없어요' };
   if (rawLines.length > MAX_LINES) return { ok: false, error: '한 번에 담을 수 있는 메뉴가 너무 많아요' };
 
@@ -83,7 +83,7 @@ export function priceCart(rawLines: unknown, menu: MenuCategory[]): Result {
     }
 
     const unitList = item.price + choices.reduce((s, c) => s + c.price * c.qty, 0);
-    const ds = discountsFor({ itemId: item.id, title: item.title }, unitList);
+    const ds = discountsFor({ itemId: item.id, title: item.title }, unitList, undefined, promo);
     const unitDiscount = Math.min(ds.reduce((s, d) => s + d.amountPerUnit, 0), unitList);
     lines.push({
       itemId: item.id,

@@ -10,6 +10,7 @@ import { Stepper } from '@/components/jache/ItemSheet';
 import { REQUESTS, choiceSummary, hhmm, kstNow, lineListTotal, lineTotal, pickupState, won, type OpenState } from '@/lib/jache/cart';
 import { Price } from '@/components/jache/Price';
 import { useJacheFlags } from '@/components/jache/JacheFlags';
+import { getClientPromo } from '@/lib/jache/promo';
 
 const PHONE_KEY = 'jache-phone-v1';
 
@@ -130,6 +131,7 @@ export default function CheckoutPage() {
           lines: cart.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, choices: l.choices.map((c) => ({ optionId: c.optionId, choiceId: c.choiceId, qty: c.qty })) })),
           pickup: pickup === 'now' ? 'now' : hhmm(pickup as number),
           requests: reqs,
+          promo: getClientPromo(),
           agree: true,
         }),
       });

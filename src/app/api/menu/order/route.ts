@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
   } catch {
     return bad('메뉴를 불러오지 못했어요. 잠시 후 다시 해 주세요', 502);
   }
-  const priced = priceCart(body?.lines, catalog.menu);
+  const promo = typeof body?.promo === 'string' && /^[a-z0-9]{2,20}$/.test(body.promo) ? body.promo : null;
+  const priced = priceCart(body?.lines, catalog.menu, promo);
   if (!priced.ok) return bad(priced.error, 409);
 
   // 주문 만들기 횟수 제한 (시험 모드는 운영 DB 를 쓰지 않으므로 건너뜀)

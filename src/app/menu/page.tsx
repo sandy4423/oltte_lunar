@@ -1,4 +1,5 @@
 'use client';
+import { savePromoFromUrl } from '@/lib/jache/promo';
 
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -30,6 +31,8 @@ export default function MenuPage() {
       .catch(() => setFailed(true));
   }, []);
   useEffect(load, [load]);
+  // 단톡방 링크(?d=dangol)면 기억 — 메뉴는 불러온 뒤 그려지므로 값이 바로 반영된다
+  useEffect(() => savePromoFromUrl(), []);
 
   useEffect(() => {
     const s = pickupState(kstNow());

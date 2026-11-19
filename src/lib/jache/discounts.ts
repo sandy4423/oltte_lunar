@@ -13,6 +13,8 @@
  * 클라이언트에서도 import 하므로 서버 전용 코드를 넣지 않는다.
  */
 
+import { getClientPromo } from './promo';
+
 export interface DiscountRule {
   id: string;
   /** 포스 주문서·화면에 찍히는 할인 이름 */
@@ -42,15 +44,17 @@ export interface PercentRule {
   /** 시작(포함)·끝(미포함) — 한국 시각을 +09:00 로 적는다 */
   start: string;
   end: string;
+  /** 있으면 이 코드로 들어온 주문만 (promo.ts — ?d=코드) */
+  code?: string;
 }
 
 export const PERCENT_RULES: PercentRule[] = [
-  { id: 'first-snow-10', title: '첫눈 10%', percent: 10, start: '2026-11-19T00:00:00+09:00', end: '2026-11-20T00:00:00+09:00' },
+  { id: 'first-snow-10', title: '첫눈 10%', percent: 10, start: '2026-11-19T00:00:00+09:00', end: '2026-11-20T00:00:00+09:00', code: 'dangol' }, // 단톡방 링크(?d=dangol)만 — 사장님 11-19
 ];
 
-export function activePercentRules(now: Date = new Date()): PercentRule[] {
+export function activePercentRules(now: Date = new Date(), code: string | null = null): PercentRule[] {
   const t = now.getTime();
-  return PERCENT_RULES.filter((r) => t >= Date.parse(r.start) && t < Date.parse(r.end));
+  return PERCENT_RULES.filter((r) => t >= Date.parse(r.start) && t < Date.parse(r.end) && (!r.code || r.code === code));
 }
 
 export interface AppliedDiscount {
@@ -63,7 +67,7 @@ export interface AppliedDiscount {
  * 상품 1개에 붙는 할인 목록.
  * unitList(1개 정가 = 기본가 + 선택지)를 주면 기간 중인 퍼센트 할인도 붙인다 — 세트할인 뺀 값 기준.
  */
-export function discountsFor(item: { itemId: string; title: string }, unitList?: number, now?: Date): AppliedDiscount[] {
+export function discountsFor(item: { itemId: string; title: string }, unitList?: number, now?: Date, code?: string | null): AppliedDiscount[] {
   const fixed: AppliedDiscount[] = DISCOUNT_RULES.filter((r) => r.itemIds.includes(item.itemId) || r.itemTitles.includes(item.title)).map((r) => ({
     ruleId: r.id,
     title: r.title,
@@ -72,7 +76,8 @@ export function discountsFor(item: { itemId: string; title: string }, unitList?:
   if (unitList == null) return fixed;
   let rest = Math.max(0, unitList - fixed.reduce((s, d) => s + d.amountPerUnit, 0));
   const out = [...fixed];
-  for (const r of activePercentRules(now)) {
+  // code 를 안 주면 브라우저에 기억된 단톡방 코드(서버에선 없음 → 서버는 꼭 넘긴다)
+  for (const r of activePercentRules(now, code === undefined ? getClientPromo() : code)) {
     const amt = Math.floor((rest * r.percent) / 100);
     if (amt > 0) {
       out.push({ ruleId: r.id, title: r.title, amountPerUnit: amt });
