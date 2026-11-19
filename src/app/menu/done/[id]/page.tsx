@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BingsuBanner } from '@/components/jache/BingsuBanner';
 import { notFound } from 'next/navigation';
 import { orderStore, verifyOrderTokenFor, isOrderId } from '@/lib/jache/orderStore.server';
 import { won } from '@/lib/jache/cart';
@@ -51,6 +52,9 @@ export default async function DonePage({ params, searchParams }: { params: { id:
           </div>
           {o.discountAmount > 0 && <p className="mt-0.5 text-right text-xs text-zinc-500">할인 −{won(o.discountAmount)} 포함</p>}
         </section>
+
+        {/* 빙수 배너는 결제완료 화면에만 (사장님 11-19 「결제완료화면에만 배너 둬」) */}
+        <BingsuBanner variant={shortNo.length + (o.lines[0]?.qty ?? 0)} />
 
         <Link href="/menu" className="mt-6 flex h-12 items-center justify-center rounded-2xl text-sm font-bold text-zinc-600 ring-1 ring-zinc-300">
           메뉴 보기
