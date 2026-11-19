@@ -30,7 +30,7 @@ export const cartTotal = (lines: CartLine[]) => lines.reduce((s, l) => s + lineT
 export const cartCount = (lines: CartLine[]) => lines.reduce((s, l) => s + l.qty, 0);
 
 /** 요청 칩 (서버도 이 목록만 받는다) */
-export const REQUESTS = ['단무지 빼기', '수저 빼기', '도착하면 전화'] as const;
+export const REQUESTS = ['단무지 빼기', '수저 빼기'] as const; // 「도착하면 전화」 뺌 (사장님 11-19 「이거 뭔소리야 빼」)
 
 export function choiceSummary(choices: CartChoice[]): string {
   return choices.map((c) => (c.qty > 1 ? `${c.title} ${c.qty}` : c.title)).join(' · ');
