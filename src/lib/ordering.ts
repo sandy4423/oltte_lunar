@@ -12,6 +12,6 @@
  *    DB 잠금(2026-10-28) 이후로는 열어도 주문이 실패한다.
  * 다시 열기: 아래 값을 true 로 바꾸고 커밋·푸시.
  */
-export const ORDERING_OPEN = false;
+export const ORDERING_OPEN = true;
 
 export const CLOSED_MESSAGE = '지금은 온라인 주문을 쉬고 있어요. 매장으로 와 주세요.';
