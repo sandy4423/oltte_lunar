@@ -115,7 +115,8 @@ export default function MenuPage() {
           <section id={`cat-${c.id}`} className="pt-8">
             <h2 className="mb-3 text-lg font-bold tracking-tight">{c.title}</h2>
             <ul className="grid gap-3 md:grid-cols-2">
-              {c.items.map((it) => (
+              {/* 품절은 카테고리 맨 아래로 — 11-19 손님이 품절 떡국떡을 두 번 누름(disabled_click) */}
+              {[...c.items].sort((a, b) => Number(a.soldOut) - Number(b.soldOut)).map((it) => (
                 <li key={it.id}>
                   <ItemCard item={it} inCart={qtyIn(it.id)} onOpen={() => !it.soldOut && quickAdd(it)} onQuick={() => quickAdd(it)} />
                 </li>
