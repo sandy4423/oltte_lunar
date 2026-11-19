@@ -7,7 +7,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { paymentsEnabled, tossKeys } from '@/lib/jache/config.server';
 import { orderStore, verifyOrderTokenFor, isOrderId } from '@/lib/jache/orderStore.server';
 import { confirmTossPayment, sendToPos } from '@/lib/jache/checkout.server';
-import { sendSMS } from '@/lib/sms';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -58,15 +57,6 @@ export async function POST(req: NextRequest) {
   }
 
   const after = await sendToPos(orderId);
-  // 접수 문자 1통 (사장님 11-19 「픽업알림은 뭐로줘?」 → 오늘 최소안). 포스에 들어간 진짜 주문에만, 이 결제 처음 한 번만(위 PENDING→PAID 를 이긴 호출)
-  if (after?.status === 'POS_OK' && !after.test && !c.simulated) {
-    const text = `[올때만두] ${after.orderNumber} 접수\n${after.pickupLabel.replace(/ \(약 20분 뒤\)$/, '')} 받아 가세요\n사거리 모서리, 파출소 대각선 맞은편`;
-    try {
-      const r = await sendSMS(after.phone, text);
-      if (!r.success) console.error('[jache] 접수 문자 실패', orderId, r.error);
-    } catch (e) {
-      console.error('[jache] 접수 문자 오류', orderId, e);
-    }
-  }
+  // 접수 문자는 보내지 않는다 (사장님 11-19 「주문 들어왔을 때 문자 그거는 하지마. 조리 완료되었을 때만」)
   return res({ success: true, status: after?.status ?? 'PAID', simulated: c.simulated });
 }
