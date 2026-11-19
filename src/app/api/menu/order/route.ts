@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
   if (body?.pickup === 'now') {
     if (!st.canNow) return bad('픽업 시간을 다시 골라 주세요');
     pickup = 'now';
-    pickupLabel = '지금 바로';
+    // 손님에겐 「약 20분 뒤」, 포스 주문서엔 시각으로 (사장님 11-19 「픽업시간 20분 후 까지만해」)
+    pickupLabel = `${hhmm(kstNow().minutes + 20)}쯤 (약 20분 뒤)`;
   } else if (typeof body?.pickup === 'string' && /^\d{2}:\d{2}$/.test(body.pickup) && st.slots.map(hhmm).includes(body.pickup)) {
     pickup = body.pickup;
     pickupLabel = `오늘 ${body.pickup}`;

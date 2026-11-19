@@ -34,7 +34,7 @@ export default function CheckoutPage() {
     return () => clearInterval(t);
   }, []);
 
-  // 아는 번호는 미리 채운다 (인증은 다시 받는다)
+  // 아는 번호는 미리 채운다. 인증 쿠키(30분)가 살아 있으면 인증된 상태로 바로 둔다 — 결제 실패·취소로 돌아와도 다시 인증 안 함
   useEffect(() => {
     try {
       const p = window.localStorage.getItem(PHONE_KEY);
@@ -42,6 +42,15 @@ export default function CheckoutPage() {
     } catch {
       /* 무시 */
     }
+    fetch('/api/menu/session', { credentials: 'same-origin', cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.phone && /^010\d{8}$/.test(j.phone)) {
+          v.setPhone(j.phone);
+          v.setIsPhoneVerified(true);
+        }
+      })
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
@@ -63,7 +72,7 @@ export default function CheckoutPage() {
     });
   }, [open]);
 
-  const pickupLabel = useMemo(() => (pickup === 'now' ? '지금 바로' : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)}` : ''), [pickup]);
+  const pickupLabel = useMemo(() => (pickup === 'now' ? '약 20분 뒤' : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)}` : ''), [pickup]);
 
   const onPhoneChange = (raw: string) => {
     const d = raw.replace(/\D/g, '');
@@ -169,18 +178,9 @@ export default function CheckoutPage() {
 
             {open?.state === 'open' && (
               <>
-                {/* 픽업 시간 */}
-                <Card title="픽업 시간" hint="사거리 모서리, 파출소 대각선 맞은편">
-                  <div className="flex flex-wrap gap-2">
-                    {open.canNow && <Chip on={pickup === 'now'} onClick={() => setPickup('now')}>지금 바로(약 15분)</Chip>}
-                  </div>
-                  <div className={`grid max-h-[180px] grid-cols-4 gap-2 overflow-y-auto overscroll-contain p-0.5 -m-0.5 ${open.canNow ? 'mt-2' : ''}`}>
-                    {open.slots.map((m) => (
-                      <Chip key={m} on={pickup === m} onClick={() => setPickup(m)}>
-                        {hhmm(m)}
-                      </Chip>
-                    ))}
-                  </div>
+                {/* 픽업 — 고르지 않는다: 지금 주문하면 약 20분 뒤 (사장님 11-19 「픽업시간 20분 후 까지만해. 시간 왜써 빼」) */}
+                <Card title="픽업" hint="사거리 모서리, 파출소 대각선 맞은편">
+                  <p className="text-lg font-bold">{pickup === 'now' ? '주문하고 약 20분 뒤' : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)}` : ''}</p>
                 </Card>
 
                 {/* 요청 */}
