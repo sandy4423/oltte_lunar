@@ -101,9 +101,9 @@ function toGroup(o: RawOption): MenuOptionGroup {
 }
 
 /** 카탈로그 → 손님용 메뉴. 순서는 카탈로그 그대로(카테고리 order → 상품 order). */
-export function sanitizeCatalog(raw: RawItem[]): MenuCategory[] {
+export function sanitizeCatalog(raw: RawItem[], hidden: Set<string> = new Set()): MenuCategory[] {
   const cats = new Map<string, { order: number; cat: MenuCategory }>();
-  for (const it of raw.filter((r) => !excluded(r)).sort((a, b) => a.order - b.order)) {
+  for (const it of raw.filter((r) => !excluded(r) && !hidden.has(r.id) && !hidden.has(r.category?.id)).sort((a, b) => a.order - b.order)) {
     const price = it.price?.priceValue ?? 0;
     const item: MenuItem = {
       id: it.id,
@@ -126,14 +126,29 @@ export function sanitizeCatalog(raw: RawItem[]): MenuCategory[] {
     .filter((c) => c.items.some((i) => !i.soldOut && i.imageUrl));
 }
 
+/**
+ * 포스 「고객용 채널 노출」을 끈 상품·카테고리 id (사장님 11-19 「자체앱도 채널에 보이기 표시와 연동해」).
+ * 공개 API 에는 이 값이 없어 맥미니가 포스 내부 값(kioskEnabled)을 1분마다 jache_menu_hidden 에 넣는다(store-automation tosspos/jache-menu-hidden.mjs).
+ * 읽기 실패하면 빈 목록(숨김 없음) — 메뉴판이 통째로 막히지 않게.
+ */
+async function fetchHidden(): Promise<Set<string>> {
+  try {
+    const { createServerSupabaseClient } = await import('@/lib/supabase');
+    const { data } = await (createServerSupabaseClient() as any).from('jache_menu_hidden').select('item_id');
+    return new Set(((data ?? []) as { item_id: string }[]).map((r) => String(r.item_id)));
+  } catch {
+    return new Set();
+  }
+}
+
 export async function fetchMenu(): Promise<MenuCategory[]> {
-  const raw = await tossplaceFetch<RawItem[]>('/catalog/items', { next: { revalidate: 60 } });
-  return sanitizeCatalog(raw);
+  const [raw, hidden] = await Promise.all([tossplaceFetch<RawItem[]>('/catalog/items', { next: { revalidate: 60 } }), fetchHidden()]);
+  return sanitizeCatalog(raw, hidden);
 }
 
 /** 주문 확정용 — 캐시 없이 지금 메뉴판 (품절 즉시 반영). 포스 주문의 itemPrice 를 위해 원본 가격 칸도 돌려준다 */
 export async function fetchCatalogFresh(): Promise<{ menu: MenuCategory[]; priceMeta: Map<string, PosItemPrice> }> {
-  const raw = await tossplaceFetch<RawItem[]>('/catalog/items', { cache: 'no-store' });
+  const [raw, hidden] = await Promise.all([tossplaceFetch<RawItem[]>('/catalog/items', { cache: 'no-store' }), fetchHidden()]);
   const priceMeta = new Map<string, PosItemPrice>();
   for (const it of raw) {
     priceMeta.set(it.id, {
@@ -145,7 +160,7 @@ export async function fetchCatalogFresh(): Promise<{ menu: MenuCategory[]; price
       taxInclusive: true,
     });
   }
-  return { menu: sanitizeCatalog(raw), priceMeta };
+  return { menu: sanitizeCatalog(raw, hidden), priceMeta };
 }
 
 /* ───────── 포스 주문 생성 ───────── */
