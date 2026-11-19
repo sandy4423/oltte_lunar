@@ -41,11 +41,13 @@ export async function POST(req: NextRequest) {
   if (st.state !== 'open') return bad(st.state === 'closedDay' ? '오늘은 쉬는 날이에요' : '오늘 주문이 끝났어요');
   let pickup: string;
   let pickupLabel: string;
-  if (body?.pickup === 'now') {
+  const afterMin = typeof body?.pickup === 'string' ? /^m(5|10|15|20)$/.exec(body.pickup) : null;
+  if (afterMin) {
+    // 몇 분 뒤 픽업 (사장님 11-19 「5분, 10분, 15분 뒤, 20분 뒤 선택할 수 있게. 바로 먹기는 말고」)
     if (!st.canNow) return bad('픽업 시간을 다시 골라 주세요');
-    pickup = 'now';
-    // 손님에겐 「약 20분 뒤」, 포스 주문서엔 시각으로 (사장님 11-19 「픽업시간 20분 후 까지만해」)
-    pickupLabel = `${hhmm(kstNow().minutes + 20)}쯤 (약 20분 뒤)`;
+    const m = Number(afterMin[1]);
+    pickup = `m${m}`;
+    pickupLabel = `${hhmm(kstNow().minutes + m)}쯤 (${m}분 뒤)`;
   } else if (typeof body?.pickup === 'string' && /^\d{2}:\d{2}$/.test(body.pickup) && st.slots.map(hhmm).includes(body.pickup)) {
     pickup = body.pickup;
     pickupLabel = `오늘 ${body.pickup}`;

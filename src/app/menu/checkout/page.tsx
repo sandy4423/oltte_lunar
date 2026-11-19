@@ -22,6 +22,8 @@ export default function CheckoutPage() {
   const v = usePhoneVerification();
   const [open, setOpen] = useState<OpenState | null>(null);
   const [pickup, setPickup] = useState<'now' | number | null>(null);
+  // 몇 분 뒤 픽업 — 5·10·15·20 (사장님 11-19). 기본 15분
+  const [afterMin, setAfterMin] = useState<5 | 10 | 15 | 20>(15);
   const [reqs, setReqs] = useState<string[]>([]);
   // 두 단계: ① 담은 것 확인 → ② 번호·결제 (사장님 11-19 「목록 먼저 뜨고 확인한 다음에 그 다음에 전화번호」)
   const [step, setStep] = useState<'review' | 'phone'>('review');
@@ -92,7 +94,7 @@ export default function CheckoutPage() {
     });
   }, [open]);
 
-  const pickupLabel = useMemo(() => (pickup === 'now' ? '약 20분 뒤' : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)}` : ''), [pickup]);
+  const pickupLabel = useMemo(() => (pickup === 'now' ? `${afterMin}분 뒤` : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)}` : ''), [pickup, afterMin]);
 
   const onPhoneChange = (raw: string) => {
     const d = raw.replace(/\D/g, '');
@@ -130,7 +132,7 @@ export default function CheckoutPage() {
         credentials: 'same-origin',
         body: JSON.stringify({
           lines: cart.lines.map((l) => ({ itemId: l.itemId, qty: l.qty, choices: l.choices.map((c) => ({ optionId: c.optionId, choiceId: c.choiceId, qty: c.qty })) })),
-          pickup: pickup === 'now' ? 'now' : hhmm(pickup as number),
+          pickup: pickup === 'now' ? `m${afterMin}` : hhmm(pickup as number),
           requests: reqs,
           promo: getClientPromo(),
           agree: true,
@@ -246,15 +248,31 @@ export default function CheckoutPage() {
             {open?.state === 'open' && (
               <>
                 {step === 'review' && (<>
-                {/* 픽업 — 고르지 않는다: 지금 주문하면 약 20분 뒤 (사장님 11-19 「픽업시간 20분 후 까지만해. 시간 왜써 빼」) */}
-                <section className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-4">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-dark text-white">
-                    <Clock className="h-5 w-5" strokeWidth={2.25} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-lg font-extrabold text-zinc-900">{pickup === 'now' ? '약 20분 뒤 픽업' : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)} 픽업` : ''}</p>
-                    <p className="mt-0.5 text-[13px] font-medium text-zinc-600">사거리 모서리, 파출소 대각선 맞은편</p>
+                {/* 픽업 — 지금 영업 중이면 5·10·15·20분 뒤 중 고름 (사장님 11-19) */}
+                <section className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-dark text-white">
+                      <Clock className="h-5 w-5" strokeWidth={2.25} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-lg font-extrabold text-zinc-900">{pickup === 'now' ? `${afterMin}분 뒤 픽업` : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)} 픽업` : ''}</p>
+                      <p className="mt-0.5 text-[13px] font-medium text-zinc-600">사거리 모서리, 파출소 대각선 맞은편</p>
+                    </div>
                   </div>
+                  {pickup === 'now' && (
+                    <div className="mt-3 grid grid-cols-4 gap-2">
+                      {([5, 10, 15, 20] as const).map((m) => (
+                        <button
+                          key={m}
+                          onClick={() => setAfterMin(m)}
+                          aria-pressed={afterMin === m}
+                          className={`h-12 rounded-xl text-sm font-bold tabular-nums transition active:scale-[0.97] ${afterMin === m ? 'bg-brand-dark text-white' : 'bg-white text-zinc-700 ring-1 ring-orange-200'}`}
+                        >
+                          {m}분 뒤
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </section>
 
                 {/* 요청 */}
