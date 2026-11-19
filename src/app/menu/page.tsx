@@ -25,7 +25,8 @@ export default function MenuPage() {
     fetch('/api/menu')
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => {
-        setCats(d.categories);
+        // 품절 메뉴는 숨긴다(사장님 11-19 「숨겨」 — 품절 떡국떡을 손님들이 계속 누름). 다 품절인 카테고리도 숨김
+        setCats((d.categories as MenuCategory[]).map((c) => ({ ...c, items: c.items.filter((it) => !it.soldOut) })).filter((c) => c.items.length > 0));
         setActive(d.categories[0]?.id ?? '');
       })
       .catch(() => setFailed(true));
@@ -115,8 +116,7 @@ export default function MenuPage() {
           <section id={`cat-${c.id}`} className="pt-8">
             <h2 className="mb-3 text-lg font-bold tracking-tight">{c.title}</h2>
             <ul className="grid gap-3 md:grid-cols-2">
-              {/* 품절은 카테고리 맨 아래로 — 11-19 손님이 품절 떡국떡을 두 번 누름(disabled_click) */}
-              {[...c.items].sort((a, b) => Number(a.soldOut) - Number(b.soldOut)).map((it) => (
+              {c.items.map((it) => (
                 <li key={it.id}>
                   <ItemCard item={it} inCart={qtyIn(it.id)} onOpen={() => !it.soldOut && quickAdd(it)} onQuick={() => quickAdd(it)} />
                 </li>
