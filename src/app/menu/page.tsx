@@ -113,7 +113,7 @@ export default function MenuPage() {
             <ul className="grid gap-3 md:grid-cols-2">
               {c.items.map((it) => (
                 <li key={it.id}>
-                  <ItemCard item={it} inCart={qtyIn(it.id)} onOpen={() => !it.soldOut && setSheet(it)} onQuick={() => quickAdd(it)} />
+                  <ItemCard item={it} inCart={qtyIn(it.id)} onOpen={() => !it.soldOut && quickAdd(it)} onQuick={() => quickAdd(it)} />
                 </li>
               ))}
             </ul>
@@ -150,7 +150,7 @@ function ItemCard({ item, inCart, onOpen, onQuick }: { item: MenuItem; inCart: n
         item.soldOut ? 'opacity-55' : 'active:scale-[0.99]'
       }`}
     >
-      <button onClick={onOpen} disabled={item.soldOut} className="flex min-w-0 flex-1 flex-col text-left" aria-label={`${item.title} 선택`}>
+      <button onClick={onOpen} disabled={item.soldOut} className="flex min-w-0 flex-1 flex-col text-left" aria-label={`${item.title} 담기`}>
         <span className="flex flex-wrap items-center gap-1.5">
           <span className="text-[15px] font-bold leading-snug text-zinc-900">{item.title}</span>
           {item.labels.map((l) => (
@@ -164,7 +164,8 @@ function ItemCard({ item, inCart, onOpen, onQuick }: { item: MenuItem; inCart: n
           {item.soldOut ? '품절' : <Price pay={item.price - Math.min(unitDiscountFor({ itemId: item.id, title: item.title }, item.price), item.price)} list={item.price} />}
         </span>
       </button>
-      <div className="relative h-[92px] w-[92px] shrink-0 self-center">
+      {/* 사진을 눌러도 담긴다 (사장님 11-19 「카드를 그냥 눌러도 메뉴 추가될수있도록」) */}
+      <div className="relative h-[92px] w-[92px] shrink-0 self-center" onClick={onOpen}>
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={item.imageUrl} alt="" loading="lazy" className="h-full w-full rounded-xl bg-zinc-100 object-cover" />
@@ -175,7 +176,10 @@ function ItemCard({ item, inCart, onOpen, onQuick }: { item: MenuItem; inCart: n
           <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-zinc-900/55 text-sm font-bold text-white">품절</span>
         ) : (
           <button
-            onClick={onQuick}
+            onClick={(e) => {
+              e.stopPropagation();
+              onQuick();
+            }}
             aria-label={`${item.title} 담기`}
             className="absolute -bottom-2 -right-2 flex h-11 min-w-11 items-center justify-center rounded-full bg-white px-2 text-sm font-bold text-brand-dark shadow-md ring-1 ring-zinc-200 transition active:scale-95"
           >
