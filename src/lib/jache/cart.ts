@@ -18,7 +18,7 @@ export function unitPrice(line: Pick<CartLine, 'basePrice' | 'choices'>): number
 
 /** 1개당 할인 (정가를 넘지 않게) — 규칙은 discounts.ts */
 export function unitDiscount(line: Pick<CartLine, 'itemId' | 'title' | 'basePrice' | 'choices'>): number {
-  return Math.min(unitDiscountFor(line), unitPrice(line));
+  return Math.min(unitDiscountFor(line, unitPrice(line)), unitPrice(line));
 }
 
 /** 손님이 내는 1개 값 */

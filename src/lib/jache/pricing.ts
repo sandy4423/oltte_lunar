@@ -83,7 +83,7 @@ export function priceCart(rawLines: unknown, menu: MenuCategory[]): Result {
     }
 
     const unitList = item.price + choices.reduce((s, c) => s + c.price * c.qty, 0);
-    const ds = discountsFor({ itemId: item.id, title: item.title });
+    const ds = discountsFor({ itemId: item.id, title: item.title }, unitList);
     const unitDiscount = Math.min(ds.reduce((s, d) => s + d.amountPerUnit, 0), unitList);
     lines.push({
       itemId: item.id,

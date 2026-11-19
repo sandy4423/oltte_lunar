@@ -161,7 +161,7 @@ function ItemCard({ item, inCart, onOpen, onQuick }: { item: MenuItem; inCart: n
         </span>
         {item.description && <span className="mt-1 line-clamp-2 whitespace-pre-line text-[13px] leading-snug text-zinc-500">{item.description}</span>}
         <span className="mt-auto pt-2 text-[15px] font-semibold tabular-nums text-zinc-900">
-          {item.soldOut ? '품절' : <Price pay={item.price - Math.min(unitDiscountFor({ itemId: item.id, title: item.title }), item.price)} list={item.price} />}
+          {item.soldOut ? '품절' : <Price pay={item.price - Math.min(unitDiscountFor({ itemId: item.id, title: item.title }, item.price), item.price)} list={item.price} />}
         </span>
       </button>
       <div className="relative h-[92px] w-[92px] shrink-0 self-center">

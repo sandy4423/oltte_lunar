@@ -64,8 +64,8 @@ export function ItemSheet({ item, onClose, onAdd }: Props) {
   );
 
   const unitList = item.price + choices.reduce((s, c) => s + c.price * c.qty, 0);
-  const unit = unitList - Math.min(unitDiscountFor({ itemId: item.id, title: item.title }), unitList);
-  const baseDiscount = Math.min(unitDiscountFor({ itemId: item.id, title: item.title }), item.price);
+  const unit = unitList - Math.min(unitDiscountFor({ itemId: item.id, title: item.title }, unitList), unitList);
+  const baseDiscount = Math.min(unitDiscountFor({ itemId: item.id, title: item.title }, item.price), item.price);
 
   const submit = () => {
     const bad = item.optionGroups.find((g) => !groupMet(picked, g));

@@ -6,7 +6,10 @@
  *    (포스 표시가 14,500 → 손님이 내는 값 13,500. 포스 키오스크도 같은 이름 「세트할인」 FIXED_AMOUNT 로 찍는다)
  *  - 송도 불쫄면 세트에는 세트할인이 없다 (사장님 규칙)
  *
- * 앞으로 단골 이벤트 등을 더할 때: DISCOUNT_RULES 에 규칙을 추가한다. 할인·무료는 사장님 승인 뒤에만.
+ *  - 퍼센트 할인(PERCENT_RULES): 기간 안에만, 세트할인 뺀 1개 값에서 % 를 깎는다(원 단위 버림)
+ *    · 첫눈 10%: 2026-11-19 하루 (사장님 11-19 「단톡방에서만 할인할테니. 우리 자체앱으로만 할인 걸자」, 맥15 #h7651)
+ *
+ * 앞으로 단골 이벤트 등을 더할 때: DISCOUNT_RULES·PERCENT_RULES 에 규칙을 추가한다. 할인·무료는 사장님 승인 뒤에만.
  * 클라이언트에서도 import 하므로 서버 전용 코드를 넣지 않는다.
  */
 
@@ -32,22 +35,54 @@ export const DISCOUNT_RULES: DiscountRule[] = [
   },
 ];
 
+export interface PercentRule {
+  id: string;
+  title: string;
+  percent: number;
+  /** 시작(포함)·끝(미포함) — 한국 시각을 +09:00 로 적는다 */
+  start: string;
+  end: string;
+}
+
+export const PERCENT_RULES: PercentRule[] = [
+  { id: 'first-snow-10', title: '첫눈 10%', percent: 10, start: '2026-11-19T00:00:00+09:00', end: '2026-11-20T00:00:00+09:00' },
+];
+
+export function activePercentRules(now: Date = new Date()): PercentRule[] {
+  const t = now.getTime();
+  return PERCENT_RULES.filter((r) => t >= Date.parse(r.start) && t < Date.parse(r.end));
+}
+
 export interface AppliedDiscount {
   ruleId: string;
   title: string;
   amountPerUnit: number;
 }
 
-/** 상품 1개에 붙는 할인 목록 */
-export function discountsFor(item: { itemId: string; title: string }): AppliedDiscount[] {
-  return DISCOUNT_RULES.filter((r) => r.itemIds.includes(item.itemId) || r.itemTitles.includes(item.title)).map((r) => ({
+/**
+ * 상품 1개에 붙는 할인 목록.
+ * unitList(1개 정가 = 기본가 + 선택지)를 주면 기간 중인 퍼센트 할인도 붙인다 — 세트할인 뺀 값 기준.
+ */
+export function discountsFor(item: { itemId: string; title: string }, unitList?: number, now?: Date): AppliedDiscount[] {
+  const fixed: AppliedDiscount[] = DISCOUNT_RULES.filter((r) => r.itemIds.includes(item.itemId) || r.itemTitles.includes(item.title)).map((r) => ({
     ruleId: r.id,
     title: r.title,
     amountPerUnit: r.amountPerUnit,
   }));
+  if (unitList == null) return fixed;
+  let rest = Math.max(0, unitList - fixed.reduce((s, d) => s + d.amountPerUnit, 0));
+  const out = [...fixed];
+  for (const r of activePercentRules(now)) {
+    const amt = Math.floor((rest * r.percent) / 100);
+    if (amt > 0) {
+      out.push({ ruleId: r.id, title: r.title, amountPerUnit: amt });
+      rest -= amt;
+    }
+  }
+  return out;
 }
 
-/** 상품 1개당 할인 합계 */
-export function unitDiscountFor(item: { itemId: string; title: string }): number {
-  return discountsFor(item).reduce((s, d) => s + d.amountPerUnit, 0);
+/** 상품 1개당 할인 합계 (unitList 를 주면 퍼센트 할인 포함) */
+export function unitDiscountFor(item: { itemId: string; title: string }, unitList?: number): number {
+  return discountsFor(item, unitList).reduce((s, d) => s + d.amountPerUnit, 0);
 }
