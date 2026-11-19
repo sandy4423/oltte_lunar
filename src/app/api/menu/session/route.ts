@@ -6,7 +6,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { clearPhoneSession, getSessionPhone, setPhoneSession } from '@/lib/orderAccess.server';
-import { kakaoEnabled } from '@/lib/jache/kakao.server';
+import { getKakaoPending, kakaoEnabled } from '@/lib/jache/kakao.server';
 import { clearRemember, getRemember, setRemember } from '@/lib/jache/remember.server';
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const session = getSessionPhone(req);
   const remembered = getRemember(req);
   const phone = session ?? remembered;
-  const res = NextResponse.json({ phone, kakao: kakaoEnabled() }, { headers: H });
+  const res = NextResponse.json({ phone, kakao: kakaoEnabled(), kakaoLinked: !!getKakaoPending(req) }, { headers: H });
   if (!session && remembered) setPhoneSession(res, remembered);
   if (session && session !== remembered) setRemember(res, session);
   return res;

@@ -28,6 +28,8 @@ export default function CheckoutPage() {
     window.scrollTo({ top: 0 });
   };
   const [kakao, setKakao] = useState(false);
+  // 카카오는 됐는데 번호를 못 받은 상태 — 버튼 대신 「연결됨」을 보여 주고 번호 한 번만 받는다
+  const [kakaoLinked, setKakaoLinked] = useState(false);
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
@@ -60,6 +62,7 @@ export default function CheckoutPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (j?.kakao) setKakao(true);
+        if (j?.kakaoLinked) setKakaoLinked(true);
         if (j?.phone && /^010\d{8}$/.test(j.phone)) {
           v.setPhone(j.phone);
           v.setIsPhoneVerified(true);
@@ -297,7 +300,15 @@ export default function CheckoutPage() {
                     </p>
                   ) : (
                     <div className="space-y-3">
-                      {kakao && !v.verificationSent && (
+                      {kakao && kakaoLinked && (
+                        <p className="flex h-10 items-center gap-2 text-sm font-semibold text-zinc-700">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FEE500] text-[#191919]">
+                            <Check className="h-4 w-4" strokeWidth={3} />
+                          </span>
+                          카카오 연결됨 · 번호 한 번만 확인해요
+                        </p>
+                      )}
+                      {kakao && !kakaoLinked && !v.verificationSent && (
                         <button
                           onClick={startKakao}
                           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] text-base font-bold text-[#191919] active:brightness-95"
