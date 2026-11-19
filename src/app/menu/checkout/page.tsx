@@ -1,5 +1,6 @@
 'use client';
 
+import { createClient } from '@supabase/supabase-js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Check, Clock, Trash2 } from 'lucide-react';
@@ -26,6 +27,7 @@ export default function CheckoutPage() {
     setStep('phone');
     window.scrollTo({ top: 0 });
   };
+  const [kakao, setKakao] = useState(false);
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
@@ -42,6 +44,12 @@ export default function CheckoutPage() {
 
   // 아는 번호는 미리 채운다. 인증 쿠키(30분)가 살아 있으면 인증된 상태로 바로 둔다 — 결제 실패·취소로 돌아와도 다시 인증 안 함
   useEffect(() => {
+    // 카카오 로그인에서 돌아오면 2단계로 연다
+    try {
+      if (new URLSearchParams(window.location.search).get('step') === 'phone') setStep('phone');
+    } catch {
+      /* 무시 */
+    }
     try {
       const p = window.localStorage.getItem(PHONE_KEY);
       if (p && /^010\d{8}$/.test(p)) v.setPhone(p);
@@ -51,6 +59,7 @@ export default function CheckoutPage() {
     fetch('/api/menu/session', { credentials: 'same-origin', cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
+        if (j?.kakao) setKakao(true);
         if (j?.phone && /^010\d{8}$/.test(j.phone)) {
           v.setPhone(j.phone);
           v.setIsPhoneVerified(true);
@@ -86,6 +95,17 @@ export default function CheckoutPage() {
   };
 
   const empty = cart.hydrated && cart.lines.length === 0;
+  const startKakao = async () => {
+    try {
+      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+        auth: { flowType: 'pkce', storageKey: 'jache-kakao-auth', detectSessionInUrl: false },
+      });
+      const { error } = await sb.auth.signInWithOAuth({ provider: 'kakao', options: { redirectTo: `${window.location.origin}/menu/kakao/callback` } });
+      if (error) setKakao(false); // 설정이 안 된 상태면 버튼을 거두고 문자 인증으로
+    } catch {
+      setKakao(false);
+    }
+  };
   const phoneOk = /^010\d{8}$/.test(v.phone);
   const listTotal = cart.lines.reduce((s, l) => s + lineListTotal(l), 0);
   const ready = open?.state === 'open' && pickup !== null && v.isPhoneVerified && agree;
@@ -277,6 +297,15 @@ export default function CheckoutPage() {
                     </p>
                   ) : (
                     <div className="space-y-3">
+                      {kakao && !v.verificationSent && (
+                        <button
+                          onClick={startKakao}
+                          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] text-base font-bold text-[#191919] active:brightness-95"
+                        >
+                          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#191919" d="M12 3C6.48 3 2 6.58 2 11c0 2.86 1.87 5.37 4.68 6.8-.2.74-.74 2.67-.85 3.08-.13.5.18.5.38.36.16-.1 2.5-1.7 3.5-2.4.74.1 1.5.16 2.29.16 5.52 0 10-3.58 10-8S17.52 3 12 3z" /></svg>
+                          카카오로 계속하기
+                        </button>
+                      )}
                       <div className="flex gap-2">
                         <input
                           type="tel"

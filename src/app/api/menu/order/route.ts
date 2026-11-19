@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionPhone } from '@/lib/orderAccess.server';
 import { setRemember } from '@/lib/jache/remember.server';
+import { clearKakaoPending, getKakaoPending, saveKakaoLink } from '@/lib/jache/kakao.server';
 import { getClientIp, rateLimitHit, failClosed503, TRY_LATER_MESSAGE } from '@/lib/rateLimit.server';
 import { fetchCatalogFresh } from '@/lib/tossplace';
 import { priceCart, orderName } from '@/lib/jache/pricing';
@@ -100,5 +101,11 @@ export async function POST(req: NextRequest) {
   );
   // 인증된 번호로 주문을 만들면 이 폰에 번호를 기억 (180일, 다음 주문엔 인증 없이)
   setRemember(okRes, phone);
+  // 카카오로 들어왔는데 번호를 몰랐던 손님: 문자 인증한 이 번호를 카카오 계정에 묶는다(다음부터 카카오만으로)
+  const kakaoId = getKakaoPending(req);
+  if (kakaoId) {
+    await saveKakaoLink(kakaoId, phone);
+    clearKakaoPending(okRes);
+  }
   return okRes;
 }
