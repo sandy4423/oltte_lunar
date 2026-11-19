@@ -20,6 +20,12 @@ export default function CheckoutPage() {
   const [open, setOpen] = useState<OpenState | null>(null);
   const [pickup, setPickup] = useState<'now' | number | null>(null);
   const [reqs, setReqs] = useState<string[]>([]);
+  // 두 단계: ① 담은 것 확인 → ② 번호·결제 (사장님 11-19 「목록 먼저 뜨고 확인한 다음에 그 다음에 전화번호」)
+  const [step, setStep] = useState<'review' | 'phone'>('review');
+  const goPhone = () => {
+    setStep('phone');
+    window.scrollTo({ top: 0 });
+  };
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
@@ -134,10 +140,16 @@ export default function CheckoutPage() {
     >
       <div className="mx-auto max-w-xl px-5">
         <header className="flex items-center gap-2 pb-2 pt-6">
-          <Link href="/menu" aria-label="메뉴로" className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full text-zinc-700 active:bg-zinc-100">
-            <ArrowLeft className="h-6 w-6" />
-          </Link>
-          <h1 className="text-xl font-extrabold tracking-tight">주문서</h1>
+          {step === 'phone' ? (
+            <button onClick={() => setStep('review')} aria-label="주문 내역으로" className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full text-zinc-700 active:bg-zinc-100">
+              <ArrowLeft className="h-6 w-6" />
+            </button>
+          ) : (
+            <Link href="/menu" aria-label="메뉴로" className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full text-zinc-700 active:bg-zinc-100">
+              <ArrowLeft className="h-6 w-6" />
+            </Link>
+          )}
+          <h1 className="text-xl font-extrabold tracking-tight">{step === 'review' ? '주문 확인' : '휴대폰 번호'}</h1>
           {flags.test && <span className="ml-auto rounded-md bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">시험</span>}
         </header>
 
@@ -150,6 +162,7 @@ export default function CheckoutPage() {
           </div>
         ) : (
           <div className="space-y-4 pt-2">
+            {step === 'review' && (<>
             {/* 주문 내역 */}
             <Card title="주문 내역">
               <ul className="divide-y divide-zinc-100">
@@ -172,12 +185,14 @@ export default function CheckoutPage() {
                 ))}
               </ul>
             </Card>
+            </>)}
 
             {open?.state === 'closedDay' && <ClosedCard text="오늘은 쉬는 날이에요" sub="수요일 09:00부터 주문할 수 있어요" />}
             {open?.state === 'ended' && <ClosedCard text="오늘 주문이 끝났어요" sub="내일 09:00부터 주문할 수 있어요" />}
 
             {open?.state === 'open' && (
               <>
+                {step === 'review' && (<>
                 {/* 픽업 — 고르지 않는다: 지금 주문하면 약 20분 뒤 (사장님 11-19 「픽업시간 20분 후 까지만해. 시간 왜써 빼」) */}
                 <Card title="픽업" hint="사거리 모서리, 파출소 대각선 맞은편">
                   <p className="text-lg font-bold">{pickup === 'now' ? '주문하고 약 20분 뒤' : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)}` : ''}</p>
@@ -193,7 +208,17 @@ export default function CheckoutPage() {
                     ))}
                   </div>
                 </Card>
+                </>)}
 
+                {step === 'phone' && (<>
+                {/* 앞 단계 요약 — 누르면 고치러 돌아감 */}
+                <button onClick={() => setStep('review')} className="flex w-full items-center justify-between rounded-2xl border border-zinc-200/80 bg-white p-4 text-left active:bg-zinc-50">
+                  <span className="min-w-0">
+                    <span className="block truncate text-[15px] font-bold">{cart.lines.map((l) => (l.qty > 1 ? `${l.title} ${l.qty}` : l.title)).join(', ')}</span>
+                    <span className="mt-0.5 block text-[13px] text-zinc-500">{pickupLabel} 픽업{reqs.length ? ` · ${reqs.join(' · ')}` : ''}</span>
+                  </span>
+                  <span className="ml-3 shrink-0 text-sm font-semibold text-brand-dark">바꾸기</span>
+                </button>
                 {/* 휴대폰 */}
                 <Card title="휴대폰 번호" innerRef={phoneRef}>
                   {v.isPhoneVerified ? (
@@ -210,6 +235,7 @@ export default function CheckoutPage() {
                           type="tel"
                           inputMode="numeric"
                           autoComplete="tel"
+                          autoFocus
                           placeholder="010-1234-5678"
                           value={v.phone ? fmtPhone(v.phone) : ''}
                           onChange={(e) => onPhoneChange(e.target.value)}
@@ -266,6 +292,7 @@ export default function CheckoutPage() {
                     </label>
                   )}
                 </Card>
+                </>)}
               </>
             )}
           </div>
@@ -275,23 +302,36 @@ export default function CheckoutPage() {
       {!empty && cart.hydrated && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur">
           <div className="mx-auto max-w-xl px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-            {open?.state === 'open' && (
-              <p className="mb-2 flex justify-between text-[13px] text-zinc-500">
-                <span className="tabular-nums">{v.phone ? fmtPhone(v.phone) : '휴대폰 번호 필요'}</span>
-                <span>{pickupLabel} 픽업</span>
-              </p>
+            {step === 'review' ? (
+              <button
+                onClick={goPhone}
+                disabled={open?.state !== 'open'}
+                className="flex h-14 w-full items-center justify-between rounded-2xl bg-brand-dark px-5 text-base font-bold text-white transition active:scale-[0.98] disabled:opacity-40"
+              >
+                <span>이대로 주문</span>
+                <Price pay={cart.total} list={listTotal} className="[&_s]:text-white/60" />
+              </button>
+            ) : (
+              <>
+                {open?.state === 'open' && (
+                  <p className="mb-2 flex justify-between text-[13px] text-zinc-500">
+                    <span className="tabular-nums">{v.phone ? fmtPhone(v.phone) : '휴대폰 번호 필요'}</span>
+                    <span>{pickupLabel} 픽업</span>
+                  </p>
+                )}
+                {payError && <p className="mb-2 text-center text-sm font-semibold text-red-600">{payError}</p>}
+                <button
+                  onClick={pay}
+                  disabled={!flags.pay || busy || open?.state !== 'open'}
+                  className={`flex h-14 w-full items-center justify-between rounded-2xl bg-brand-dark px-5 text-base font-bold text-white transition active:scale-[0.98] disabled:opacity-40 ${
+                    ready ? '' : 'opacity-60'
+                  }`}
+                >
+                  <span>{busy ? '결제 여는 중' : '결제하기'}</span>
+                  <Price pay={cart.total} list={listTotal} className="[&_s]:text-white/60" />
+                </button>
+              </>
             )}
-            {payError && <p className="mb-2 text-center text-sm font-semibold text-red-600">{payError}</p>}
-            <button
-              onClick={pay}
-              disabled={!flags.pay || busy || open?.state !== 'open'}
-              className={`flex h-14 w-full items-center justify-between rounded-2xl bg-brand-dark px-5 text-base font-bold text-white transition active:scale-[0.98] disabled:opacity-40 ${
-                ready ? '' : 'opacity-60'
-              }`}
-            >
-              <span>{busy ? '결제 여는 중' : '결제하기'}</span>
-              <Price pay={cart.total} list={listTotal} className="[&_s]:text-white/60" />
-            </button>
             {!flags.pay && <p className="mt-2 text-center text-xs text-zinc-500">결제는 준비 중</p>}
           </div>
         </div>
