@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Check, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Clock, Trash2 } from 'lucide-react';
 import { useJacheCart } from '@/hooks/useJacheCart';
 import { usePhoneVerification } from '@/hooks/usePhoneVerification';
 import { Stepper } from '@/components/jache/ItemSheet';
@@ -152,6 +152,20 @@ export default function CheckoutPage() {
           <h1 className="text-xl font-extrabold tracking-tight">{step === 'review' ? '주문 확인' : '휴대폰 번호'}</h1>
           {flags.test && <span className="ml-auto rounded-md bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">시험</span>}
         </header>
+        {/* 지금 어느 단계인지: 두 칸 막대, 지금 칸만 브랜드색 */}
+        {!empty && (
+          <div className="mb-3 grid grid-cols-2 gap-1.5" aria-label="주문 단계">
+            {(['주문 확인', '번호·결제'] as const).map((t, i) => {
+              const on = (step === 'review' ? 0 : 1) >= i;
+              return (
+                <div key={t}>
+                  <div className={`h-1.5 rounded-full ${on ? 'bg-brand-dark' : 'bg-zinc-200'}`} />
+                  <p className={`mt-1.5 text-xs ${(step === 'review' ? 0 : 1) === i ? 'font-bold text-brand-dark' : 'font-medium text-zinc-400'}`}>{t}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {empty ? (
           <div className="py-24 text-center">
@@ -170,7 +184,7 @@ export default function CheckoutPage() {
                   <li key={l.key} className="py-3.5 first:pt-0 last:pb-0">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[15px] font-bold leading-snug">{l.title}</p>
+                        <p className="text-base font-bold leading-snug text-zinc-900">{l.title}</p>
                         {l.choices.length > 0 && <p className="mt-0.5 text-[13px] leading-snug text-zinc-500">{choiceSummary(l.choices)}</p>}
                       </div>
                       <button onClick={() => cart.remove(l.key)} aria-label={`${l.title} 빼기`} className="-mr-2 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-zinc-400 active:bg-zinc-100">
@@ -179,11 +193,24 @@ export default function CheckoutPage() {
                     </div>
                     <div className="mt-2 flex items-center justify-between">
                       <Stepper small value={l.qty} min={1} max={99} onChange={(q) => cart.setQty(l.key, q)} />
-                      <Price className="text-[15px] font-semibold" pay={lineTotal(l)} list={lineListTotal(l)} />
+                      <Price className="text-base font-bold text-zinc-900" pay={lineTotal(l)} list={lineListTotal(l)} />
                     </div>
                   </li>
                 ))}
               </ul>
+              {/* 합계: 할인은 브랜드색, 합계는 가장 크게 */}
+              <div className="mt-4 space-y-1 border-t border-dashed border-zinc-200 pt-3">
+                {listTotal > cart.total && (
+                  <p className="flex justify-between text-sm font-semibold text-brand-dark">
+                    <span>할인</span>
+                    <span className="tabular-nums">-{won(listTotal - cart.total)}</span>
+                  </p>
+                )}
+                <p className="flex items-baseline justify-between">
+                  <span className="text-sm font-semibold text-zinc-600">합계</span>
+                  <span className="text-xl font-extrabold tabular-nums text-zinc-900">{won(cart.total)}</span>
+                </p>
+              </div>
             </Card>
             </>)}
 
@@ -194,9 +221,15 @@ export default function CheckoutPage() {
               <>
                 {step === 'review' && (<>
                 {/* 픽업 — 고르지 않는다: 지금 주문하면 약 20분 뒤 (사장님 11-19 「픽업시간 20분 후 까지만해. 시간 왜써 빼」) */}
-                <Card title="픽업" hint="사거리 모서리, 파출소 대각선 맞은편">
-                  <p className="text-lg font-bold">{pickup === 'now' ? '주문하고 약 20분 뒤' : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)}` : ''}</p>
-                </Card>
+                <section className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-dark text-white">
+                    <Clock className="h-5 w-5" strokeWidth={2.25} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-lg font-extrabold text-zinc-900">{pickup === 'now' ? '약 20분 뒤 픽업' : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)} 픽업` : ''}</p>
+                    <p className="mt-0.5 text-[13px] font-medium text-zinc-600">사거리 모서리, 파출소 대각선 맞은편</p>
+                  </div>
+                </section>
 
                 {/* 요청 */}
                 <Card title="요청" optional>
@@ -344,7 +377,7 @@ function Card({ title, hint, optional, innerRef, children }: { title: string; hi
   return (
     <section ref={innerRef} className="scroll-mt-24 rounded-2xl border border-zinc-200/80 bg-white p-4">
       <div className="mb-3 flex items-baseline gap-2">
-        <h2 className="text-base font-bold">{title}</h2>
+        <h2 className="text-[13px] font-semibold text-zinc-500">{title}</h2>
         {optional && <span className="text-xs text-zinc-400">선택</span>}
         {hint && <span className="ml-auto text-xs text-zinc-500">{hint}</span>}
       </div>
@@ -360,8 +393,9 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
       aria-pressed={on}
       className={`h-12 rounded-xl px-3.5 text-sm font-semibold tabular-nums transition active:scale-[0.97] ${
         on ? 'bg-brand-dark text-white' : 'bg-white text-zinc-700 ring-1 ring-zinc-300'
-      }`}
+      } inline-flex items-center gap-1.5`}
     >
+      {on && <Check className="h-4 w-4" strokeWidth={3} />}
       {children}
     </button>
   );

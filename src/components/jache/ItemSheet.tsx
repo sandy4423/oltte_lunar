@@ -202,7 +202,7 @@ export function Stepper({
         <Minus className="h-4 w-4" />
       </button>
       <span className={`${small ? 'w-6 text-sm' : 'w-8 text-base'} text-center font-semibold tabular-nums text-zinc-900`}>{value}</span>
-      <button type="button" aria-label="늘리기" className={btn} disabled={value >= max} onClick={() => onChange(value + 1)}>
+      <button type="button" aria-label="늘리기" className={`${btn} border-orange-200 bg-orange-50 text-brand-dark`} disabled={value >= max} onClick={() => onChange(value + 1)}>
         <Plus className="h-4 w-4" />
       </button>
     </div>
