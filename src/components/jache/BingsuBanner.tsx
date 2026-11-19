@@ -6,7 +6,7 @@ const BINGSU_URL = 'https://store.payhere.in/olttebs1';
 const VARIANTS = [
   { img: '/jache/bingsu-injeolmi.jpg', title: '인절미빙수 (2인)', sub: '올때빙수 · 빙수도 주문해 보세요' },
   { img: '/jache/bingsu-hongsi.jpg', title: '1인 홍시빙수', sub: '올때빙수 · 달콤한 빙수 한 그릇' },
-  { img: '/jache/bingsu-milk.jpg', title: '시그니처 순우유빙수 (2인)', sub: '올때빙수 · 우유 듬뿍 눈꽃빙수' },
+  { img: '/jache/bingsu-milk.jpg', title: '시그니처 순우유빙수 (2인)', sub: '올때빙수에서 주문하기' },
 ] as const;
 
 export function BingsuBanner({ variant = 0 }: { variant?: number }) {
