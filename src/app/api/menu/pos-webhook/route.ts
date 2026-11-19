@@ -39,6 +39,8 @@ export async function POST(req: NextRequest) {
   }
   const merchant = process.env.TOSSPLACE_MERCHANT_ID;
   if (merchant && String(ev?.merchantId) !== String(merchant)) return ok();
+  // 진단: 어떤 이벤트가 오는지(번호·금액 없이 종류·주문 키 앞부분만)
+  console.log('[pos-webhook]', ev?.type, String(ev?.data?.orderKey ?? ev?.data?.order?.orderKey ?? '').slice(0, 8), String(ev?.data?.source ?? ev?.data?.order?.source ?? ''));
   if (ev?.type !== 'order.call.created.v1') return ok();
 
   const orderId = String(ev?.data?.orderId ?? '');
