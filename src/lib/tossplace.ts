@@ -6,6 +6,7 @@
 import type { MenuCategory, MenuChoice, MenuItem, MenuOptionGroup } from '@/lib/jache/types';
 import type { PricedLine } from '@/lib/jache/pricing';
 import { splitVat } from '@/lib/jache/pricing';
+import { applyJacheLayout } from '@/lib/jache/layout';
 
 const BASE = 'https://open-api.tossplace.com/api-public/openapi/v1';
 
@@ -143,7 +144,8 @@ async function fetchHidden(): Promise<Set<string>> {
 
 export async function fetchMenu(): Promise<MenuCategory[]> {
   const [raw, hidden] = await Promise.all([tossplaceFetch<RawItem[]>('/catalog/items', { next: { revalidate: 60 } }), fetchHidden()]);
-  return sanitizeCatalog(raw, hidden);
+  // 자체앱 전용 카테고리 배치 (포스 카테고리는 그대로) — src/lib/jache/layout.ts
+  return applyJacheLayout(sanitizeCatalog(raw, hidden));
 }
 
 /** 주문 확정용 — 캐시 없이 지금 메뉴판 (품절 즉시 반영). 포스 주문의 itemPrice 를 위해 원본 가격 칸도 돌려준다 */
@@ -160,7 +162,7 @@ export async function fetchCatalogFresh(): Promise<{ menu: MenuCategory[]; price
       taxInclusive: true,
     });
   }
-  return { menu: sanitizeCatalog(raw, hidden), priceMeta };
+  return { menu: applyJacheLayout(sanitizeCatalog(raw, hidden)), priceMeta };
 }
 
 /* ───────── 포스 주문 생성 ───────── */
