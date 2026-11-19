@@ -16,12 +16,21 @@ export async function POST(req: NextRequest) {
   if (!kakaoEnabled()) return NextResponse.json({ phone: null }, { status: 404, headers: H });
   let token = '';
   try {
-    token = String((await req.json())?.accessToken ?? '');
+    const b = await req.json();
+    if (b?.clientError) {
+      console.error('[jache-kakao] callback 실패:', String(b.clientError).slice(0, 200));
+      return NextResponse.json({ phone: null }, { headers: H });
+    }
+    token = String(b?.accessToken ?? '');
   } catch {
     /* 빈 본문 */
   }
   const user = await verifyKakaoToken(token);
-  if (!user) return NextResponse.json({ phone: null }, { status: 401, headers: H });
+  if (!user) {
+    console.error('[jache-kakao] 토큰 확인 실패');
+    return NextResponse.json({ phone: null }, { status: 401, headers: H });
+  }
+  console.log('[jache-kakao] 로그인', { hasPhone: !!user.phone });
 
   let phone = user.phone;
   if (phone) await saveKakaoLink(user.id, phone); // 다음엔 카카오가 번호를 안 줘도 알 수 있게(표 없으면 무시됨)

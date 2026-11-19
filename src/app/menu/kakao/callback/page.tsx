@@ -16,7 +16,11 @@ export default function KakaoCallback() {
         });
         const { data, error } = await sb.auth.exchangeCodeForSession(code);
         const accessToken = data?.session?.access_token;
-        if (error || !accessToken) return back();
+        if (error || !accessToken) {
+          // 왜 실패했는지 서버 로그에 남긴다(번호·토큰 없음)
+          await fetch('/api/menu/kakao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ clientError: String(error?.message || 'no session').slice(0, 200) }) }).catch(() => {});
+          return back();
+        }
         await fetch('/api/menu/kakao', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
