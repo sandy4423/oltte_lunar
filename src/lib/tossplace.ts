@@ -72,7 +72,7 @@ export async function tossplaceFetch<T>(path: string, init?: RequestInit & { nex
 /* ───────── 메뉴 정리 ───────── */
 
 const EXCLUDE_CATEGORIES = new Set(['Pregnancy']);
-const EXCLUDE_TITLES = new Set(['교자 2+1 행사', '쫄면 1+1']);
+const EXCLUDE_TITLES = new Set(['교자 2+1 행사', '쫄면 1+1', '공기밥']); // 공기밥: 사장님 11-19 「공기밥도 숨겨」
 const MAX_QTY_CAP = 9;
 
 function excluded(it: RawItem): boolean {
