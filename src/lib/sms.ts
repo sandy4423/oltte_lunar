@@ -112,7 +112,7 @@ export async function sendSMS(to: string, text: string): Promise<SMSResult> {
       };
     }
 
-    console.log('[SMS] 발송 성공:', JSON.stringify(result, null, 2));
+    console.log('[SMS] 발송 성공', { groupId: result.groupId ?? null, messageId: result.messageId ?? null }); // 번호·본문은 로그에 남기지 않는다(11-19 점검)
 
     // messageId 반환
     const messageId = result.messageId || result.groupId || `sent_${Date.now()}`;

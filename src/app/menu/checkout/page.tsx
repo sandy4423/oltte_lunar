@@ -27,10 +27,32 @@ export default function CheckoutPage() {
   const [reqs, setReqs] = useState<string[]>([]);
   // 두 단계: ① 담은 것 확인 → ② 번호·결제 (사장님 11-19 「목록 먼저 뜨고 확인한 다음에 그 다음에 전화번호」)
   const [step, setStep] = useState<'review' | 'phone'>('review');
+  // 2단계를 브라우저 기록 한 칸으로 — 폰 뒤로 가기가 메뉴가 아니라 1단계로 (11-19 점검)
   const goPhone = () => {
     setStep('phone');
+    try {
+      window.history.pushState({ jacheStep: 'phone' }, '', '/menu/checkout?step=phone');
+    } catch {
+      /* 무시 */
+    }
     window.scrollTo({ top: 0 });
   };
+  const backToReview = () => {
+    if (typeof window !== 'undefined' && window.history.state?.jacheStep === 'phone') window.history.back();
+    else {
+      setStep('review');
+      try {
+        window.history.replaceState(null, '', '/menu/checkout');
+      } catch {
+        /* 무시 */
+      }
+    }
+  };
+  useEffect(() => {
+    const onPop = () => setStep(new URLSearchParams(window.location.search).get('step') === 'phone' ? 'phone' : 'review');
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   const [kakao, setKakao] = useState(false);
   // 카카오는 됐는데 번호를 못 받은 상태 — 버튼 대신 「연결됨」을 보여 주고 번호 한 번만 받는다
   const [kakaoLinked, setKakaoLinked] = useState(false);
@@ -172,7 +194,7 @@ export default function CheckoutPage() {
       <div className="mx-auto max-w-xl px-5">
         <header className="flex items-center gap-2 pb-2 pt-6">
           {step === 'phone' ? (
-            <button onClick={() => setStep('review')} aria-label="주문 내역으로" className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full text-zinc-700 active:bg-zinc-100">
+            <button onClick={backToReview} aria-label="주문 내역으로" className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full text-zinc-700 active:bg-zinc-100">
               <ArrowLeft className="h-6 w-6" />
             </button>
           ) : (
@@ -258,7 +280,7 @@ export default function CheckoutPage() {
                       <Clock className="h-5 w-5" strokeWidth={2.25} />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-lg font-extrabold text-zinc-900">{pickup === 'now' ? `${afterMin}분 뒤 픽업` : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)} 픽업` : ''}</p>
+                      <p className="text-lg font-extrabold text-zinc-900">{pickup === 'now' ? `${afterMin}분 뒤 픽업 · ${hhmm(kstNow().minutes + afterMin)}쯤` : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)} 픽업` : ''}</p>
                       <p className="mt-0.5 text-[13px] font-medium text-zinc-600">사거리 모서리, 파출소 대각선 맞은편</p>
                     </div>
                   </div>
@@ -268,8 +290,9 @@ export default function CheckoutPage() {
                         <button
                           key={m}
                           onClick={() => setAfterMin(m)}
+                          disabled={kstNow().minutes + m >= 21 * 60}
                           aria-pressed={afterMin === m}
-                          className={`h-12 rounded-xl text-sm font-bold tabular-nums transition active:scale-[0.97] ${afterMin === m ? 'bg-brand-dark text-white' : 'bg-white text-zinc-700 ring-1 ring-orange-200'}`}
+                          className={`h-12 rounded-xl text-sm font-bold tabular-nums transition active:scale-[0.97] ${afterMin === m ? 'bg-brand-dark text-white' : 'bg-white text-zinc-700 ring-1 ring-orange-200'} disabled:opacity-30`}
                         >
                           {m}분 뒤
                         </button>
@@ -292,9 +315,14 @@ export default function CheckoutPage() {
 
                 {step === 'phone' && (<>
                 {/* 앞 단계 요약 — 누르면 고치러 돌아감 */}
-                <button onClick={() => setStep('review')} className="flex w-full items-center justify-between rounded-2xl border border-zinc-200/80 bg-white p-4 text-left active:bg-zinc-50">
+                <button onClick={backToReview} className="flex w-full items-center justify-between rounded-2xl border border-zinc-200/80 bg-white p-4 text-left active:bg-zinc-50">
                   <span className="min-w-0">
-                    <span className="block truncate text-[15px] font-bold">{cart.lines.map((l) => (l.qty > 1 ? `${l.title} ${l.qty}` : l.title)).join(', ')}</span>
+                    {cart.lines.map((l) => (
+                      <span key={l.key} className="block text-[15px] font-bold leading-snug">
+                        {l.title} <span className="text-zinc-500">×{l.qty}</span>
+                        {l.choices.length > 0 && <span className="block text-[13px] font-medium text-zinc-500">{choiceSummary(l.choices)}</span>}
+                      </span>
+                    ))}
                     <span className="mt-0.5 block text-[13px] text-zinc-500">{pickupLabel} 픽업{reqs.length ? ` · ${reqs.join(' · ')}` : ''}</span>
                   </span>
                   <span className="ml-3 shrink-0 text-sm font-semibold text-brand-dark">바꾸기</span>
@@ -306,7 +334,7 @@ export default function CheckoutPage() {
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-white">
                         <Check className="h-4 w-4" strokeWidth={3} />
                       </span>
-                      {fmtPhone(v.phone)}
+                      <span data-no-text>{fmtPhone(v.phone)}</span>
                       <button
                         onClick={async () => {
                           await fetch('/api/menu/session', { method: 'DELETE', credentials: 'same-origin' }).catch(() => {});
@@ -343,7 +371,7 @@ export default function CheckoutPage() {
                       )}
                       {/* 카카오가 기본 (사장님 11-19 「카톡 로그인을 기본으로」). 번호 칸은 카카오 연결 직후(번호 한 번 묶기)나 「번호로 주문」을 눌렀을 때만 */}
                       {kakao && !kakaoLinked && !showPhone && !v.verificationSent ? (
-                        <button onClick={() => setShowPhone(true)} className="h-11 w-full rounded-xl text-sm font-semibold text-zinc-500 active:bg-zinc-100">
+                        <button onClick={() => setShowPhone(true)} className="h-12 w-full rounded-2xl bg-white text-sm font-bold text-zinc-700 ring-1 ring-zinc-300 active:bg-zinc-50">
                           번호로 주문
                         </button>
                       ) : (
@@ -435,7 +463,7 @@ export default function CheckoutPage() {
               <>
                 {open?.state === 'open' && (
                   <p className="mb-2 flex justify-between text-[13px] text-zinc-500">
-                    <span className="tabular-nums">{v.phone ? fmtPhone(v.phone) : '휴대폰 번호 필요'}</span>
+                    <span className="tabular-nums" data-no-text>{v.phone ? fmtPhone(v.phone) : '휴대폰 번호 필요'}</span>
                     <span>{pickupLabel} 픽업</span>
                   </p>
                 )}

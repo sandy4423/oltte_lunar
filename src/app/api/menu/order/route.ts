@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
     // 몇 분 뒤 픽업 (사장님 11-19 「5분, 10분, 15분 뒤, 20분 뒤 선택할 수 있게. 바로 먹기는 말고」)
     if (!st.canNow) return bad('픽업 시간을 다시 골라 주세요');
     const m = Number(afterMin[1]);
+    if (kstNow().minutes + m >= 21 * 60) return bad('마감 전에 받을 수 있는 시간으로 골라 주세요'); // 21시 마감 넘김 방지(11-19 점검)
     pickup = `m${m}`;
     pickupLabel = `${hhmm(kstNow().minutes + m)}쯤 (${m}분 뒤)`;
   } else if (typeof body?.pickup === 'string' && /^\d{2}:\d{2}$/.test(body.pickup) && st.slots.map(hhmm).includes(body.pickup)) {

@@ -41,6 +41,9 @@ export async function POST(req: NextRequest) {
     return res({ success: true, status: cur?.status ?? order.status });
   }
 
+  // 만든 지 30분 넘은 주문은 결제하지 않는다 — 할인 기간·영업일이 지난 뒤 결제되는 것 방지(11-19 점검)
+  if (Date.now() - Date.parse(order.createdAt) > 30 * 60 * 1000) return res({ success: false, error: '주문 시간이 지났어요. 다시 주문해 주세요' }, 410);
+
   if (order.totalAmount !== amount) {
     console.error('[jache] amount mismatch', { orderId, expected: order.totalAmount, received: amount });
     return res({ success: false, error: '결제 금액이 맞지 않아요' }, 400);

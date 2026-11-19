@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { setPhoneSession } from '@/lib/orderAccess.server';
 import { setRemember } from '@/lib/jache/remember.server';
-import { kakaoEnabled, loadKakaoPhone, saveKakaoLink, setKakaoPending, verifyKakaoToken } from '@/lib/jache/kakao.server';
+import { kakaoEnabled, loadKakaoPhone, setKakaoPending, verifyKakaoToken } from '@/lib/jache/kakao.server';
 
 export const dynamic = 'force-dynamic';
 const H = { 'Cache-Control': 'no-store' };
@@ -30,11 +30,10 @@ export async function POST(req: NextRequest) {
     console.error('[jache-kakao] 토큰 확인 실패');
     return NextResponse.json({ phone: null }, { status: 401, headers: H });
   }
-  console.log('[jache-kakao] 로그인', { hasPhone: !!user.phone });
+  console.log('[jache-kakao] 로그인');
 
-  let phone = user.phone;
-  if (phone) await saveKakaoLink(user.id, phone); // 다음엔 카카오가 번호를 안 줘도 알 수 있게(표 없으면 무시됨)
-  else phone = await loadKakaoPhone(user.id);
+  // 번호는 문자 인증으로 묶어 둔 것만 믿는다(카카오 계정 정보의 번호는 손님이 고칠 수 있어 쓰지 않음)
+  const phone = await loadKakaoPhone(user.id);
 
   const res = NextResponse.json({ phone }, { headers: H });
   if (phone) {

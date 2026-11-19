@@ -36,8 +36,9 @@ export async function verifyKakaoToken(accessToken: string): Promise<{ id: strin
     if (error || !u || !UUID.test(u.id)) return null;
     const providers = Array.isArray(u.app_metadata?.providers) ? (u.app_metadata.providers as unknown[]) : [];
     if (u.app_metadata?.provider !== 'kakao' && !providers.includes('kakao')) return null;
-    const m = (u.user_metadata ?? {}) as Record<string, unknown>;
-    return { id: u.id, phone: normalizeKakaoPhone(m.phone_number) ?? normalizeKakaoPhone(u.phone) };
+    // ⛔ user_metadata·u.phone 은 손님이 공개 키로 고칠 수 있다(11-19 점검 치명 1) → 번호로 믿지 않는다.
+    //    번호는 오직 우리가 문자 인증 뒤 묶어 둔 jache_kakao_link 에서만 가져온다.
+    return { id: u.id, phone: null };
   } catch {
     return null;
   }
