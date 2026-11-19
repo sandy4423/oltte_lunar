@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import type { CartLine, MenuCategory, MenuItem } from '@/lib/jache/types';
@@ -9,6 +9,7 @@ import { unitDiscountFor } from '@/lib/jache/discounts';
 import { Price } from '@/components/jache/Price';
 import { useJacheCart } from '@/hooks/useJacheCart';
 import { ItemSheet } from '@/components/jache/ItemSheet';
+import { BingsuBanner } from '@/components/jache/BingsuBanner';
 
 export default function MenuPage() {
   const [cats, setCats] = useState<MenuCategory[] | null>(null);
@@ -68,6 +69,7 @@ export default function MenuPage() {
     cart.add(line);
   };
 
+  const bannerAt: number[] = cats ? Array.from(new Set([0, ...(cats.length >= 4 ? [Math.floor(cats.length / 2)] : []), cats.length - 1])) : [];
   const qtyIn = (itemId: string) => cart.lines.filter((l) => l.itemId === itemId).reduce((s, l) => s + l.qty, 0);
 
   return (
@@ -107,8 +109,9 @@ export default function MenuPage() {
             </button>
           </div>
         )}
-        {cats?.map((c) => (
-          <section key={c.id} id={`cat-${c.id}`} className="pt-8">
+        {cats?.map((c, ci) => (
+          <Fragment key={c.id}>
+          <section id={`cat-${c.id}`} className="pt-8">
             <h2 className="mb-3 text-lg font-bold tracking-tight">{c.title}</h2>
             <ul className="grid gap-3 md:grid-cols-2">
               {c.items.map((it) => (
@@ -118,6 +121,9 @@ export default function MenuPage() {
               ))}
             </ul>
           </section>
+          {/* 올때빙수 홍보 배너: 첫 카테고리 뒤·중간·맨 아래 (진짜 링크) */}
+          {bannerAt.includes(ci) && <BingsuBanner variant={bannerAt.indexOf(ci)} />}
+          </Fragment>
         ))}
       </div>
 
