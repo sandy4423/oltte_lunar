@@ -172,7 +172,7 @@ function ItemCard({ item, inCart, onOpen, onQuick }: { item: MenuItem; inCart: n
         </span>
       </button>
       {/* 사진을 눌러도 담긴다 (사장님 11-19 「카드를 그냥 눌러도 메뉴 추가될수있도록」) */}
-      <div className="relative h-[92px] w-[92px] shrink-0 self-center" onClick={onOpen}>
+      <div className="relative h-[92px] w-[92px] shrink-0 cursor-pointer self-center" onClick={onOpen} role="button" tabIndex={-1} aria-label={`${item.title} 담기`}>
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={item.imageUrl} alt="" loading="lazy" className="h-full w-full rounded-xl bg-zinc-100 object-cover" />
