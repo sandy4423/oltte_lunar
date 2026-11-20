@@ -22,8 +22,8 @@ export default function CheckoutPage() {
   const v = usePhoneVerification();
   const [open, setOpen] = useState<OpenState | null>(null);
   const [pickup, setPickup] = useState<'now' | number | null>(null);
-  // 몇 분 뒤 픽업 — 5·10·15·20 (사장님 11-19). 기본 15분
-  const [afterMin, setAfterMin] = useState<5 | 10 | 15 | 20>(15);
+  // 픽업 — 기본은 「바로 픽업」(0), 「나중에 픽업」을 누르면 10·15·20분 뒤 (사장님 11-20 「기본은 항상 바로 픽업. 나중에픽업 버튼 눌러서 10분 15분 20분 버튼 따로 띄워」)
+  const [afterMin, setAfterMin] = useState<0 | 10 | 15 | 20>(0);
   const [reqs, setReqs] = useState<string[]>([]);
   // 두 단계: ① 담은 것 확인 → ② 번호·결제 (사장님 11-19 「목록 먼저 뜨고 확인한 다음에 그 다음에 전화번호」)
   const [step, setStep] = useState<'review' | 'phone'>('review');
@@ -119,7 +119,7 @@ export default function CheckoutPage() {
     });
   }, [open]);
 
-  const pickupLabel = useMemo(() => (pickup === 'now' ? `${afterMin}분 뒤` : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)}` : ''), [pickup, afterMin]);
+  const pickupLabel = useMemo(() => (pickup === 'now' ? (afterMin === 0 ? '바로' : `${afterMin}분 뒤`) : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)}` : ''), [pickup, afterMin]);
 
   const onPhoneChange = (raw: string) => {
     const d = raw.replace(/\D/g, '');
@@ -273,31 +273,52 @@ export default function CheckoutPage() {
             {open?.state === 'open' && (
               <>
                 {step === 'review' && (<>
-                {/* 픽업 — 지금 영업 중이면 5·10·15·20분 뒤 중 고름 (사장님 11-19) */}
+                {/* 픽업 — 기본 바로 픽업, 나중에 픽업 → 10·15·20분 뒤 (사장님 11-20) */}
                 <section className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
                   <div className="flex items-center gap-3">
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-dark text-white">
                       <Clock className="h-5 w-5" strokeWidth={2.25} />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-lg font-extrabold text-zinc-900">{pickup === 'now' ? `${afterMin}분 뒤 픽업 · ${hhmm(kstNow().minutes + afterMin)}쯤` : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)} 픽업` : ''}</p>
+                      <p className="text-lg font-extrabold text-zinc-900">{pickup === 'now' ? (afterMin === 0 ? '바로 픽업' : `${afterMin}분 뒤 픽업 · ${hhmm(kstNow().minutes + afterMin)}쯤`) : typeof pickup === 'number' ? `오늘 ${hhmm(pickup)} 픽업` : ''}</p>
                       <p className="mt-0.5 text-[13px] font-medium text-zinc-600">사거리 모서리, 파출소 대각선 맞은편</p>
                     </div>
                   </div>
                   {pickup === 'now' && (
-                    <div className="mt-3 grid grid-cols-4 gap-2">
-                      {([5, 10, 15, 20] as const).map((m) => (
-                        <button
-                          key={m}
-                          onClick={() => setAfterMin(m)}
-                          disabled={kstNow().minutes + m >= 21 * 60}
-                          aria-pressed={afterMin === m}
-                          className={`h-12 rounded-xl text-sm font-bold tabular-nums transition active:scale-[0.97] ${afterMin === m ? 'bg-brand-dark text-white' : 'bg-white text-zinc-700 ring-1 ring-orange-200'} disabled:opacity-30`}
-                        >
-                          {m}분 뒤
-                        </button>
-                      ))}
-                    </div>
+                    <>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        {([['바로 픽업', true], ['나중에 픽업', false]] as const).map(([label, isNow]) => {
+                          const on = isNow ? afterMin === 0 : afterMin !== 0;
+                          const laterOk = kstNow().minutes + 10 < 21 * 60;
+                          return (
+                            <button
+                              key={label}
+                              onClick={() => setAfterMin(isNow ? 0 : afterMin || 10)}
+                              disabled={!isNow && !laterOk}
+                              aria-pressed={on}
+                              className={`h-12 rounded-xl text-[15px] font-bold transition active:scale-[0.97] ${on ? 'bg-brand-dark text-white' : 'bg-white text-zinc-700 ring-1 ring-orange-200'} disabled:opacity-30`}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {afterMin !== 0 && (
+                        <div className="mt-2 grid grid-cols-3 gap-2">
+                          {([10, 15, 20] as const).map((m) => (
+                            <button
+                              key={m}
+                              onClick={() => setAfterMin(m)}
+                              disabled={kstNow().minutes + m >= 21 * 60}
+                              aria-pressed={afterMin === m}
+                              className={`h-11 rounded-xl text-sm font-bold tabular-nums transition active:scale-[0.97] ${afterMin === m ? 'bg-orange-500 text-white' : 'bg-white text-zinc-700 ring-1 ring-orange-200'} disabled:opacity-30`}
+                            >
+                              {m}분 뒤
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </section>
 
