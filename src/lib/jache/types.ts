@@ -39,6 +39,8 @@ export interface MenuCategory {
 
 export interface MenuResponse {
   categories: MenuCategory[];
+  /** 15,000원 이상 증정 상품 (없거나 품절이면 null → 이벤트 문구 없음) */
+  gift: import('./gift').GiftItem | null;
   fetchedAt: string;
 }
 

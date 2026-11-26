@@ -10,9 +10,12 @@ import { discountTitles, unitDiscountFor } from '@/lib/jache/discounts';
 import { Price } from '@/components/jache/Price';
 import { useJacheCart } from '@/hooks/useJacheCart';
 import { ItemSheet } from '@/components/jache/ItemSheet';
+import { GiftMeter } from '@/components/jache/GiftMeter';
+import type { GiftItem } from '@/lib/jache/gift';
 
 export default function MenuPage() {
   const [cats, setCats] = useState<MenuCategory[] | null>(null);
+  const [gift, setGift] = useState<GiftItem | null>(null);
   const [failed, setFailed] = useState(false);
   const [sheet, setSheet] = useState<MenuItem | null>(null);
   const [active, setActive] = useState<string>('');
@@ -28,6 +31,7 @@ export default function MenuPage() {
         // 품절 메뉴는 숨긴다(사장님 11-19 「숨겨」 — 품절 떡국떡을 손님들이 계속 누름). 다 품절인 카테고리도 숨김
         setCats((d.categories as MenuCategory[]).map((c) => ({ ...c, items: c.items.filter((it) => !it.soldOut) })).filter((c) => c.items.length > 0));
         setActive(d.categories[0]?.id ?? '');
+        setGift(d.gift ?? null);
       })
       .catch(() => setFailed(true));
   }, []);
@@ -80,6 +84,7 @@ export default function MenuPage() {
         <p className="text-sm font-semibold text-brand-dark">포장 주문</p>
         <h1 className="mt-1 text-[28px] font-extrabold tracking-tight">올때만두</h1>
         {closedMsg && <p className="mt-3 inline-block rounded-full bg-zinc-900 px-3 py-1 text-sm font-medium text-white">{closedMsg}</p>}
+        {cart.hydrated && cart.count === 0 && <GiftMeter payTotal={0} gift={gift} empty className="mt-3" />}
       </header>
 
       {cats && (
@@ -131,6 +136,7 @@ export default function MenuPage() {
       {cart.hydrated && cart.count > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 backdrop-blur">
           <div className="mx-auto max-w-3xl px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <GiftMeter payTotal={cart.total} gift={gift} className="mb-2.5" />
             <Link
               href="/menu/checkout"
               className="flex h-14 items-center justify-between rounded-2xl bg-brand-dark px-5 text-base font-bold text-white transition active:scale-[0.99]"

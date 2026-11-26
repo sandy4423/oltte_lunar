@@ -7,8 +7,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const categories = await fetchMenu();
-    const body: MenuResponse = { categories, fetchedAt: new Date().toISOString() };
+    const { categories, gift } = await fetchMenu();
+    const body: MenuResponse = { categories, gift, fetchedAt: new Date().toISOString() };
     return NextResponse.json(body, {
       headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' },
     });

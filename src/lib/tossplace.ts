@@ -7,6 +7,7 @@ import type { MenuCategory, MenuChoice, MenuItem, MenuOptionGroup } from '@/lib/
 import type { PricedLine } from '@/lib/jache/pricing';
 import { splitVat } from '@/lib/jache/pricing';
 import { applyJacheLayout } from '@/lib/jache/layout';
+import { findGiftItem, type GiftItem } from '@/lib/jache/gift';
 
 const BASE = 'https://open-api.tossplace.com/api-public/openapi/v1';
 
@@ -142,14 +143,14 @@ async function fetchHidden(): Promise<Set<string>> {
   }
 }
 
-export async function fetchMenu(): Promise<MenuCategory[]> {
+export async function fetchMenu(): Promise<{ categories: MenuCategory[]; gift: GiftItem | null }> {
   const [raw, hidden] = await Promise.all([tossplaceFetch<RawItem[]>('/catalog/items', { next: { revalidate: 60 } }), fetchHidden()]);
   // 자체앱 전용 카테고리 배치 (포스 카테고리는 그대로) — src/lib/jache/layout.ts
-  return applyJacheLayout(sanitizeCatalog(raw, hidden));
+  return { categories: applyJacheLayout(sanitizeCatalog(raw, hidden)), gift: findGiftItem(raw) };
 }
 
 /** 주문 확정용 — 캐시 없이 지금 메뉴판 (품절 즉시 반영). 포스 주문의 itemPrice 를 위해 원본 가격 칸도 돌려준다 */
-export async function fetchCatalogFresh(): Promise<{ menu: MenuCategory[]; priceMeta: Map<string, PosItemPrice> }> {
+export async function fetchCatalogFresh(): Promise<{ menu: MenuCategory[]; priceMeta: Map<string, PosItemPrice>; gift: GiftItem | null }> {
   const [raw, hidden] = await Promise.all([tossplaceFetch<RawItem[]>('/catalog/items', { cache: 'no-store' }), fetchHidden()]);
   const priceMeta = new Map<string, PosItemPrice>();
   for (const it of raw) {
@@ -162,7 +163,7 @@ export async function fetchCatalogFresh(): Promise<{ menu: MenuCategory[]; price
       taxInclusive: true,
     });
   }
-  return { menu: applyJacheLayout(sanitizeCatalog(raw, hidden)), priceMeta };
+  return { menu: applyJacheLayout(sanitizeCatalog(raw, hidden)), priceMeta, gift: findGiftItem(raw) };
 }
 
 /* ───────── 포스 주문 생성 ───────── */

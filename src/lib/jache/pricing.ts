@@ -4,6 +4,7 @@
  */
 import type { MenuCategory, MenuItem } from './types';
 import { discountsFor } from './discounts';
+import { giftLine, giftStatus, type GiftItem } from './gift';
 
 export interface PricedChoice {
   optionId: string;
@@ -28,6 +29,8 @@ export interface PricedLine {
   lineList: number;
   lineDiscount: number;
   lineTotal: number;
+  /** 증정 줄 (15,000원 이상 제로식혜) — 손님이 담은 게 아니라 서버가 붙인다 */
+  gift?: boolean;
 }
 
 export interface PricedCart {
@@ -43,7 +46,7 @@ const MAX_TOTAL = 500_000;
 
 type Result = { ok: true; value: PricedCart } | { ok: false; error: string };
 
-export function priceCart(rawLines: unknown, menu: MenuCategory[], promo: string | null = null): Result {
+export function priceCart(rawLines: unknown, menu: MenuCategory[], promo: string | null = null, gift: GiftItem | null = null, now?: Date): Result {
   if (!Array.isArray(rawLines) || rawLines.length === 0) return { ok: false, error: '담은 메뉴가 없어요' };
   if (rawLines.length > MAX_LINES) return { ok: false, error: '한 번에 담을 수 있는 메뉴가 너무 많아요' };
 
@@ -100,6 +103,9 @@ export function priceCart(rawLines: unknown, menu: MenuCategory[], promo: string
     });
   }
 
+  // 증정: 손님이 내는 음식값이 기준 이상이면 서버가 제로식혜 1개를 붙인다 (손님이 보낸 줄에 gift 표시가 있어도 위에서 일반 상품으로만 계산됨)
+  if (giftStatus(lines.reduce((s, l) => s + l.lineTotal, 0), gift, now).eligible) lines.push(giftLine(gift!));
+
   const listPrice = lines.reduce((s, l) => s + l.lineList, 0);
   const discountAmount = lines.reduce((s, l) => s + l.lineDiscount, 0);
   const total = listPrice - discountAmount;
@@ -115,6 +121,7 @@ export function splitVat(total: number): { taxAmount: number; supplyAmount: numb
 
 /** 결제창에 보일 주문 이름 */
 export function orderName(lines: PricedLine[]): string {
+  lines = lines.filter((l) => !l.gift);
   const first = lines[0]?.title ?? '만두';
   const rest = lines.reduce((s, l) => s + l.qty, 0) - (lines[0]?.qty ?? 0);
   const n = `올때만두 ${first}${rest > 0 ? ` 외 ${rest}개` : ''}`;

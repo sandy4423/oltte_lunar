@@ -126,8 +126,9 @@ const cut = (s: string, n = 40) => (s.length > n ? s.slice(0, n - 1) + '…' : s
 const won = (n: number) => n.toLocaleString('ko-KR');
 
 export function menuText(o: Pick<JacheOrder, 'lines'>): string {
-  const first = o.lines[0]?.title ?? '만두';
-  const rest = o.lines.reduce((s, l) => s + l.qty, 0) - (o.lines[0]?.qty ?? 0);
+  const lines = o.lines.filter((l) => !l.gift); // 증정 줄(제로식혜)은 「외 N개」에 세지 않는다
+  const first = lines[0]?.title ?? '만두';
+  const rest = lines.reduce((s, l) => s + l.qty, 0) - (lines[0]?.qty ?? 0);
   return cut(`${first}${rest > 0 ? ` 외 ${rest}개` : ''}`);
 }
 

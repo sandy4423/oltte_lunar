@@ -36,6 +36,7 @@ export default async function DonePage({ params, searchParams }: { params: { id:
                 <div className="min-w-0">
                   <p className="text-[15px] font-bold leading-snug">
                     {l.title} <span className="font-semibold text-zinc-500">×{l.qty}</span>
+                    {l.gift && <span className="ml-1.5 text-[13px] font-semibold text-green-700">증정</span>}
                   </p>
                   {l.choices.length > 0 && (
                     <p className="mt-0.5 text-[13px] text-zinc-500">{l.choices.map((c) => (c.qty > 1 ? `${c.title} ${c.qty}` : c.title)).join(' · ')}</p>

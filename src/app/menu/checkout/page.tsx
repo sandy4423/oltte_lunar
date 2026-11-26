@@ -12,6 +12,9 @@ import { Price } from '@/components/jache/Price';
 import { useJacheFlags } from '@/components/jache/JacheFlags';
 import { getClientPromo } from '@/lib/jache/promo';
 import { discountTitles } from '@/lib/jache/discounts';
+import { GiftMeter } from '@/components/jache/GiftMeter';
+import { useJacheGift } from '@/hooks/useJacheGift';
+import { GIFT_LABEL, giftStatus } from '@/lib/jache/gift';
 
 const PHONE_KEY = 'jache-phone-v1';
 
@@ -20,6 +23,8 @@ const fmtPhone = (d: string) => (d.length <= 3 ? d : d.length <= 7 ? `${d.slice(
 export default function CheckoutPage() {
   const cart = useJacheCart();
   const v = usePhoneVerification();
+  const gift = useJacheGift();
+  const giftOn = giftStatus(cart.total, gift);
   const [open, setOpen] = useState<OpenState | null>(null);
   const [pickup, setPickup] = useState<'now' | number | null>(null);
   // 픽업 — 기본은 「바로 픽업」(0), 「나중에 픽업」을 누르면 10·15·20분 뒤 (사장님 11-20 「기본은 항상 바로 픽업. 나중에픽업 버튼 눌러서 10분 15분 20분 버튼 따로 띄워」)
@@ -250,7 +255,17 @@ export default function CheckoutPage() {
                     </div>
                   </li>
                 ))}
+                {giftOn.eligible && gift && (
+                  <li className="flex items-start justify-between gap-3 py-3.5 last:pb-0">
+                    <div className="min-w-0">
+                      <p className="text-base font-bold leading-snug text-zinc-900">{gift.title}</p>
+                      <p className="mt-0.5 text-[13px] leading-snug text-zinc-500">1개</p>
+                    </div>
+                    <Price className="text-base font-bold text-zinc-900" align="end" pay={0} list={gift.price} labels={[GIFT_LABEL]} />
+                  </li>
+                )}
               </ul>
+              <GiftMeter payTotal={cart.total} gift={gift} className="mt-4 rounded-xl bg-[#FBFAF7] px-3 py-2.5" />
               {/* 합계: 할인은 브랜드색, 합계는 가장 크게 */}
               <div className="mt-4 space-y-1 border-t border-dashed border-zinc-200 pt-3">
                 {listTotal > cart.total && (
@@ -344,6 +359,11 @@ export default function CheckoutPage() {
                         {l.choices.length > 0 && <span className="block text-[13px] font-medium text-zinc-500">{choiceSummary(l.choices)}</span>}
                       </span>
                     ))}
+                    {giftOn.eligible && gift && (
+                      <span className="block text-[15px] font-bold leading-snug">
+                        {gift.title} <span className="text-zinc-500">×1</span> <span className="text-[13px] font-semibold text-green-700">증정</span>
+                      </span>
+                    )}
                     <span className="mt-0.5 block text-[13px] text-zinc-500">{pickupLabel} 픽업{reqs.length ? ` · ${reqs.join(' · ')}` : ''}</span>
                   </span>
                   <span className="ml-3 shrink-0 text-sm font-semibold text-brand-dark">바꾸기</span>
