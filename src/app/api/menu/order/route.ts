@@ -13,6 +13,7 @@ import { fetchCatalogFresh } from '@/lib/tossplace';
 import { priceCart, orderName } from '@/lib/jache/pricing';
 import { REQUESTS, hhmm, kstNow, pickupState } from '@/lib/jache/cart';
 import { isTestMode, paymentsEnabled, tossKeys } from '@/lib/jache/config.server';
+import { secondOrderForPhone } from '@/lib/jache/secondOrder.server';
 import { orderStore, orderToken } from '@/lib/jache/orderStore.server';
 
 export const dynamic = 'force-dynamic';
@@ -65,7 +66,9 @@ export async function POST(req: NextRequest) {
     return bad('메뉴를 불러오지 못했어요. 잠시 후 다시 해 주세요', 502);
   }
   const promo = typeof body?.promo === 'string' && /^[a-z0-9]{2,20}$/.test(body.promo) ? body.promo : null;
-  const priced = priceCart(body?.lines, catalog.menu, promo, catalog.gift);
+  // 2번째 주문 할인: 자격은 서버가 DB 에서 다시 판정 (브라우저 값은 받지 않음)
+  const second = await secondOrderForPhone(phone, isTestMode());
+  const priced = priceCart(body?.lines, catalog.menu, promo, catalog.gift, undefined, second);
   if (!priced.ok) return bad(priced.error, 409);
 
   // 주문 만들기 횟수 제한 (시험 모드는 운영 DB 를 쓰지 않으므로 건너뜀)

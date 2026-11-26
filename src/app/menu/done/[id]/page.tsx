@@ -3,6 +3,8 @@ import { BingsuBanner } from '@/components/jache/BingsuBanner';
 import { notFound } from 'next/navigation';
 import { orderStore, verifyOrderTokenFor, isOrderId } from '@/lib/jache/orderStore.server';
 import { won } from '@/lib/jache/cart';
+import { SecondOrderLine } from '@/components/jache/SecondOrderLine';
+import { secondOrderForPhone } from '@/lib/jache/secondOrder.server';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +19,8 @@ export default async function DonePage({ params, searchParams }: { params: { id:
   // 취소 알림톡 버튼이 이 화면으로 온다 → 404 대신 「취소·환불」 상태를 보여 준다 (결제 전 취소면 환불 줄 없음)
   const cancelled = o.status === 'CANCELLED';
   const refunded = cancelled && !!o.paidAt;
+  // 첫 주문이면 다음 주문 할인 안내 (이 주문 포함 결제된 주문이 정확히 1건이고 아직 안 쓴 번호)
+  const nextSecond = cancelled ? null : await secondOrderForPhone(o.phone, o.test);
   const sent = o.status === 'POS_OK';
   const shortNo = o.orderNumber.replace(/^테스트-/, '');
 
@@ -62,6 +66,8 @@ export default async function DonePage({ params, searchParams }: { params: { id:
           </div>
           {o.discountAmount > 0 && <p className="mt-0.5 text-right text-xs text-zinc-500">할인 −{won(o.discountAmount)} 포함</p>}
         </section>
+
+        {nextSecond && <SecondOrderLine next className="mt-4 justify-center" />}
 
         {/* 빙수 배너는 결제완료 화면에만 (사장님 11-19 「결제완료화면에만 배너 둬」) */}
         {!cancelled && <BingsuBanner variant={shortNo.length + (o.lines[0]?.qty ?? 0)} />}

@@ -80,6 +80,8 @@ export function verifyOrderTokenFor(id: string, token: unknown): boolean {
 interface Backend {
   create(o: NewOrder): Promise<JacheOrder>;
   get(id: string): Promise<JacheOrder | null>;
+  /** 이 번호의 주문 전부 (2번째 주문 할인 자격 판정용) */
+  listByPhone(phone: string): Promise<JacheOrder[]>;
   /** expect 상태일 때만 바꾼다 (동시 호출 방지). 바뀐 주문 또는 null */
   update(id: string, patch: Partial<JacheOrder>, expect?: JacheStatus[]): Promise<JacheOrder | null>;
   /** 포스 웹훅의 orderId(포스 주문 id)·orderKey(우리 id)로 시험 아닌 주문 찾기 */
@@ -146,6 +148,24 @@ const fileBackend: Backend = {
     } catch {
       return null;
     }
+  },
+  listByPhone: async (phone) => {
+    let names: string[] = [];
+    try {
+      names = await fs.readdir(dir());
+    } catch {
+      return [];
+    }
+    const out: JacheOrder[] = [];
+    for (const n of names.filter((x) => x.endsWith('.json'))) {
+      try {
+        const j = JSON.parse(await fs.readFile(path.join(dir(), n), 'utf8')) as JacheOrder;
+        if (j.phone === phone) out.push(j);
+      } catch {
+        /* 깨진 파일 무시 */
+      }
+    }
+    return out;
   },
   update: (id, patch, expect) =>
     locked(async () => {
@@ -235,6 +255,12 @@ const dbBackend: Backend = {
     const supabase: any = createServerSupabaseClient();
     const { data } = await supabase.from('jache_orders').select('*').eq('id', id).maybeSingle();
     return data ? fromRow(data) : null;
+  },
+  async listByPhone(phone) {
+    const supabase: any = createServerSupabaseClient();
+    const { data, error } = await supabase.from('jache_orders').select('*').eq('phone', phone);
+    if (error) throw new Error(`jache_orders 조회 실패: ${error.message}`);
+    return (data ?? []).map(fromRow);
   },
   async update(id, patch, expect) {
     const supabase: any = createServerSupabaseClient();

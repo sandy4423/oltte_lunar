@@ -15,6 +15,8 @@ import { discountTitles } from '@/lib/jache/discounts';
 import { GiftMeter } from '@/components/jache/GiftMeter';
 import { useJacheGift } from '@/hooks/useJacheGift';
 import { GIFT_LABEL, giftStatus } from '@/lib/jache/gift';
+import { SECOND_ORDER_AMOUNT, SECOND_ORDER_TITLE } from '@/lib/jache/discounts';
+import { useSecondOrder } from '@/hooks/useSecondOrder';
 
 const PHONE_KEY = 'jache-phone-v1';
 
@@ -145,6 +147,10 @@ export default function CheckoutPage() {
   };
   const phoneOk = /^010\d{8}$/.test(v.phone);
   const listTotal = cart.lines.reduce((s, l) => s + lineListTotal(l), 0);
+  // 2번째 주문 할인: 번호를 아는 손님만(기억·인증). 증정 기준(giftOn)은 이 할인 전 금액으로 본다. 실제 금액은 서버가 다시 계산
+  const secondOn = useSecondOrder(v.isPhoneVerified ? v.phone : null);
+  const secondAmt = secondOn ? Math.min(SECOND_ORDER_AMOUNT, Math.max(0, cart.total - 1)) : 0;
+  const payTotal = cart.total - secondAmt;
   const ready = open?.state === 'open' && pickup !== null && v.isPhoneVerified && agree;
 
   const pay = async () => {
@@ -274,9 +280,15 @@ export default function CheckoutPage() {
                     <span className="tabular-nums">-{won(listTotal - cart.total)}</span>
                   </p>
                 )}
+                {secondAmt > 0 && (
+                  <p className="flex justify-between text-sm font-semibold text-brand-dark">
+                    <span>{SECOND_ORDER_TITLE}</span>
+                    <span className="tabular-nums">-{won(secondAmt)}</span>
+                  </p>
+                )}
                 <p className="flex items-baseline justify-between">
                   <span className="text-sm font-semibold text-zinc-600">합계</span>
-                  <span className="text-xl font-extrabold tabular-nums text-zinc-900">{won(cart.total)}</span>
+                  <span className="text-xl font-extrabold tabular-nums text-zinc-900">{won(payTotal)}</span>
                 </p>
               </div>
             </Card>
@@ -498,7 +510,7 @@ export default function CheckoutPage() {
                 className="flex h-14 w-full items-center justify-between rounded-2xl bg-brand-dark px-5 text-base font-bold text-white transition active:scale-[0.98] disabled:opacity-40"
               >
                 <span>이대로 주문</span>
-                <Price pay={cart.total} list={listTotal} className="[&_s]:text-white/60" />
+                <Price pay={payTotal} list={listTotal} className="[&_s]:text-white/60" />
               </button>
             ) : (
               <>
@@ -517,7 +529,7 @@ export default function CheckoutPage() {
                   }`}
                 >
                   <span>{busy ? '결제 여는 중' : '결제하기'}</span>
-                  <Price pay={cart.total} list={listTotal} className="[&_s]:text-white/60" />
+                  <Price pay={payTotal} list={listTotal} className="[&_s]:text-white/60" />
                 </button>
               </>
             )}

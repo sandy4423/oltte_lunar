@@ -5,6 +5,7 @@
 import type { MenuCategory, MenuItem } from './types';
 import { discountsFor } from './discounts';
 import { giftLine, giftStatus, type GiftItem } from './gift';
+import { applySecondOrder } from './secondOrder';
 
 export interface PricedChoice {
   optionId: string;
@@ -31,6 +32,8 @@ export interface PricedLine {
   lineTotal: number;
   /** 증정 줄 (15,000원 이상 제로식혜) — 손님이 담은 게 아니라 서버가 붙인다 */
   gift?: boolean;
+  /** 주문 전체 할인(2번째 주문 할인)을 이 줄에 붙인 몫 — 줄 전체 금액(수량 곱 아님). lineDiscount·lineTotal 에 이미 반영됨 */
+  orderDiscount?: { ruleId: string; title: string; amount: number };
 }
 
 export interface PricedCart {
@@ -46,7 +49,7 @@ const MAX_TOTAL = 500_000;
 
 type Result = { ok: true; value: PricedCart } | { ok: false; error: string };
 
-export function priceCart(rawLines: unknown, menu: MenuCategory[], promo: string | null = null, gift: GiftItem | null = null, now?: Date): Result {
+export function priceCart(rawLines: unknown, menu: MenuCategory[], promo: string | null = null, gift: GiftItem | null = null, now?: Date, secondOrder = false): Result {
   if (!Array.isArray(rawLines) || rawLines.length === 0) return { ok: false, error: '담은 메뉴가 없어요' };
   if (rawLines.length > MAX_LINES) return { ok: false, error: '한 번에 담을 수 있는 메뉴가 너무 많아요' };
 
@@ -105,6 +108,9 @@ export function priceCart(rawLines: unknown, menu: MenuCategory[], promo: string
 
   // 증정: 손님이 내는 음식값이 기준 이상이면 서버가 제로식혜 1개를 붙인다 (손님이 보낸 줄에 gift 표시가 있어도 위에서 일반 상품으로만 계산됨)
   if (giftStatus(lines.reduce((s, l) => s + l.lineTotal, 0), gift, now).eligible) lines.push(giftLine(gift!));
+
+  // 2번째 주문 할인(서버가 DB 로 자격 확인한 뒤 true) — 증정 판정 「뒤」에 붙인다: 증정 기준 15,000원은 이 할인 전 금액
+  if (secondOrder) applySecondOrder(lines);
 
   const listPrice = lines.reduce((s, l) => s + l.lineList, 0);
   const discountAmount = lines.reduce((s, l) => s + l.lineDiscount, 0);

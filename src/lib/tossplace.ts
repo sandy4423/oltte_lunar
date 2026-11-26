@@ -211,6 +211,8 @@ export function buildPosOrderBody(input: PosOrderInput) {
       const amount = d.amountPerUnit * l.qty;
       return { title: d.title, type: 'FIXED_AMOUNT', amount, percentage: 0, fixedAmount: amount };
     });
+    // 주문 전체 할인(2번째 주문 할인)은 한 줄에 줄 전체 금액으로 붙는다 (수량을 곱하지 않음)
+    if (l.orderDiscount) appliedDiscounts.push({ title: l.orderDiscount.title, type: 'FIXED_AMOUNT', amount: l.orderDiscount.amount, percentage: 0, fixedAmount: l.orderDiscount.amount });
     const base = { diningOption: 'TOGO', itemPrice, quantity: l.qty, ...(appliedDiscounts.length ? { appliedDiscounts } : {}) };
     if (input.test) {
       // 시험 주문은 실매장 포스 매출에 잡히지 않게 금액을 전부 0원으로 넣는다(2026-11-18 15,500원 시험 주문이 매출로 잡힌 사고)

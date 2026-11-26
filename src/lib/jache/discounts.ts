@@ -9,6 +9,9 @@
  *  - 퍼센트 할인(PERCENT_RULES): 기간 안에만, 세트할인 뺀 1개 값에서 % 를 깎는다(원 단위 버림)
  *    · 첫눈 10%: 2026-11-19 하루 (사장님 11-19 「단톡방에서만 할인할테니. 우리 자체앱으로만 할인 걸자」, 맥15 #h7651)
  *
+ *  - 2번째 주문 할인(SECOND_ORDER_*): 번호당 딱 한 번, 주문 전체에서 1,000원 (기간 안, 사장님 2026-11-26 「자체앱 2번째 주문 1,000원 할인 (손님당 1번)」, 2주)
+ *    · 자격 판정·금액 분배는 secondOrder.ts (서버가 DB 로 다시 판정). 증정(gift.ts) 기준 금액은 이 할인 「전」 값으로 본다
+ *
  * 앞으로 단골 이벤트 등을 더할 때: DISCOUNT_RULES·PERCENT_RULES 에 규칙을 추가한다. 할인·무료는 사장님 승인 뒤에만.
  * 클라이언트에서도 import 하므로 서버 전용 코드를 넣지 않는다.
  */
@@ -36,6 +39,23 @@ export const DISCOUNT_RULES: DiscountRule[] = [
     amountPerUnit: 1000,
   },
 ];
+
+/** 2번째 주문 할인 — 끄는 법: ENABLED=false 로 배포하거나 END 를 앞당긴다 (둘 다 화면 문구와 할인이 같이 사라진다) */
+export const SECOND_ORDER_ENABLED = true;
+export const SECOND_ORDER_RULE_ID = 'second-order-1000';
+export const SECOND_ORDER_TITLE = '2번째 주문 할인';
+export const SECOND_ORDER_AMOUNT = 1000;
+export const SECOND_ORDER_START = '2026-11-26T00:00:00+09:00';
+/** 끝(미포함) = 12/10 23:59:59 까지 */
+export const SECOND_ORDER_END = '2026-12-11T00:00:00+09:00';
+/** 화면 표시용 마지막 날 */
+export const SECOND_ORDER_UNTIL_LABEL = '12/10까지';
+
+export function secondOrderWindowOpen(now: Date = new Date()): boolean {
+  if (!SECOND_ORDER_ENABLED) return false;
+  const t = now.getTime();
+  return t >= Date.parse(SECOND_ORDER_START) && t < Date.parse(SECOND_ORDER_END);
+}
 
 export interface PercentRule {
   id: string;

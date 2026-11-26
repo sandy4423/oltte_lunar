@@ -8,6 +8,7 @@ import { paymentsEnabled, tossKeys } from '@/lib/jache/config.server';
 import { orderStore, verifyOrderTokenFor, isOrderId } from '@/lib/jache/orderStore.server';
 import { confirmTossPayment, sendToPos } from '@/lib/jache/checkout.server';
 import { notifyOrder } from '@/lib/alimtalk';
+import { secondOrderStillOpen } from '@/lib/jache/secondOrder.server';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -51,6 +52,9 @@ export async function POST(req: NextRequest) {
     console.error('[jache] amount mismatch', { orderId, expected: order.totalAmount, received: amount });
     return res({ success: false, error: '결제 금액이 맞지 않아요' }, 400);
   }
+
+  // 2번째 주문 할인이 든 주문: 승인 직전에 다시 확인 — 그 사이 같은 번호의 다른 주문이 먼저 결제돼 이미 썼으면 결제 전에 막는다(돈은 안 나감)
+  if (!(await secondOrderStillOpen(order))) return res({ success: false, error: '2번째 주문 할인을 이미 썼어요. 다시 주문해 주세요' }, 409);
 
   const c = await confirmTossPayment(keys, { paymentKey, orderId, amount });
   if (!c.ok) return res({ success: false, error: c.error }, 402);
