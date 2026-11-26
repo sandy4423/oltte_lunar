@@ -82,7 +82,14 @@ interface Backend {
   get(id: string): Promise<JacheOrder | null>;
   /** expect 상태일 때만 바꾼다 (동시 호출 방지). 바뀐 주문 또는 null */
   update(id: string, patch: Partial<JacheOrder>, expect?: JacheStatus[]): Promise<JacheOrder | null>;
+  /** 포스 웹훅의 orderId(포스 주문 id)·orderKey(우리 id)로 시험 아닌 주문 찾기 */
+  findByPos(posOrderId: string, orderKey: string): Promise<JacheOrder | null>;
+  /** 멈춤·포스 실패 되살피기 대상: PAID·POS_SENDING·POS_FAILED 이고 결제가 since 이후 */
+  listForRecovery(sinceIso: string): Promise<JacheOrder[]>;
 }
+
+const RECOVERY_STATUSES: JacheStatus[] = ['PAID', 'POS_SENDING', 'POS_FAILED'];
+const safeKey = (s: string) => s.replace(/[^0-9A-Za-z_-]/g, '');
 
 function fresh(o: NewOrder, id: string, date: string, dailyNo: number): JacheOrder {
   const now = new Date().toISOString();
@@ -148,7 +155,31 @@ const fileBackend: Backend = {
       await fs.writeFile(path.join(dir(), `${id}.json`), JSON.stringify(next, null, 2));
       return next;
     }),
+  findByPos: async (posOrderId, orderKey) => {
+    for (const o of await readAll()) if (!o.test && ((posOrderId && o.posOrderId === posOrderId) || (orderKey && o.id === orderKey))) return o;
+    return null;
+  },
+  listForRecovery: async (sinceIso) =>
+    (await readAll()).filter((o) => RECOVERY_STATUSES.includes(o.status) && !!o.paidAt && o.paidAt >= sinceIso).slice(0, 20),
 };
+
+async function readAll(): Promise<JacheOrder[]> {
+  let names: string[] = [];
+  try {
+    names = await fs.readdir(dir());
+  } catch {
+    return [];
+  }
+  const out: JacheOrder[] = [];
+  for (const n of names.filter((x) => x.endsWith('.json'))) {
+    try {
+      out.push(JSON.parse(await fs.readFile(path.join(dir(), n), 'utf8')) as JacheOrder);
+    } catch {
+      /* 깨진 파일 무시 */
+    }
+  }
+  return out;
+}
 
 /* ───────── Supabase 표 jache_orders (마이그레이션 적용 뒤) ───────── */
 
@@ -212,6 +243,28 @@ const dbBackend: Backend = {
     const { data, error } = await q.select('*');
     if (error) throw new Error(`jache_orders 갱신 실패: ${error.message}`);
     return data?.[0] ? fromRow(data[0]) : null;
+  },
+  async findByPos(posOrderId, orderKey) {
+    const a = safeKey(posOrderId);
+    const b = safeKey(orderKey);
+    if (!a && !b) return null;
+    const supabase: any = createServerSupabaseClient();
+    const conds = [a && `pos_order_id.eq.${a}`, b && `id.eq.${b}`].filter(Boolean).join(',');
+    const { data, error } = await supabase.from('jache_orders').select('*').or(conds).eq('is_test', false).limit(1);
+    if (error) throw new Error(`jache_orders 조회 실패: ${error.message}`);
+    return data?.[0] ? fromRow(data[0]) : null;
+  },
+  async listForRecovery(sinceIso) {
+    const supabase: any = createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('jache_orders')
+      .select('*')
+      .in('status', RECOVERY_STATUSES)
+      .gte('paid_at', sinceIso)
+      .order('paid_at', { ascending: true })
+      .limit(20);
+    if (error) throw new Error(`jache_orders 조회 실패: ${error.message}`);
+    return (data ?? []).map(fromRow);
   },
 };
 

@@ -315,3 +315,47 @@ export async function createPosOrderWithRetry(body: unknown, maxAttempts = 3): P
 export async function getPosOrder(posOrderId: string): Promise<any> {
   return tossplaceFetch<any>(`/order/orders/${encodeURIComponent(posOrderId)}`, { cache: 'no-store' });
 }
+
+export type PosLookup =
+  | { found: true; id: string; orderState: string | null }
+  | { found: false }
+  | { error: string };
+
+/**
+ * 우리 주문 id(orderKey)로 포스 주문을 찾는다 — GET …/order/orders/by-order-key/{orderKey} (docs.tossplace.com order-methods).
+ * 자동 환불 전에 「정말 포스에 안 들어갔나」를 확인하는 데 쓴다. 없으면 {found:false}, 판단이 안 되면 {error} (그때는 환불하지 않는다).
+ */
+export async function findPosOrderByKey(orderKey: string): Promise<PosLookup> {
+  let creds;
+  try {
+    creds = credentials();
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : '토스포스 설정 없음' };
+  }
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}/merchants/${creds.merchantId}/order/orders/by-order-key/${encodeURIComponent(orderKey)}`, {
+      headers: { 'x-access-key': creds.accessKey, 'x-secret-key': creds.secret, 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(10000),
+    });
+  } catch (e) {
+    return { error: `네트워크: ${e instanceof Error ? e.message : String(e)}` };
+  }
+  const text = await res.text();
+  let json: any = null;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    /* 본문이 JSON 이 아님 */
+  }
+  if (res.ok && json?.resultType === 'SUCCESS') {
+    const o = json.success;
+    if (!o?.id || (o.orderKey && o.orderKey !== orderKey)) return { error: '조회 응답이 이상함' };
+    return { found: true, id: String(o.id), orderState: o.orderState ?? null };
+  }
+  // 없는 주문: HTTP 404 + {resultType:'FAIL', error:{errorCode:'4040', reason:'존재하지 않는 주문입니다 …'}} (2026-11-26 실제 조회로 확인).
+  // 경로가 틀려 생긴 404(본문이 토스 API 형식이 아님)는 「없음」으로 보지 않는다 — 잘못 환불하지 않게
+  if (res.status === 404 && json?.resultType === 'FAIL') return { found: false };
+  return { error: `HTTP ${res.status} ${(json?.error ? JSON.stringify(json.error) : text).slice(0, 300)}` };
+}

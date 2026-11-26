@@ -6,6 +6,7 @@ import { sendSlackMessage } from '@/lib/slack';
 import { buildPosOrderBody, createPosOrderWithRetry, fetchCatalogFresh } from '@/lib/tossplace';
 import { posDryRun, type TossKeys } from './config.server';
 import { orderStore, type JacheOrder } from './orderStore.server';
+import { resolvePosFailure } from './refund.server';
 
 const TOSS_API = 'https://api.tosspayments.com/v1';
 export const SIM_PREFIX = 'SIM_';
@@ -52,7 +53,8 @@ const slackSafe = (text: string) => sendSlackMessage(text).catch((e) => console.
 
 /**
  * PAID 주문을 포스로 보낸다. PAID → POS_SENDING 으로 먼저 잡아 두 번 보내지 않는다.
- * 실패하면 POS_FAILED + 슬랙. (자동 환불은 3단계 — TODO)
+ * 실패하면 POS_FAILED + 슬랙 → resolvePosFailure(포스 조회 → 있으면 POS_OK, 없으면 자동 환불 + 취소 알림톡).
+ * 이 함수가 도중에 죽어 PAID·POS_SENDING·POS_FAILED 로 남아도 /api/cron/jache-recover 가 5분마다 이어서 처리한다.
  */
 export async function sendToPos(orderId: string): Promise<JacheOrder | null> {
   const store = orderStore();
@@ -93,14 +95,16 @@ export async function sendToPos(orderId: string): Promise<JacheOrder | null> {
   const maybeDup = r.attempts > 1 && !r.retryable;
   const err = `${r.error}${maybeDup ? ' (앞선 시도가 들어갔을 수 있음 — 포스 현황 확인)' : ''}`;
   const failed = await store.update(orderId, { status: 'POS_FAILED', posAttempts: attempts, posError: err.slice(0, 1000) }, ['POS_SENDING']);
-  // TODO(3단계): 자동 환불(토스페이먼츠 취소) + 손님 안내 문자. 지금은 슬랙으로만 알리고 POS_FAILED 로 남긴다
+  // 먼저 실패를 알리고(이 함수가 시간 한도로 죽어도 남게), 이어서 자동 마무리: 포스 조회 → 있으면 접수로 바로잡고, 없으면 자동 환불 + 취소 알림톡 (사장님 11-26 D2)
   await slackSafe(
     [
       `🚨 ${claimed.test ? '[테스트] ' : ''}자체앱 주문 포스 전송 실패 — 결제는 됨, 포스에 안 들어감`,
       `주문 ${claimed.orderNumber} (${claimed.id}) · ${claimed.totalAmount.toLocaleString('ko-KR')}원 · 픽업 ${claimed.pickupLabel}`,
       `시도 ${r.attempts}번 · ${err.slice(0, 300)}`,
-      '→ 포스에 직접 넣거나 환불해 주세요 (자동 환불은 아직 없음)',
+      '→ 포스에 들어갔는지 조회한 뒤 없으면 자동 환불합니다 (결과는 다음 알림)',
     ].join('\n')
   );
-  return failed;
+  if (!failed) return store.get(orderId);
+  await resolvePosFailure(orderId);
+  return store.get(orderId);
 }
