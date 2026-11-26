@@ -10,7 +10,6 @@
 import crypto from 'crypto';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { normalizePhone } from '@/lib/utils';
-import { CUSTOMER_SUPPORT_PHONE } from '@/lib/constants';
 import type { JacheOrder } from '@/lib/jache/orderStore.server';
 import { orderToken } from '@/lib/jache/orderStore.server';
 
@@ -153,7 +152,7 @@ export function variablesFor(
     case 'ready':
       return { ...base, 메뉴: menuText(o) };
     case 'unclaimed':
-      return { ...base, 준비시각: extra.readyAt ? kstHm(extra.readyAt) : '', 가게전화: CUSTOMER_SUPPORT_PHONE };
+      return { ...base, 준비시각: extra.readyAt ? kstHm(extra.readyAt) : '', 가게전화: '032-832-5012' };
     case 'picked_up':
       return { ...base, 메뉴: menuText(o), 금액: won(o.totalAmount) };
     case 'cancelled':
