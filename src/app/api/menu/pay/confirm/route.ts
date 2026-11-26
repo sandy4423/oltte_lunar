@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { paymentsEnabled, tossKeys } from '@/lib/jache/config.server';
 import { orderStore, verifyOrderTokenFor, isOrderId } from '@/lib/jache/orderStore.server';
 import { confirmTossPayment, sendToPos } from '@/lib/jache/checkout.server';
+import { notifyOrder } from '@/lib/alimtalk';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -38,6 +39,8 @@ export async function POST(req: NextRequest) {
   if (order.status !== 'PENDING') {
     if (order.tossPaymentKey && order.tossPaymentKey !== paymentKey) return res({ success: false, error: '이미 결제된 주문이에요' }, 409);
     const cur = order.status === 'PAID' ? await sendToPos(orderId) : order;
+    // PAID 에서 멈췄다가 이어서 POS_OK 가 된 경우도 접수 알림톡 (한 번만 — 기록 표가 막아 줌)
+    if (order.status === 'PAID' && cur?.status === 'POS_OK') await notifyOrder('received', cur);
     return res({ success: true, status: cur?.status ?? order.status });
   }
 
@@ -60,6 +63,7 @@ export async function POST(req: NextRequest) {
   }
 
   const after = await sendToPos(orderId);
-  // 접수 문자는 보내지 않는다 (사장님 11-19 「주문 들어왔을 때 문자 그거는 하지마. 조리 완료되었을 때만」)
+  // 접수 알림: 문자는 보내지 않는다(사장님 11-19). 11-26 사장님 승인으로 알림톡만 — 포스에 들어간(POS_OK) 주문만, 문자 대체 없음
+  if (after?.status === 'POS_OK') await notifyOrder('received', after);
   return res({ success: true, status: after?.status ?? 'PAID', simulated: c.simulated });
 }
